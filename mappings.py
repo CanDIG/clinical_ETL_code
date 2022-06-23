@@ -1,7 +1,6 @@
 import ast
 import dateparser
 
-
 MODULES = {}
 IDENTIFIER = {}
 VERBOSE = False
@@ -25,14 +24,17 @@ class MappingError(Exception):
 
 # Format a date field to ISO standard
 def date(mapping):
-    raw_date = single_val(mapping)
+    raw_date = list_val(mapping)
+    dates = []
     if raw_date is None:
         return None
-    try:
-        d = dateparser.parse(raw_date)
-        return d.date().isoformat()
-    except Exception as e:
-        raise MappingError(f"error in date({raw_date}): {type(e)} {e}")
+    for date in raw_date:
+        try:
+            d = dateparser.parse(date, settings={'TIMEZONE': 'UTC'})
+            dates.append(d.date().isoformat())
+        except Exception as e:
+            raise MappingError(f"error in date({raw_date}): {type(e)} {e}")
+    return dates
 
 
 # Returns a boolean based on whether or not the key in the mapping has a value
@@ -88,6 +90,3 @@ def is_null(cell):
     if cell == 'nan' or cell is None or cell == '':
         return True
     return False
-
-
-

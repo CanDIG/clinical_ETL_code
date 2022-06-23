@@ -75,6 +75,9 @@ def vital_signs_node(mapping):
 - `identifier`: column used to identify patients in the input data
 - `mapping`: template file
 - `mapping_functions`: additional mapping functions
+- `sheets`: lists of sheets in the clinical data:
+    - raw (all sheets available for mapping)
+    - final (subset of sheets actually used in the mapping)
 
 **Note:** Files should be specified as paths relative to the location of the manifest file.
 

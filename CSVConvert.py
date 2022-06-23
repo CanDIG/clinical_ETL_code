@@ -15,6 +15,7 @@ import argparse
 from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
 from schemas import candigv1_schema
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, help="Path to either an xlsx file or a directory of csv files for ingest")
@@ -370,6 +371,8 @@ def main(args):
         return
 
     indexed_data = process_data(raw_csv_dfs, identifier)
+    with open(f"{output_file}_indexed.json", 'w') as f:
+        json.dump(indexed_data, f, indent=4)
 
     # if verbose flag is set, warn if column name is present in multiple sheets:
     for col in indexed_data["columns"]:
@@ -381,7 +384,6 @@ def main(args):
     # for each identifier's row, make an mcodepacket
     for key in indexed_data["individuals"]:
         mcodepackets.append(map_row_to_mcodepacket(key, indexed_data, deepcopy(mapping_scaffold)))
-
 
     # special case: if it was candigv1, we need to wrap the results in "metadata"
     if schema == "candigv1":

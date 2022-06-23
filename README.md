@@ -88,6 +88,17 @@ identifier: Subject
 mapping: your_mapping.csv
 mapping_functions:
   - additional_functions.py
+sheets:
+  raw:
+      - Vital Signs
+      - Diagnosis
+      - Diagnosis 2
+      - Hematology
+      - Outcome
+  final:
+      - Vital Signs
+      - Diagnosis
+      - Outcome
 ```
 
 ## Set-up & Installation

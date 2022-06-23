@@ -242,7 +242,9 @@ def generate_mapping_template(node, node_name="", node_names=None):
 def create_mapping_scaffold(lines):
     props = {}
     for line in lines:
-        if line.startswith("##"):
+        if line.startswith("#"):
+            continue
+        if re.match(r"^\s*$", line):
             continue
         line_match = re.match(r"(##)*(.+?),(.*$)", line.replace("\"", ""))
         if line_match is not None and line_match.group(1) is None:

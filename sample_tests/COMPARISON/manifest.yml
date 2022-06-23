@@ -1,0 +1,5 @@
+description: Test mapping of COMPARISON dataset to mCODEpacket format for katsu
+mapping: COMPARISON2mCODE.csv
+identifier: Subject
+functions:
+  - COMPARISON

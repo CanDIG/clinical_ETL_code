@@ -36,6 +36,13 @@ def date(mapping):
             raise MappingError(f"error in date({raw_date}): {type(e)} {e}")
     return dates
 
+# Single date
+def single_date(mapping):
+    dates = date(mapping)
+    if len(dates) > 0:
+        return dates[0]
+    return None
+
 
 # Returns a boolean based on whether or not the key in the mapping has a value
 def has_value(mapping):

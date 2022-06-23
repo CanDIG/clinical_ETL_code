@@ -10,7 +10,7 @@ def test_single_val():
 
 
 def test_date():
-    test = CSVConvert.translate_mapping("ABC-01-03", indexed_data, "{date(DTH_DT_RAW)}")
+    test = CSVConvert.translate_mapping("ABC-01-03", indexed_data, "{single_date(DTH_DT_RAW)}")
     assert test == "2023-09-25"
 
 

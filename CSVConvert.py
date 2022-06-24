@@ -324,7 +324,11 @@ def load_manifest(mapping):
                 return
                 # mappings is a standard module: add it
     mappings.MODULES["mappings"] = importlib.import_module("mappings")
-    return identifier, schema, mapping_scaffold
+    return {
+        "identifier": identifier,
+        "schema": schema,
+        "scaffold": mapping_scaffold
+    }
 
 
 def main(args):
@@ -352,7 +356,10 @@ def main(args):
 
     # if mapping is provided, we should create a mapping scaffold
     if mapping is not None:
-        identifier, schema, mapping_scaffold = load_manifest(mapping)
+        manifest = load_manifest(mapping)
+        identifier = manifest["identifier"]
+        schema = manifest["schema"]
+        mapping_scaffold = manifest["scaffold"]
         if identifier is None:
             print("Need to specify what the main identifier column name is in the manifest file")
             return

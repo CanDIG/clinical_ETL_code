@@ -154,7 +154,7 @@ def translate_mapping(identifier, indexed_data, mapping):
 
 
 # Ingest either an excel file or a directory of csvs
-def ingest_raw_data(input_path):
+def ingest_raw_data(input_path, indexed):
     raw_csv_dfs = {}
     output_file = "mCodePacket"
     # input can either be an excel file or a directory of csvs
@@ -173,6 +173,10 @@ def ingest_raw_data(input_path):
             if file_match is not None:
                 df = pandas.read_csv(os.path.join(input_path, file), dtype=str)
                 raw_csv_dfs[file_match.group(1)] = df
+    if indexed is not None and len(indexed) > 0:
+        for df in indexed:
+            df = df.replace(".csv","")
+            raw_csv_dfs[df].reset_index(inplace=True)
     return raw_csv_dfs, output_file
 
 
@@ -292,6 +296,7 @@ def load_manifest(mapping):
     identifier = None
     schema = "mcode"
     mapping_scaffold = None
+    indexed = None
     with open(mapping, 'r') as f:
         manifest_dir = os.path.dirname(os.path.abspath(mapping))
         manifest = yaml.safe_load(f)
@@ -324,7 +329,14 @@ def load_manifest(mapping):
                 return
                 # mappings is a standard module: add it
     mappings.MODULES["mappings"] = importlib.import_module("mappings")
-    return identifier, schema, mapping_scaffold
+    if "indexed" in manifest:
+        indexed = manifest["indexed"]
+    return {
+        "identifier": identifier,
+        "schema": schema,
+        "scaffold": mapping_scaffold,
+        "indexed": indexed
+    }
 
 
 def main(args):
@@ -352,7 +364,11 @@ def main(args):
 
     # if mapping is provided, we should create a mapping scaffold
     if mapping is not None:
-        identifier, schema, mapping_scaffold = load_manifest(mapping)
+        manifest = load_manifest(mapping)
+        identifier = manifest["identifier"]
+        schema = manifest["schema"]
+        mapping_scaffold = manifest["scaffold"]
+        indexed = manifest["indexed"]
         if identifier is None:
             print("Need to specify what the main identifier column name is in the manifest file")
             return
@@ -364,7 +380,7 @@ def main(args):
         return
 
     if input_path is not None:
-        raw_csv_dfs, output_file = ingest_raw_data(input_path)
+        raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
         if not raw_csv_dfs:
             print(f"No ingestable files (csv or xlsx) were found at {input_path}")
             return

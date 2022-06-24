@@ -292,6 +292,7 @@ def load_manifest(mapping):
     identifier = None
     schema = "mcode"
     mapping_scaffold = None
+    indexed = None
     with open(mapping, 'r') as f:
         manifest_dir = os.path.dirname(os.path.abspath(mapping))
         manifest = yaml.safe_load(f)
@@ -324,10 +325,13 @@ def load_manifest(mapping):
                 return
                 # mappings is a standard module: add it
     mappings.MODULES["mappings"] = importlib.import_module("mappings")
+    if "indexed" in manifest:
+        indexed = manifest["indexed"]
     return {
         "identifier": identifier,
         "schema": schema,
-        "scaffold": mapping_scaffold
+        "scaffold": mapping_scaffold,
+        "indexed": indexed
     }
 
 
@@ -360,6 +364,7 @@ def main(args):
         identifier = manifest["identifier"]
         schema = manifest["schema"]
         mapping_scaffold = manifest["scaffold"]
+        indexed = manifest["indexed"]
         if identifier is None:
             print("Need to specify what the main identifier column name is in the manifest file")
             return

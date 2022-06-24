@@ -154,7 +154,7 @@ def translate_mapping(identifier, indexed_data, mapping):
 
 
 # Ingest either an excel file or a directory of csvs
-def ingest_raw_data(input_path):
+def ingest_raw_data(input_path, indexed):
     raw_csv_dfs = {}
     output_file = "mCodePacket"
     # input can either be an excel file or a directory of csvs
@@ -173,6 +173,10 @@ def ingest_raw_data(input_path):
             if file_match is not None:
                 df = pandas.read_csv(os.path.join(input_path, file), dtype=str)
                 raw_csv_dfs[file_match.group(1)] = df
+    if indexed is not None and len(indexed) > 0:
+        for df in indexed:
+            df = df.replace(".csv","")
+            raw_csv_dfs[df].reset_index(inplace=True)
     return raw_csv_dfs, output_file
 
 
@@ -376,7 +380,7 @@ def main(args):
         return
 
     if input_path is not None:
-        raw_csv_dfs, output_file = ingest_raw_data(input_path)
+        raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
         if not raw_csv_dfs:
             print(f"No ingestable files (csv or xlsx) were found at {input_path}")
             return

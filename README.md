@@ -78,6 +78,7 @@ def vital_signs_node(mapping):
 - `sheets`: lists of sheets in the clinical data:
     - raw (all sheets available for mapping)
     - final (subset of sheets actually used in the mapping)
+- `indexed`: a list of sheets that need a numeric row index, e.g. for specifying particular rows. Any sheets here will have an `index` column available to mapping functions.
 
 **Note:** Files should be specified as paths relative to the location of the manifest file.
 
@@ -99,6 +100,8 @@ sheets:
       - Vital Signs
       - Diagnosis
       - Outcome
+indexed:
+      - Diagnosis
 ```
 
 ## Set-up & Installation

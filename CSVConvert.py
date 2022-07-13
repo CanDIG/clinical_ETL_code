@@ -243,19 +243,21 @@ def generate_mapping_template(node, node_name="", node_names=None):
 
 
 # Given a mapping csv file, create a scaffold mapping.
-def create_mapping_scaffold(lines):
+def create_mapping_scaffold(lines, test=False):
     props = {}
     for line in lines:
         if line.startswith("#"):
             continue
         if re.match(r"^\s*$", line):
             continue
-        line_match = re.match(r"(##)*(.+?),(.*$)", line.replace("\"", ""))
-        if line_match is not None and line_match.group(1) is None:
-            element = line_match.group(2)
+        line_match = re.match(r"(.+?),(.*$)", line.replace("\"", ""))
+        if line_match is not None:
+            element = line_match.group(1)
             value = ""
-            if line_match.group(3) != "" and not line_match.group(3).startswith("##"):
-                value = line_match.group(3).replace(",", ";")
+            if test:
+                value = "test"
+            if line_match.group(2) != "" and not line_match.group(2).startswith("##"):
+                value = line_match.group(2).replace(",", ";")
             elems = element.replace("*", "").replace("+", "").split(".")
             x = elems.pop(0)
             if x not in props:

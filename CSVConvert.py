@@ -3,6 +3,7 @@
 
 from copy import deepcopy
 import importlib.util
+from importlib.metadata import files, version
 import json
 import mappings
 import os
@@ -347,17 +348,26 @@ def main(args):
     mapping = args.mapping
     schema = args.schema
     mappings.VERBOSE = args.verbose
-
+    metadata = ""
+    
     # if template is provided, we should generate a template file
     if template is not None:
         if schema is None:
             schema = MCODE_SCHEMA
+            # get metadata about version of MCODE_SCHEMA used:
+            metadata += "## schema based on version " + version('katsu') + ",\n"
+            direct_url = [p for p in files('katsu') if 'direct_url.json' in str(p)]
+            if len(direct_url) > 0:
+                d = json.loads(direct_url[0].read_text())
+                metadata += f"## directly checked out from {d['url']}, commit {d['vcs_info']['commit_id']}\n"
         if schema == "candigv1":
             schema = candigv1_schema
         sc, node_names = generate_mapping_template(schema)
+            
         with open(f"{template}.csv", 'w') as f:  # write to csv file for mapping
+            f.write(metadata)
             f.write("## mcodepacket element, description (overwrite with mapped element)\n")
-            f.write("## (.0 is an array element) (* is required) (+ denotes ontology term)\n")
+            f.write("## (.0 is an array element) (* is required) (+ denotes ontology term),\n")
             for nn in node_names:
                 f.write(f"{nn}\n")
         return

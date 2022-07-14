@@ -1,7 +1,7 @@
 import CSVConvert
 
 # read sheet from given data pathway
-raw_csvs, output_file = CSVConvert.ingest_raw_data("sample_tests/sample_data/pytest_data_v2.xlsx")
+raw_csvs, output_file = CSVConvert.ingest_raw_data("test_data/pytest_data_v2.xlsx", [])
 indexed_data = CSVConvert.process_data(raw_csvs, "Subject")
 
 def test_single_val():

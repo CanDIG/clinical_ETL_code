@@ -1,5 +1,7 @@
+## schema based on version 2.7.0,
+## directly checked out from https://github.com/CanDIG/katsu.git, commit 6d58fd7225c1c91d8cf428135c4df757cff3003d
 ## mcodepacket element, description (overwrite with mapped element)
-## (.0 is an array element) (* is required) (+ denotes ontology term)
+## (.0 is an array element) (* is required) (+ denotes ontology term),
 "id","##An arbitrary identifier for the mcodepacket."
 ##"subject","##An individual who is a subject of mcodepacket."
 "subject.id*","##A unique researcher-specified identifier for an individual."

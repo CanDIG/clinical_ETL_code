@@ -190,7 +190,6 @@ def generate_mapping_template(node, node_name="", node_names=None):
         if len(node_names) > 0:
             x = node_names.pop()
             x_match = re.match(r"\"(.+?)\**\",.*", x)
-            print(f"is {x} a header for {node_name}: {x_match}")
             if x_match is not None:
                 if x_match.group(1) in node_name:
                     node_names.append(f"##{x}")

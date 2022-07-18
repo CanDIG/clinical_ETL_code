@@ -74,7 +74,7 @@ def vital_signs_node(mapping):
 - `description`: description of the mapping
 - `identifier`: column used to identify patients in the input data
 - `mapping`: template file
-- `mapping_functions`: additional mapping functions
+- `functions`: additional mapping functions
 - `sheets`: lists of sheets in the clinical data:
     - raw (all sheets available for mapping)
     - final (subset of sheets actually used in the mapping)
@@ -87,7 +87,7 @@ Example:
 description: Test mapping of COMPARISON dataset to mCODEpacket format for katsu
 identifier: Subject
 mapping: your_mapping.csv
-mapping_functions:
+functions:
   - additional_functions.py
 sheets:
   raw:

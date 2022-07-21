@@ -110,7 +110,7 @@ def main(args):
 
     with open(f"{output_file}_testmap.json", 'w') as f:    # write to json file for ingestion
         json.dump(mcodepackets, f, indent=4)
-
+    print(f"Test mapping saved as {output_file}_testmap.json")
 
 if __name__ == '__main__':
     main(parse_args())

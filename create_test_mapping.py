@@ -12,8 +12,8 @@ from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('template', type=str, help="Path to a template mapping file.")
-    parser.add_argument('--placeholder', type=str, default="abcd")
+    parser.add_argument('--template', type=str, default="mcode_template.csv", help="Path to a template mapping file.")
+    parser.add_argument('--placeholder', type=str, default="abcd", help="Value for placeholder strings.")
     args = parser.parse_args()
     return args
 

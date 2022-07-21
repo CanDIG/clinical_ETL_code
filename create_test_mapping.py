@@ -60,14 +60,15 @@ def pick_value_for_node(placeholder_val, node, schema):
                 obj["value"] = placeholder_val
             return obj
         elif schema["type"] == "array":
-            print(schema)
+            if "items" in schema:
+                return pick_value_for_node(placeholder_val, node, schema["items"])
         elif schema["type"] == "boolean":
             return True
         elif schema["type"] == "string":
             if "enum" in schema:
                 return schema["enum"][0]
             if "format" in schema and schema["format"] == "date-time":
-                return str(datetime.now())
+                return "2022-07-17T17:17:17.085021Z"
             if "description" in schema:
                 # it's useful if there's an example!
                 eg_match = re.match(r".*(e\. *g\. *)(.+?)(\s).*", schema["description"])

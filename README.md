@@ -1,5 +1,4 @@
-# clinical_ETL 
-[![Build Status](https://travis-ci.com/CanDIG/medidata_mCode_ETL.svg?token=G1SY8JVFAzjkR7ZoffDu&branch=main)](https://travis-ci.com/CanDIG/medidata_mCode_ETL)
+# clinical_ETL_code
 
 Convert patient clinical data to mCode model for Katsu ingestion with Python
 
@@ -126,3 +125,10 @@ Continuous Integration is implemented through Pytest and Travis CI which runs wh
 To run tests manually, enter from command line `$ pytest`
 
 *Note: updated mCodePacket.json files must be pushed for all tests to pass during Travis builds*
+
+## Creating a dummy json file for testing
+You can use a template file (created as described above with `--template`) alone to create a dummy ingest file without actual data. 
+
+`python create_test_mapping.py` creates a file at `mcode_template_testmap.json` that is filled in (without using mapping functions) with placeholder or dummy values. You can specify the placeholder value with the argument `--placeholder`.
+
+This JSON file can be ingested into katsu and compared with the ingested value using https://github.com/CanDIG/candigv2-ingest/blob/main/katsu_validate_dataset.py.

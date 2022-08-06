@@ -246,10 +246,6 @@ def generate_mapping_template(node, node_name="", node_names=None):
 def create_mapping_scaffold(lines, test=False):
     props = {}
     for line in lines:
-        if line.startswith("#"):
-            continue
-        if re.match(r"^\s*$", line):
-            continue
         line_match = re.match(r"(.+?),(.*$)", line.replace("\"", ""))
         if line_match is not None:
             element = line_match.group(1)
@@ -313,9 +309,16 @@ def load_manifest(mapping):
         mapping_path = os.path.join(manifest_dir, manifest["mapping"])
         if os.path.isabs(manifest["mapping"]):
             mapping_path = manifest["mapping"]
+        mapping = []
         with open(mapping_path, 'r') as f:
             lines = f.readlines()
-            mapping_scaffold = create_mapping_scaffold(lines)
+            for line in lines:
+                if line.startswith("#"):
+                    continue
+                if re.match(r"^\s*$", line):
+                    continue
+                mapping.append(line)
+        mapping_scaffold = create_mapping_scaffold(mapping)
     if "functions" in manifest:
         for mod in manifest["functions"]:
             try:
@@ -337,6 +340,7 @@ def load_manifest(mapping):
         "identifier": identifier,
         "schema": schema,
         "scaffold": mapping_scaffold,
+        "mapping": mapping,
         "indexed": indexed
     }
 

@@ -101,7 +101,14 @@ def process_data(raw_csv_dfs, identifier):
 def map_row_to_mcodepacket(identifier, indexed_data, node):
     # walk through the provided node of the mcodepacket and fill in the details
     if "str" in str(type(node)) and node != "":
-        return translate_mapping(identifier, indexed_data, node)
+        method, mapping = translate_mapping(identifier, indexed_data, node)
+        module = mappings.MODULES["mappings"]
+        # is the function something in a dynamically-loaded module?
+        subfunc_match = re.match(r"(.+)\.(.+)", method)
+        if subfunc_match is not None:
+            module = mappings.MODULES[subfunc_match.group(1)]
+            method = subfunc_match.group(2)
+        return eval(f'module.{method}({mapping})')
     elif "list" in str(type(node)):
         new_node = []
         for item in node:
@@ -146,12 +153,8 @@ def translate_mapping(identifier, indexed_data, mapping):
                         new_dict[item][sheet] = indexed_data["data"][sheet][identifier][item]
                     else:
                         new_dict[item][sheet] = []
-        # is the function something in a dynamically-loaded module?
-        subfunc_match = re.match(r"(.+)\.(.+)", func_match.group(1))
-        if subfunc_match is not None:
-            module = mappings.MODULES[subfunc_match.group(1)]
-            return eval(f'module.{subfunc_match.group(2)}({new_dict})')
-        return eval(f'mappings.{func_match.group(1)}({new_dict})')
+        return func_match.group(1), new_dict
+    return None, None
 
 
 # Ingest either an excel file or a directory of csvs

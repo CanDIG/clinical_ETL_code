@@ -1,10 +1,6 @@
 import argparse
 import json
-import os
-import re
-from copy import deepcopy
 from CSVConvert import ingest_raw_data, process_data, load_manifest, translate_mapping, process_mapping
-from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
 
 
 def parse_args():

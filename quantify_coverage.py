@@ -1,6 +1,9 @@
 import argparse
 import json
-from CSVConvert import ingest_raw_data, process_data, load_manifest, translate_mapping, process_mapping
+from CSVConvert import ingest_raw_data, process_data, load_manifest, translate_mapping, process_mapping, generate_mapping_template, map_row_to_mcodepacket, create_mapping_scaffold
+from create_test_mapping import map_to_mcodepacket
+from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
+from copy import deepcopy
 
 
 def parse_args():
@@ -89,6 +92,19 @@ def main(args):
                 accessed_sheets[sheet].remove("index")
             cols_used = len(accessed_sheets[sheet])
         print(f"{sheet}\t{cols_used}\t{len(data)-1}")
+
+    # Create actual mapping and test mapping and compare the two:
+    # actual mapping
+    key = indexed_data["individuals"][0]
+    actual = map_row_to_mcodepacket(key, indexed_data, deepcopy(scaffold))
+
+    # test mapping
+    schema, mapping = generate_mapping_template(MCODE_SCHEMA)
+    mapping_scaffold = create_mapping_scaffold(mapping, test=True)
+    expected = map_to_mcodepacket("test", deepcopy(mapping_scaffold), MCODE_SCHEMA)
+
+    print(json.dumps(actual, indent=4))
+    print(json.dumps(expected, indent=4))
 
 if __name__ == '__main__':
     main(parse_args())

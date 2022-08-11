@@ -39,6 +39,7 @@ def process_data(raw_csv_dfs, identifier):
     individuals = []
 
     for page in raw_csv_dfs.keys():
+        print(f"Processing sheet {page}...")
         df = raw_csv_dfs[page].dropna(axis='index', how='all')\
             .dropna(axis='columns', how='all')\
             .applymap(str)\

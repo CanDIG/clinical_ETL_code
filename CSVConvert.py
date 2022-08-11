@@ -263,6 +263,10 @@ def process_mapping(line, test=False):
 def create_mapping_scaffold(lines, test=False):
     props = {}
     for line in lines:
+        if line.startswith("#"):
+            continue
+        if re.match(r"^\s*$", line):
+            continue
         value, elems = process_mapping(line, test)
         if elems is not None:
             x = elems.pop(0)

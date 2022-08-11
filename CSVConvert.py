@@ -39,6 +39,7 @@ def process_data(raw_csv_dfs, identifier):
     individuals = []
 
     for page in raw_csv_dfs.keys():
+        print(f"Processing sheet {page}...")
         df = raw_csv_dfs[page].dropna(axis='index', how='all')\
             .dropna(axis='columns', how='all')\
             .applymap(str)\
@@ -102,13 +103,14 @@ def map_row_to_mcodepacket(identifier, indexed_data, node):
     # walk through the provided node of the mcodepacket and fill in the details
     if "str" in str(type(node)) and node != "":
         method, mapping = translate_mapping(identifier, indexed_data, node)
-        module = mappings.MODULES["mappings"]
-        # is the function something in a dynamically-loaded module?
-        subfunc_match = re.match(r"(.+)\.(.+)", method)
-        if subfunc_match is not None:
-            module = mappings.MODULES[subfunc_match.group(1)]
-            method = subfunc_match.group(2)
-        return eval(f'module.{method}({mapping})')
+        if method is not None:
+            module = mappings.MODULES["mappings"]
+            # is the function something in a dynamically-loaded module?
+            subfunc_match = re.match(r"(.+)\.(.+)", method)
+            if subfunc_match is not None:
+                module = mappings.MODULES[subfunc_match.group(1)]
+                method = subfunc_match.group(2)
+            return eval(f'module.{method}({mapping})')
     elif "list" in str(type(node)):
         new_node = []
         for item in node:

@@ -4,6 +4,7 @@ from CSVConvert import ingest_raw_data, process_data, load_manifest, translate_m
 from create_test_mapping import map_to_mcodepacket
 from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
 from copy import deepcopy
+from jsoncomparison import Compare
 
 
 def parse_args():
@@ -12,6 +13,17 @@ def parse_args():
     parser.add_argument('--input', type=str, help="Clinical data for mapping.")
     args = parser.parse_args()
     return args
+
+
+def clean_compare(compare):
+    new_compare = {}
+    for key in compare:
+        if "_message" in compare[key]:
+            if "Values not equal." not in compare[key]["_message"]:
+                new_compare[key] = compare[key]
+        else:
+            new_compare[key] = clean_compare(compare[key])
+    return new_compare
 
 
 def main(args):
@@ -101,10 +113,10 @@ def main(args):
     # test mapping
     schema, mapping = generate_mapping_template(MCODE_SCHEMA)
     mapping_scaffold = create_mapping_scaffold(mapping, test=True)
-    expected = map_to_mcodepacket("test", deepcopy(mapping_scaffold), MCODE_SCHEMA)
+    expected = map_to_mcodepacket(key, deepcopy(mapping_scaffold), MCODE_SCHEMA)
 
-    print(json.dumps(actual, indent=4))
-    print(json.dumps(expected, indent=4))
+    compare = Compare().check(expected, actual)
+    print(json.dumps(clean_compare(compare), indent=4))
 
 if __name__ == '__main__':
     main(parse_args())

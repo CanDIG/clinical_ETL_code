@@ -75,7 +75,7 @@ def main(args):
                     break
                 sheet = val["sheets"].pop()
             if len(val["sheets"]) == 0: # it's not in any of those, so add the col to the last sheet seen
-                accessed_sheets[sheet].append(val['column'])
+                accessed_sheets[sheet] = [val['column']]
     # print(json.dumps(accessed_sheets, indent=4))
     
     print("Sheet\tColumns used\tTotal columns (not including identifier)")

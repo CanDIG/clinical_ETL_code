@@ -90,9 +90,16 @@ def main(args):
     schema, nn = generate_mapping_template(MCODE_SCHEMA)
     # print(json.dumps(MCODE_SCHEMA, indent=4))
     if template is not None:
+        mapping = []
         with open(template, 'r') as f:
             lines = f.readlines()
-            mapping_scaffold = create_mapping_scaffold(lines, test=True)
+            for line in lines:
+                if line.startswith("#"):
+                    continue
+                if re.match(r"^\s*$", line):
+                    continue
+                mapping.append(line)
+            mapping_scaffold = create_mapping_scaffold(mapping, test=True)
             # print(json.dumps(mapping_scaffold, indent=4))
         if mapping_scaffold is None:
             print("No mapping scaffold was loaded. Either katsu was not found or no schema was specified.")

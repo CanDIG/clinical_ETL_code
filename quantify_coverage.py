@@ -15,14 +15,22 @@ def parse_args():
     return args
 
 
-def clean_compare(compare):
+def clean_compare(compare, expected, actual):
     new_compare = {}
     for key in compare:
         if "_message" in compare[key]:
             if "Values not equal." not in compare[key]["_message"]:
                 new_compare[key] = compare[key]
+                if "Key does not exists." in compare[key]["_message"]:
+                    new_compare[key] = "missing"
+        elif "_content" in compare[key]:
+            check = clean_compare(compare[key]["_content"][0], expected[key][0], actual[key][0])
+            if len(check) > 0:
+                new_compare[key] = check
         else:
-            new_compare[key] = clean_compare(compare[key])
+            check = clean_compare(compare[key], expected[key], actual[key])
+            if len(check) > 0:
+                new_compare[key] = check
     return new_compare
 
 
@@ -116,7 +124,9 @@ def main(args):
     expected = map_to_mcodepacket(key, deepcopy(mapping_scaffold), MCODE_SCHEMA)
 
     compare = Compare().check(expected, actual)
-    print(json.dumps(clean_compare(compare), indent=4))
+    print("\n\nMapping is missing the following items from the schema:")
+    print(json.dumps(compare, indent=4))
+    print(json.dumps(clean_compare(compare, expected, actual), indent=4))
 
 if __name__ == '__main__':
     main(parse_args())

@@ -91,6 +91,21 @@ def main(args):
 
     indexed_data = process_data(raw_csv_dfs, identifier)
 
+    # actual mapping
+    key = indexed_data["individuals"][0]
+    actual = map_row_to_mcodepacket(key, indexed_data, scaffold)
+
+    # test mapping
+    schema, expected_flattened = generate_mapping_template(MCODE_SCHEMA)
+    expected = map_to_mcodepacket(key, create_mapping_scaffold(expected_flattened, test=True), MCODE_SCHEMA)
+
+    # compare the actual mapping and report any mismatches
+    compare = clean_compare(Compare().check(expected, actual), expected, actual)
+    if len(compare.keys()) > 0:
+        print("\n\nSome items in the mapping do not match the schema:")
+        print(json.dumps(compare, indent=4))
+
+    # quantify mapping coverage of all data sheets
     all_sheets = list(indexed_data["columns"][identifier]) # identifier is in all sheets
 
     mappings = set()
@@ -137,20 +152,8 @@ def main(args):
             cols_used = len(accessed_sheets[sheet])
         print(f"{sheet}\t{cols_used}\t{len(data)-1}")
 
-    # Create actual mapping and test mapping and compare the two:
-    # actual mapping
-    key = indexed_data["individuals"][0]
-    actual = map_row_to_mcodepacket(key, indexed_data, scaffold)
+    # look for missing fields from the schema
     sc, actual_flattened = flatten_mapping(actual)
-
-    # test mapping
-    schema, expected_flattened = generate_mapping_template(MCODE_SCHEMA)
-    expected = map_to_mcodepacket(key, create_mapping_scaffold(expected_flattened, test=True), MCODE_SCHEMA)
-
-    compare = clean_compare(Compare().check(expected, actual), expected, actual)
-    if len(compare.keys()) > 0:
-        print("\n\nSome items in the mapping do not match the schema:")
-        print(json.dumps(compare, indent=4))
     actual = actual_flattened.pop(0)
     missing = []
     

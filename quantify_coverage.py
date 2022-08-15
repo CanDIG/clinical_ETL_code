@@ -1,5 +1,6 @@
 import argparse
 import json
+import re
 from CSVConvert import ingest_raw_data, process_data, load_manifest, translate_mapping, process_mapping, generate_mapping_template, map_row_to_mcodepacket, create_mapping_scaffold
 from create_test_mapping import map_to_mcodepacket
 from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
@@ -32,6 +33,29 @@ def clean_compare(compare, expected, actual):
             if len(check) > 0:
                 new_compare[key] = check
     return new_compare
+
+
+def flatten_mapping(node, node_name="", node_names=None):
+    if node_names is None:
+        node_names = []
+    if node_name != "":
+        node_names.append(node_name)
+    if "list" in str(type(node)):
+        new_node_name = ".".join((node_name, "0"))
+        sc, nn = flatten_mapping(node[0], new_node_name, node_names)
+        return [sc], nn
+    elif "dict" in str(type(node)):
+        scaffold = {}
+        for prop in node.keys():
+            if node_name == "":
+                new_node_name = prop
+            else:
+                new_node_name = ".".join((node_name, prop))
+            scaffold[prop], node_names = flatten_mapping(node[prop], new_node_name, node_names)
+        return scaffold, node_names
+    else:
+        return "string", node_names
+    return None, node_names
 
 
 def main(args):
@@ -116,17 +140,46 @@ def main(args):
     # Create actual mapping and test mapping and compare the two:
     # actual mapping
     key = indexed_data["individuals"][0]
-    actual = map_row_to_mcodepacket(key, indexed_data, deepcopy(scaffold))
+    actual = map_row_to_mcodepacket(key, indexed_data, scaffold)
+    sc, actual_flattened = flatten_mapping(actual)
 
     # test mapping
-    schema, mapping = generate_mapping_template(MCODE_SCHEMA)
-    mapping_scaffold = create_mapping_scaffold(mapping, test=True)
-    expected = map_to_mcodepacket(key, deepcopy(mapping_scaffold), MCODE_SCHEMA)
+    schema, expected_flattened = generate_mapping_template(MCODE_SCHEMA)
+    expected = map_to_mcodepacket(key, create_mapping_scaffold(expected_flattened, test=True), MCODE_SCHEMA)
 
     compare = Compare().check(expected, actual)
     print("\n\nMapping is missing the following items from the schema:")
-    print(json.dumps(compare, indent=4))
-    print(json.dumps(clean_compare(compare, expected, actual), indent=4))
+    # print(json.dumps(clean_compare(compare, expected, actual), indent=4))
+    actual = actual_flattened.pop(0)
+    missing = []
+    
+    while len(actual) > 0:
+        if len(expected_flattened) == 0:
+            break
+        expected = expected_flattened.pop(0)
+        # print(actual)
+        while "extra_properties" in actual:
+            actual = actual_flattened.pop(0)
+        patt = re.compile(f"^(##)*{actual}([\*\+])*,.*")
+        expected_match = re.match(patt, expected)
+        if expected_match is not None:
+            # print(f"++{actual}, {expected}")
+            if expected_match.group(2) == "+":
+                # need to pop the next two actuals
+                actual = actual_flattened.pop(0)
+                actual = actual_flattened.pop(0)
+            if len(actual_flattened) > 0:
+                actual = actual_flattened.pop(0)
+            else:
+                break
+        else:
+            # print(f"--{actual}, {expected}")
+            comment_match = re.match(r"^(##)*(.*?)(,.*)", expected)
+            if comment_match is not None:
+                if comment_match.group(1) is None:
+                    missing.append(comment_match.group(2))
+    print("\n".join(missing))
+
 
 if __name__ == '__main__':
     main(parse_args())

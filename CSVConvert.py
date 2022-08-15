@@ -102,15 +102,7 @@ def process_data(raw_csv_dfs, identifier):
 def map_row_to_mcodepacket(identifier, indexed_data, node):
     # walk through the provided node of the mcodepacket and fill in the details
     if "str" in str(type(node)) and node != "":
-        method, mapping = translate_mapping(identifier, indexed_data, node)
-        if method is not None:
-            module = mappings.MODULES["mappings"]
-            # is the function something in a dynamically-loaded module?
-            subfunc_match = re.match(r"(.+)\.(.+)", method)
-            if subfunc_match is not None:
-                module = mappings.MODULES[subfunc_match.group(1)]
-                method = subfunc_match.group(2)
-            return eval(f'module.{method}({mapping})')
+        return eval_mapping(identifier, indexed_data, node)
     elif "list" in str(type(node)):
         new_node = []
         for item in node:
@@ -157,6 +149,20 @@ def translate_mapping(identifier, indexed_data, mapping):
                         new_dict[item][sheet] = []
         return func_match.group(1), new_dict
     return None, None
+
+
+def eval_mapping(identifier, indexed_data, node):
+    method, mapping = translate_mapping(identifier, indexed_data, node)
+    if method is not None:
+        if "mappings" not in mappings.MODULES:
+            mappings.MODULES["mappings"] = importlib.import_module("mappings")
+        module = mappings.MODULES["mappings"]
+        # is the function something in a dynamically-loaded module?
+        subfunc_match = re.match(r"(.+)\.(.+)", method)
+        if subfunc_match is not None:
+            module = mappings.MODULES[subfunc_match.group(1)]
+            method = subfunc_match.group(2)
+        return eval(f'module.{method}({mapping})')
 
 
 # Ingest either an excel file or a directory of csvs

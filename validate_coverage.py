@@ -150,7 +150,7 @@ def main(args):
             if "index" in accessed_sheets[sheet]: # don't count index; it's not a real column
                 accessed_sheets[sheet].remove("index")
             cols_used = len(accessed_sheets[sheet])
-        print(f"{sheet}\t{cols_used}\t{len(data)-1}")
+        print(f"{sheet}\t{cols_used}\t{len(data)}")
 
     # look for missing fields from the schema
     sc, actual_flattened = flatten_mapping(actual)

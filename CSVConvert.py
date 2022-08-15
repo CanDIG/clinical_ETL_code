@@ -194,7 +194,7 @@ def generate_mapping_template(node, node_name="", node_names=None):
         # check to see if the last node_name is a header for this node_name:
         if len(node_names) > 0:
             x = node_names.pop()
-            x_match = re.match(r"\"(.+?)\**\",.*", x)
+            x_match = re.match(r"(.+?)\**,.*", x)
             if x_match is not None:
                 if x_match.group(1) in node_name:
                     node_names.append(f"##{x}")
@@ -203,9 +203,9 @@ def generate_mapping_template(node, node_name="", node_names=None):
             else:
                 node_names.append(x)
         if "description" in node:
-            node_names.append(f"\"{node_name}\",\"##{node['description']}\"")
+            node_names.append(f"{node_name},\"##{node['description']}\"")
         else:
-            node_names.append(f"\"{node_name}\",")
+            node_names.append(f"{node_name},")
     if "type" in node:
         if node["type"] == "string":
             return "string", node_names
@@ -227,9 +227,9 @@ def generate_mapping_template(node, node_name="", node_names=None):
                                       or node["$id"] == "katsu:mcode:complex_ontology"):
                     # add a + to the name of the node to denote that this needs to be looked up in an ontology
                     name = node_names.pop()
-                    name_match = re.match(r"\"(.+?)\"(.+)", name)
+                    name_match = re.match(r"(.+?),(.+)", name)
                     if name_match is not None:
-                        name = f"\"{name_match.group(1)}+\"{name_match.group(2)}"
+                        name = f"{name_match.group(1)}+,{name_match.group(2)}"
                     node_names.append(name)
                     return node["$id"], node_names
             if "properties" in node:

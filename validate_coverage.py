@@ -23,7 +23,7 @@ def clean_compare(compare, expected, actual):
             if "Values not equal." not in compare[key]["_message"]:
                 new_compare[key] = compare[key]
                 if "Key does not exists." in compare[key]["_message"]:
-                    new_compare[key] = "missing"
+                    new_compare.pop(key)
         elif "_content" in compare[key]:
             check = clean_compare(compare[key]["_content"][0], expected[key][0], actual[key][0])
             if len(check) > 0:
@@ -124,7 +124,7 @@ def main(args):
             if len(val["sheets"]) == 0: # it's not in any of those, so add the col to the last sheet seen
                 accessed_sheets[sheet] = [val['column']]
     # print(json.dumps(accessed_sheets, indent=4))
-    
+    print("\n\nMapping coverage of the clinical data provided:")
     print("Sheet\tColumns used\tTotal columns (not including identifier)")
     for sheet in all_sheets:
         subject = list(indexed_data["data"][sheet].keys())[0]
@@ -147,12 +147,14 @@ def main(args):
     schema, expected_flattened = generate_mapping_template(MCODE_SCHEMA)
     expected = map_to_mcodepacket(key, create_mapping_scaffold(expected_flattened, test=True), MCODE_SCHEMA)
 
-    compare = Compare().check(expected, actual)
-    print("\n\nMapping is missing the following items from the schema:")
-    # print(json.dumps(clean_compare(compare, expected, actual), indent=4))
+    compare = clean_compare(Compare().check(expected, actual), expected, actual)
+    if len(compare.keys()) > 0:
+        print("\n\nSome items in the mapping do not match the schema:")
+        print(json.dumps(compare, indent=4))
     actual = actual_flattened.pop(0)
     missing = []
     
+    print("\n\nMapping is missing the following items from the schema:")
     while len(actual) > 0:
         if len(expected_flattened) == 0:
             break

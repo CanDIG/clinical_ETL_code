@@ -153,12 +153,26 @@ def main(args):
         print(f"{sheet}\t{cols_used}\t{len(data)}")
 
     # look for missing fields from the schema
-    sc, actual_flattened = flatten_mapping(actual)
-    actual = actual_flattened.pop(0)
+    # create an actual mapping of all items used for any individual
+    items_used = []
+    for key in indexed_data["individuals"]:
+        sc, actual_flattened = flatten_mapping(map_row_to_mcodepacket(key, indexed_data, scaffold))
+        for i in range(0, len(actual_flattened)):
+            curr_item = actual_flattened[i]
+            if curr_item not in items_used:
+                # if this is not the first item, file it in the spot it goes in the order:
+                if i > 0:
+                    prev_item = actual_flattened[i-1]
+                    prev_index = items_used.index(prev_item)
+                    items_used.insert(prev_index+1, curr_item)
+                else:
+                    items_used.insert(0, curr_item)    
+
     missing = []
-    
+
     print("\n\nMapping is missing the following items from the schema:")
-    while len(actual) > 0:
+    actual = items_used.pop(0)
+    while len(items_used) > 0:
         if len(expected_flattened) == 0:
             break
         expected = expected_flattened.pop(0)
@@ -171,10 +185,10 @@ def main(args):
             # print(f"++{actual}, {expected}")
             if expected_match.group(2) == "+":
                 # need to pop the next two actuals
-                actual = actual_flattened.pop(0)
-                actual = actual_flattened.pop(0)
-            if len(actual_flattened) > 0:
-                actual = actual_flattened.pop(0)
+                actual = items_used.pop(0)
+                actual = items_used.pop(0)
+            if len(items_used) > 0:
+                actual = items_used.pop(0)
             else:
                 break
         else:

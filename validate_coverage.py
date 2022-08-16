@@ -176,9 +176,18 @@ def main(args):
         if len(expected_flattened) == 0:
             break
         expected = expected_flattened.pop(0)
-        # print(actual)
-        while "extra_properties" in actual:
-            actual = actual_flattened.pop(0)
+
+        # skip any extra_properties, because these are definitely not needed
+        while "extra_properties" in expected and len(expected_flattened) > 0:
+            expected = expected_flattened.pop(0)
+        if len(expected_flattened) == 0:
+            break
+
+        while "extra_properties" in actual and len(items_used) > 0:
+            actual = items_used.pop(0)
+        if len(items_used) == 0:
+            break
+
         patt = re.compile(f"^(##)*{actual}([\*\+])*,.*")
         expected_match = re.match(patt, expected)
         if expected_match is not None:

@@ -6,3 +6,4 @@ katsu@git+https://github.com/CanDIG/katsu.git@develop
 PyYAML~=5.4.1
 dateparser~=1.1.0
 openpyxl~=3.0.9
+jsoncomparison~=1.1.0

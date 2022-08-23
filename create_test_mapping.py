@@ -9,7 +9,7 @@ from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--template', type=str, default="mcode_template.csv", help="Path to a template mapping file.")
+    parser.add_argument('--template', type=str, help="Path to a template mapping file.")
     parser.add_argument('--placeholder', type=str, default="abcd", help="Value for placeholder strings.")
     args = parser.parse_args()
     return args
@@ -87,27 +87,26 @@ def pick_value_for_node(placeholder_val, node, schema):
 
 def main(args):
     template = args.template
-    schema, nn = generate_mapping_template(MCODE_SCHEMA)
-    # print(json.dumps(MCODE_SCHEMA, indent=4))
     if template is not None:
         with open(template, 'r') as f:
-            lines = f.readlines()
-            mapping_scaffold = create_mapping_scaffold(lines, test=True)
-            # print(json.dumps(mapping_scaffold, indent=4))
-        if mapping_scaffold is None:
-            print("No mapping scaffold was loaded. Either katsu was not found or no schema was specified.")
-            return
+            mapping = f.readlines()
     else:
-        print("A manifest file is required, using the --manifest argument")
+        schema, mapping = generate_mapping_template(MCODE_SCHEMA)
+    mapping_scaffold = create_mapping_scaffold(mapping, test=True)
+    # print(json.dumps(mapping_scaffold, indent=4))
+    if mapping_scaffold is None:
+        print("No mapping scaffold was loaded. Either katsu was not found or no schema was specified.")
         return
-
-    output_file, ext = os.path.splitext(template)
 
     mcodepackets = [map_to_mcodepacket(args.placeholder, deepcopy(mapping_scaffold), MCODE_SCHEMA)]
 
-    with open(f"{output_file}_testmap.json", 'w') as f:    # write to json file for ingestion
-        json.dump(mcodepackets, f, indent=4)
-    print(f"Test mapping saved as {output_file}_testmap.json")
+    if template is not None:
+        output_file, ext = os.path.splitext(template)
+        with open(f"{output_file}_testmap.json", 'w') as f:    # write to json file for ingestion
+            json.dump(mcodepackets, f, indent=4)
+        print(f"Test mapping saved as {output_file}_testmap.json")
+    else:
+        print(json.dumps(mcodepackets, indent=4))
 
 if __name__ == '__main__':
     main(parse_args())

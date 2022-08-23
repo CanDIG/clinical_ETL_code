@@ -31,9 +31,8 @@ def parse_args():
     return args
 
 
-# Combine dataframes from multiple sheets, delete any duplicate patients by merging data
 def process_data(raw_csv_dfs, identifier):
-    # for each dataframe, merge all occurrences for an identifier into a single row with arrayed values
+    """Takes a set of raw dataframes with a common identifier and merges into the internal JSON data structure."""
     final_merged = {}
     cols_index = {}
     individuals = []
@@ -100,7 +99,7 @@ def process_data(raw_csv_dfs, identifier):
 
 
 def map_row_to_mcodepacket(identifier, indexed_data, node):
-    # walk through the provided node of the mcodepacket and fill in the details
+    """Given a particular individual's data, and a node in the schema, return the node with mapped data."""
     if "str" in str(type(node)) and node != "":
         return eval_mapping(identifier, indexed_data, node)
     elif "list" in str(type(node)):
@@ -122,6 +121,7 @@ def map_row_to_mcodepacket(identifier, indexed_data, node):
 
 
 def translate_mapping(identifier, indexed_data, mapping):
+    """Given the identifier field, the data, and a particular mapping, figure out what the method and the mapped values are."""
     func_match = re.match(r".*\{(.+?)\((.+)\)\}.*", mapping)
     if func_match is not None:  # it's a function, prep the dictionary and exec it
         items = func_match.group(2).split(";")
@@ -152,6 +152,7 @@ def translate_mapping(identifier, indexed_data, mapping):
 
 
 def eval_mapping(identifier, indexed_data, node):
+    """Given the identifier field, the data, and a particular schema node, evaluate the mapping and return the final JSON for the node in the schema."""
     method, mapping = translate_mapping(identifier, indexed_data, node)
     if method is not None:
         if "mappings" not in mappings.MODULES:
@@ -165,8 +166,8 @@ def eval_mapping(identifier, indexed_data, node):
         return eval(f'module.{method}({mapping})')
 
 
-# Ingest either an excel file or a directory of csvs
 def ingest_raw_data(input_path, indexed):
+    """Ingest the csvs or xlsx and create dataframes for processing."""
     raw_csv_dfs = {}
     output_file = "mCodePacket"
     # input can either be an excel file or a directory of csvs
@@ -192,8 +193,8 @@ def ingest_raw_data(input_path, indexed):
     return raw_csv_dfs, output_file
 
 
-# Create a template for mcodepacket, for use with the --template flag
 def generate_mapping_template(node, node_name="", node_names=None):
+    """Create a template for mcodepacket, for use with the --template flag."""
     if node_names is None:
         node_names = []
     if node_name != "":
@@ -254,6 +255,7 @@ def generate_mapping_template(node, node_name="", node_names=None):
 
 
 def process_mapping(line, test=False):
+    """Given a csv mapping line, process into its component pieces."""
     line_match = re.match(r"(.+?),(.*$)", line.replace("\"", ""))
     if line_match is not None:
         element = line_match.group(1)
@@ -267,8 +269,8 @@ def process_mapping(line, test=False):
     return line, None
 
 
-# Given a mapping csv file, create a scaffold mapping.
 def create_mapping_scaffold(lines, test=False):
+    """Given lines from a mapping csv file, create a scaffold mapping."""
     props = {}
     for line in lines:
         if line.startswith("#"):
@@ -313,6 +315,7 @@ def create_mapping_scaffold(lines, test=False):
 
 
 def load_manifest(mapping):
+    """Given a manifest file's path, return the data inside it."""
     identifier = None
     schema = "mcode"
     mapping_scaffold = None

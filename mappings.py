@@ -97,3 +97,10 @@ def is_null(cell):
     if cell == 'nan' or cell is None or cell == '':
         return True
     return False
+
+# Placeholder function to make a fake ontology entry
+def ontology_placeholder(mapping):
+    return {
+        "id": "placeholder",
+        "label": single_val(mapping)
+    }

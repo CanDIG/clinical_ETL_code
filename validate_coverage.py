@@ -40,7 +40,7 @@ def flatten_mapping(node, node_name="", node_names=None):
         node_names = []
     if node_name != "":
         node_names.append(node_name)
-    if "list" in str(type(node)):
+    if "list" in str(type(node)) and len(node) > 0:
         new_node_name = ".".join((node_name, "0"))
         sc, nn = flatten_mapping(node[0], new_node_name, node_names)
         return [sc], nn

@@ -168,6 +168,10 @@ def main(args):
                 else:
                     items_used.insert(0, curr_item)    
 
+    # print the actual items used:
+    print("Items successfully mapped onto the schema:")
+    print("\n".join(items_used))
+
     missing = []
 
     print("\n\nMapping is missing the following items from the schema:")

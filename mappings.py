@@ -100,6 +100,11 @@ def is_null(cell):
 
 # Placeholder function to make a fake ontology entry
 def ontology_placeholder(mapping):
+    if "str" in str(type(mapping)):
+        return {
+            "id": "placeholder",
+            "label": mapping
+        }
     return {
         "id": "placeholder",
         "label": single_val(mapping)

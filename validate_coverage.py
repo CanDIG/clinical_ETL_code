@@ -164,13 +164,13 @@ def main(args):
                 if i > 0:
                     prev_item = actual_flattened[i-1]
                     prev_index = items_used.index(prev_item)
-                    items_used.insert(prev_index+1, curr_item.replace('"',"").replace("'",""))
+                    items_used.insert(prev_index+1, curr_item)
                 else:
-                    items_used.insert(0, curr_item.replace('"',"").replace("'",""))    
+                    items_used.insert(0, curr_item)    
 
     # print the actual items used:
     print("Items successfully mapped onto the schema:")
-    print("\n".join(items_used))
+    print("\n".join(map(lambda x: x.replace('"',"").replace("'",""), items_used)))
 
     missing = []
 

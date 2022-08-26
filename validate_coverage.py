@@ -158,7 +158,7 @@ def main(args):
     for key in indexed_data["individuals"]:
         sc, actual_flattened = flatten_mapping(map_row_to_mcodepacket(key, indexed_data, scaffold))
         for i in range(0, len(actual_flattened)):
-            curr_item = actual_flattened[i]
+            curr_item = actual_flattened[i].replace('"',"").replace("'","")
             if curr_item not in items_used:
                 # if this is not the first item, file it in the spot it goes in the order:
                 if i > 0:

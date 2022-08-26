@@ -158,15 +158,15 @@ def main(args):
     for key in indexed_data["individuals"]:
         sc, actual_flattened = flatten_mapping(map_row_to_mcodepacket(key, indexed_data, scaffold))
         for i in range(0, len(actual_flattened)):
-            curr_item = actual_flattened[i].replace('"',"").replace("'","")
+            curr_item = actual_flattened[i]
             if curr_item not in items_used:
                 # if this is not the first item, file it in the spot it goes in the order:
                 if i > 0:
                     prev_item = actual_flattened[i-1]
                     prev_index = items_used.index(prev_item)
-                    items_used.insert(prev_index+1, curr_item)
+                    items_used.insert(prev_index+1, curr_item.replace('"',"").replace("'",""))
                 else:
-                    items_used.insert(0, curr_item)    
+                    items_used.insert(0, curr_item.replace('"',"").replace("'",""))    
 
     # print the actual items used:
     print("Items successfully mapped onto the schema:")

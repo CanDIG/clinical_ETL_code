@@ -128,13 +128,7 @@ def translate_mapping(identifier, indexed_data, mapping):
         new_dict = {}
         mappings.IDENTIFIER = {"id": identifier}
         for item in items:
-            item = item.strip()
-            sheets = None
-            sheet_match = re.match(r"(.+?)\.(.+)", item)
-            if sheet_match is not None:
-                # this is a specific item on a specific sheet:
-                item = sheet_match.group(2)
-                sheets = [sheet_match.group(1).replace('"', '').replace("'", "")]
+            item, sheets = process_ref(item)
             # check to see if this item is even present in the columns:
             if item in indexed_data["columns"]:
                 new_dict[item] = {}
@@ -149,6 +143,26 @@ def translate_mapping(identifier, indexed_data, mapping):
                         new_dict[item][sheet] = []
         return func_match.group(1), new_dict
     return None, None
+
+
+def process_ref(item):
+    item = item.strip()
+    sheets = None
+    # are there quotes?
+    first_quote_match = re.match(r"^[\'\"](.+?)[\'\"]\.*(.*)", item)
+    if first_quote_match is not None:
+        if first_quote_match.group(2) == '':
+            item = first_quote_match.group(1).replace('"', '').replace("'", "")
+        else:
+            item = first_quote_match.group(2).replace('"', '').replace("'", "")
+            sheets = [first_quote_match.group(1).replace('"', '').replace("'", "")]
+    else:
+        sheet_match = re.match(r"(.+?)\.(.+)", item)
+        if sheet_match is not None:
+            # this is a specific item on a specific sheet:
+            item = sheet_match.group(2).replace('"', '').replace("'", "")
+            sheets = [sheet_match.group(1).replace('"', '').replace("'", "")]
+    return item, sheets
 
 
 def eval_mapping(identifier, indexed_data, node):

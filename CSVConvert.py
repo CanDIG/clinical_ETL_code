@@ -31,14 +31,14 @@ def parse_args():
     return args
 
 
-# Combine dataframes from multiple sheets, delete any duplicate patients by merging data
 def process_data(raw_csv_dfs, identifier):
-    # for each dataframe, merge all occurrences for an identifier into a single row with arrayed values
+    """Takes a set of raw dataframes with a common identifier and merges into the internal JSON data structure."""
     final_merged = {}
     cols_index = {}
     individuals = []
 
     for page in raw_csv_dfs.keys():
+        print(f"Processing sheet {page}...")
         df = raw_csv_dfs[page].dropna(axis='index', how='all')\
             .dropna(axis='columns', how='all')\
             .applymap(str)\
@@ -99,9 +99,9 @@ def process_data(raw_csv_dfs, identifier):
 
 
 def map_row_to_mcodepacket(identifier, indexed_data, node):
-    # walk through the provided node of the mcodepacket and fill in the details
+    """Given a particular individual's data, and a node in the schema, return the node with mapped data."""
     if "str" in str(type(node)) and node != "":
-        return translate_mapping(identifier, indexed_data, node)
+        return eval_mapping(identifier, indexed_data, node)
     elif "list" in str(type(node)):
         new_node = []
         for item in node:
@@ -121,6 +121,7 @@ def map_row_to_mcodepacket(identifier, indexed_data, node):
 
 
 def translate_mapping(identifier, indexed_data, mapping):
+    """Given the identifier field, the data, and a particular mapping, figure out what the method and the mapped values are."""
     func_match = re.match(r".*\{(.+?)\((.+)\)\}.*", mapping)
     if func_match is not None:  # it's a function, prep the dictionary and exec it
         items = func_match.group(2).split(";")
@@ -146,16 +147,27 @@ def translate_mapping(identifier, indexed_data, mapping):
                         new_dict[item][sheet] = indexed_data["data"][sheet][identifier][item]
                     else:
                         new_dict[item][sheet] = []
+        return func_match.group(1), new_dict
+    return None, None
+
+
+def eval_mapping(identifier, indexed_data, node):
+    """Given the identifier field, the data, and a particular schema node, evaluate the mapping and return the final JSON for the node in the schema."""
+    method, mapping = translate_mapping(identifier, indexed_data, node)
+    if method is not None:
+        if "mappings" not in mappings.MODULES:
+            mappings.MODULES["mappings"] = importlib.import_module("mappings")
+        module = mappings.MODULES["mappings"]
         # is the function something in a dynamically-loaded module?
-        subfunc_match = re.match(r"(.+)\.(.+)", func_match.group(1))
+        subfunc_match = re.match(r"(.+)\.(.+)", method)
         if subfunc_match is not None:
             module = mappings.MODULES[subfunc_match.group(1)]
-            return eval(f'module.{subfunc_match.group(2)}({new_dict})')
-        return eval(f'mappings.{func_match.group(1)}({new_dict})')
+            method = subfunc_match.group(2)
+        return eval(f'module.{method}({mapping})')
 
 
-# Ingest either an excel file or a directory of csvs
 def ingest_raw_data(input_path, indexed):
+    """Ingest the csvs or xlsx and create dataframes for processing."""
     raw_csv_dfs = {}
     output_file = "mCodePacket"
     # input can either be an excel file or a directory of csvs
@@ -181,15 +193,15 @@ def ingest_raw_data(input_path, indexed):
     return raw_csv_dfs, output_file
 
 
-# Create a template for mcodepacket, for use with the --template flag
 def generate_mapping_template(node, node_name="", node_names=None):
+    """Create a template for mcodepacket, for use with the --template flag."""
     if node_names is None:
         node_names = []
     if node_name != "":
         # check to see if the last node_name is a header for this node_name:
         if len(node_names) > 0:
             x = node_names.pop()
-            x_match = re.match(r"\"(.+?)\**\",.*", x)
+            x_match = re.match(r"(.+?)\**,.*", x)
             if x_match is not None:
                 if x_match.group(1) in node_name:
                     node_names.append(f"##{x}")
@@ -198,9 +210,9 @@ def generate_mapping_template(node, node_name="", node_names=None):
             else:
                 node_names.append(x)
         if "description" in node:
-            node_names.append(f"\"{node_name}\",\"##{node['description']}\"")
+            node_names.append(f"{node_name},\"##{node['description']}\"")
         else:
-            node_names.append(f"\"{node_name}\",")
+            node_names.append(f"{node_name},")
     if "type" in node:
         if node["type"] == "string":
             return "string", node_names
@@ -222,9 +234,9 @@ def generate_mapping_template(node, node_name="", node_names=None):
                                       or node["$id"] == "katsu:mcode:complex_ontology"):
                     # add a + to the name of the node to denote that this needs to be looked up in an ontology
                     name = node_names.pop()
-                    name_match = re.match(r"\"(.+?)\"(.+)", name)
+                    name_match = re.match(r"(.+?),(.+)", name)
                     if name_match is not None:
-                        name = f"\"{name_match.group(1)}+\"{name_match.group(2)}"
+                        name = f"{name_match.group(1)}+,{name_match.group(2)}"
                     node_names.append(name)
                     return node["$id"], node_names
             if "properties" in node:
@@ -242,23 +254,31 @@ def generate_mapping_template(node, node_name="", node_names=None):
     return None, node_names
 
 
-# Given a mapping csv file, create a scaffold mapping.
+def process_mapping(line, test=False):
+    """Given a csv mapping line, process into its component pieces."""
+    line_match = re.match(r"(.+?),(.*$)", line.replace("\"", ""))
+    if line_match is not None:
+        element = line_match.group(1)
+        value = ""
+        if test:
+            value = "test"
+        if line_match.group(2) != "" and not line_match.group(2).startswith("##"):
+            value = line_match.group(2).replace(",", ";")
+        elems = element.replace("*", "").replace("+", "").split(".")
+        return value, elems
+    return line, None
+
+
 def create_mapping_scaffold(lines, test=False):
+    """Given lines from a mapping csv file, create a scaffold mapping."""
     props = {}
     for line in lines:
         if line.startswith("#"):
             continue
         if re.match(r"^\s*$", line):
             continue
-        line_match = re.match(r"(.+?),(.*$)", line.replace("\"", ""))
-        if line_match is not None:
-            element = line_match.group(1)
-            value = ""
-            if test:
-                value = "test"
-            if line_match.group(2) != "" and not line_match.group(2).startswith("##"):
-                value = line_match.group(2).replace(",", ";")
-            elems = element.replace("*", "").replace("+", "").split(".")
+        value, elems = process_mapping(line, test)
+        if elems is not None:
             x = elems.pop(0)
             if x not in props:
                 props[x] = []
@@ -295,6 +315,7 @@ def create_mapping_scaffold(lines, test=False):
 
 
 def load_manifest(mapping):
+    """Given a manifest file's path, return the data inside it."""
     identifier = None
     schema = "mcode"
     mapping_scaffold = None
@@ -313,9 +334,16 @@ def load_manifest(mapping):
         mapping_path = os.path.join(manifest_dir, manifest["mapping"])
         if os.path.isabs(manifest["mapping"]):
             mapping_path = manifest["mapping"]
+        mapping = []
         with open(mapping_path, 'r') as f:
             lines = f.readlines()
-            mapping_scaffold = create_mapping_scaffold(lines)
+            for line in lines:
+                if line.startswith("#"):
+                    continue
+                if re.match(r"^\s*$", line):
+                    continue
+                mapping.append(line)
+        mapping_scaffold = create_mapping_scaffold(mapping)
     if "functions" in manifest:
         for mod in manifest["functions"]:
             try:
@@ -337,6 +365,7 @@ def load_manifest(mapping):
         "identifier": identifier,
         "schema": schema,
         "scaffold": mapping_scaffold,
+        "mapping": mapping,
         "indexed": indexed
     }
 

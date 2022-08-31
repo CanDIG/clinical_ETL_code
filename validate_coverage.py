@@ -17,6 +17,7 @@ def parse_args():
 
 
 def clean_compare(compare, expected, actual):
+    """Takes in a Compare object and the original compared JSONs and cleans up the formatting."""
     new_compare = {}
     for key in compare:
         if "_message" in compare[key]:
@@ -36,6 +37,7 @@ def clean_compare(compare, expected, actual):
 
 
 def flatten_mapping(node, node_name="", node_names=None):
+    """Converts a JSON node into a flattened list of items."""
     if node_names is None:
         node_names = []
     if node_name != "":

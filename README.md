@@ -135,7 +135,7 @@ You can use a template file (created as described above with `--template`) alone
 This JSON file can be ingested into katsu and compared with the ingested value using https://github.com/CanDIG/candigv2-ingest/blob/main/katsu_validate_dataset.py.
 
 ## Quantifying coverage for datasets and mappings
-The `quantify_coverage.py` tool takes the same arguments as `CSVConvert.py`:
+The `validate_coverage.py` tool takes the same arguments as `CSVConvert.py`:
 ```
 $ python CSVConvert.py [-h] [--input INPUT] [--mapping|manifest MAPPING]
 

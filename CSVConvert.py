@@ -146,6 +146,7 @@ def translate_mapping(identifier, indexed_data, mapping):
 
 
 def process_ref(item):
+    """Given a mapping item, process the reference into the item and the referred sheet."""
     item = item.strip()
     sheets = None
     # are there quotes?
@@ -270,7 +271,7 @@ def generate_mapping_template(node, node_name="", node_names=None):
 
 def process_mapping(line, test=False):
     """Given a csv mapping line, process into its component pieces."""
-    line_match = re.match(r"(.+?),(.*$)", line)
+    line_match = re.match(r"(.+?),\"*(.*$)\"*", line)
     if line_match is not None:
         element = line_match.group(1)
         value = ""
@@ -294,14 +295,15 @@ def create_mapping_scaffold(lines, test=False):
         value, elems = process_mapping(line, test)
         if elems is not None:
             x = elems.pop(0)
-            if x not in props:
-                props[x] = []
-            if len(elems) > 0:
-                props[x].append(".".join(elems)+","+value)
-            elif value != "":
-                props[x].append(value)
-            else:
-                props[x] = []
+            if value is not None and value != "":
+                if x not in props:
+                    props[x] = []
+                if len(elems) > 0:
+                    props[x].append(".".join(elems)+","+value)
+                elif value != "":
+                    props[x].append(value)
+                else:
+                    props[x] = []
         else:
             return line
 

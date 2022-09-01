@@ -295,14 +295,15 @@ def create_mapping_scaffold(lines, test=False):
         value, elems = process_mapping(line, test)
         if elems is not None:
             x = elems.pop(0)
-            if x not in props:
-                props[x] = []
-            if len(elems) > 0:
-                props[x].append(".".join(elems)+","+value)
-            elif value != "":
-                props[x].append(value)
-            else:
-                props[x] = []
+            if value is not None and value != "":
+                if x not in props:
+                    props[x] = []
+                if len(elems) > 0:
+                    props[x].append(".".join(elems)+","+value)
+                elif value != "":
+                    props[x].append(value)
+                else:
+                    props[x] = []
         else:
             return line
 

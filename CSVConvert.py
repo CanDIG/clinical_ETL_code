@@ -146,6 +146,7 @@ def translate_mapping(identifier, indexed_data, mapping):
 
 
 def process_ref(item):
+    """Given a mapping item, process the reference into the item and the referred sheet."""
     item = item.strip()
     sheets = None
     # are there quotes?

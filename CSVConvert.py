@@ -271,7 +271,7 @@ def generate_mapping_template(node, node_name="", node_names=None):
 
 def process_mapping(line, test=False):
     """Given a csv mapping line, process into its component pieces."""
-    line_match = re.match(r"(.+?),(.*$)", line)
+    line_match = re.match(r"(.+?),\"*(.*$)\"*", line)
     if line_match is not None:
         element = line_match.group(1)
         value = ""

@@ -9,16 +9,18 @@ Prerequisites:
 
 You'll need to set up a free [account](https://bioportal.bioontology.org/account) at NCBI Bioportal to obtain an API key.
 
-## Running from command line
+## Converting csvs to mcodepackets
 ```
-$ python CSVConvert.py [-h] [--input INPUT] [--template TEMPLATE] [--mapping|manifest MAPPING]
+$ python CSVConvert.py [-h] [--input INPUT] [--mapping|manifest MAPPING]
 
 --input: path to dataset to be converted to mCODE data model
 
---template: If provided, generate a mapping template at the specified file (only needed if you are creating a new template sheet)
-
 --mapping or --manifest: Path to a manifest file describing the mapping
 ```
+## Generating mcode template file
+
+The `generate_template.py` script will generate a template file based on the version of katsu specified in `requirements.txt`. 
+
 ## Testing
 Continuous Integration is implemented through Pytest and Travis CI which runs when git pushes occur. Build results can be found at [this repository's Travis build page](https://travis-ci.com/github/CanDIG/medidata_mCode_ETL)
 
@@ -27,7 +29,7 @@ To run tests manually, enter from command line `$ pytest`
 *Note: updated mCodePacket.json files must be pushed for all tests to pass during Travis builds*
 
 ## Creating a dummy json file for testing
-You can use a template file (created as described above with `--template`) alone to create a dummy ingest file without actual data. 
+You can use an mocode template file (created as described above) alone to create a dummy ingest file without actual data. 
 
 `python create_test_mapping.py` creates a JSON that is filled in (without using mapping functions) with placeholder or dummy values. You can specify the placeholder value with the argument `--placeholder`. If no template file is specified with `--template`, the current MCODE_SCHEMA of katsu is used and the JSON is outputted to stdout. Otherwise, the file is saved to `<template>_testmap.json`.
 

@@ -17,6 +17,9 @@ $ python CSVConvert.py [-h] [--input INPUT] [--mapping|manifest MAPPING]
 
 --mapping or --manifest: Path to a manifest file describing the mapping
 ```
+
+The output mcode packets (`INPUT_map.json` and `INPUT_indexed.json`) will be  in the parent of the `INPUT` directory. 
+
 ## Generating mcode template file
 
 The `generate_template.py` script will generate a template file based on the version of katsu specified in `requirements.txt`. 

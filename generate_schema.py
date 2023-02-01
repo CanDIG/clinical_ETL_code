@@ -11,17 +11,57 @@ import pandas
 import re
 import sys
 import yaml
-
+import requests 
 import argparse
-from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
-from schemas import candigv1_schema
+#from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
+#from schemas import candigv1_schema
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--schema', type=str, help="Schema to use for template; default is mCodePacket")
+    parser.add_argument('--url', type=str, help="URL to openAPI schema file (raw github link)", required=True)
+    parser.add_argument('--out', type=str, help="name of output file; csv extension will be added. Default is template", default="template")
     args = parser.parse_args()
     return args
+
+def get_schema_from_url(schema_url):
+    """Retrieve the schema from the supplied URL, return as dictionary."""
+    resp = requests.get(schema_url)
+    schema = yaml.safe_load(resp.text)
+    # rudimentary test that we have found something that looks like an openapi schema
+    # would be better to formally validate
+    if "openapi" in schema:
+        return schema
+    else:
+        return None
+
+def generate_schema_array(schema):
+    """Create an array of the schema that can be easily be exported to csv"""
+    components = schema["components"]["schemas"]
+    schema_array = []
+    for component in components.keys():
+        # each of these is an MoH schema, e.g. Donor, or Treatment
+        # skip the ones that are internal to katsu
+        if re.match("Patched",component):
+            continue 
+        if re.match("Paginated",component):
+            continue 
+        if re.match("Discovery",component):
+            continue 
+        if re.search("Request",component):
+            continue 
+        if re.match("data_ingest",component):
+            continue 
+        if re.match("moh",component):
+            continue 
+        schema_array.append(f"# Schema {component}\n")
+        properties = components[component]["properties"]
+        for k in properties.keys():
+            expected_type = properties[k]["type"]
+            # format of each line is : schema.field, # help text for expected value
+            schema_array.append(f"{component}.{k}, # expects {expected_type}\n")
+    return schema_array
+
 
 def generate_mapping_template(node, node_name="", node_names=None):
     """Create a template for mcodepacket, for use with the --template flag."""
@@ -84,27 +124,39 @@ def generate_mapping_template(node, node_name="", node_names=None):
     return None, node_names
 
 def main(args):
-    schema = args.schema
-    metadata = ""
-    
+    url = args.url
+    schema = get_schema_from_url(url)
     if schema is None:
-        schema = MCODE_SCHEMA
-        # get metadata about version of MCODE_SCHEMA used:
-        metadata += "## schema based on version " + version('katsu') + ",\n"
-        direct_url = [p for p in files('katsu') if 'direct_url.json' in str(p)]
-        if len(direct_url) > 0:
-            d = json.loads(direct_url[0].read_text())
-            metadata += f"## directly checked out from {d['url']}, commit {d['vcs_info']['commit_id']}\n"
-    if schema == "candigv1":
-        schema = candigv1_schema
-    sc, node_names = generate_mapping_template(schema)
+        print("Did not find an openapi schema at {}; please check link".format(url))
+        return
+    schema_array = generate_schema_array(schema)
+    
+    outputfile = "{}.csv".format(args.out)
+    with open(outputfile,'w') as f:
+        f.write("# Schema generated from {}\n".format(url))
+        f.writelines(schema_array)
+    
+
+    # metadata = ""
+    
+    # if schema is None:
+    #     schema = MCODE_SCHEMA
+    #     # get metadata about version of MCODE_SCHEMA used:
+    #     metadata += "## schema based on version " + version('katsu') + ",\n"
+    #     direct_url = [p for p in files('katsu') if 'direct_url.json' in str(p)]
+    #     if len(direct_url) > 0:
+    #         d = json.loads(direct_url[0].read_text())
+    #         metadata += f"## directly checked out from {d['url']}, commit {d['vcs_info']['commit_id']}\n"
+    # if schema == "candigv1":
+    #     schema = candigv1_schema
+    # sc, node_names = generate_mapping_template(schema)
         
-    with open(f"{template}.csv", 'w') as f:  # write to csv file for mapping
-        f.write(metadata)
-        f.write("## mcodepacket element, description (overwrite with mapped element)\n")
-        f.write("## (.0 is an array element) (* is required) (+ denotes ontology term),\n")
-        for nn in node_names:
-            f.write(f"{nn}\n")
+    # with open(f"{template}.csv", 'w') as f:  # write to csv file for mapping
+    #     f.write(metadata)
+    #     f.write("## mcodepacket element, description (overwrite with mapped element)\n")
+    #     f.write("## (.0 is an array element) (* is required) (+ denotes ontology term),\n")
+    #     for nn in node_names:
+    #         f.write(f"{nn}\n")
     return
 
 if __name__ == '__main__':

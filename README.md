@@ -1,6 +1,6 @@
 # clinical_ETL_code
 
-This repository converts MoH clinical data into the mcodepacket format needed for katsu. The cohort-specific mappings are implemented in a private GitHub repository, not here. 
+This repository converts MoH clinical data into the packet format needed for katsu. The cohort-specific mappings are implemented in a private GitHub repository, not here. 
 
 ## Set-up & Installation
 Prerequisites: 
@@ -9,20 +9,39 @@ Prerequisites:
 
 You'll need to set up a free [account](https://bioportal.bioontology.org/account) at NCBI Bioportal to obtain an API key.
 
-## Converting csvs to mcodepackets
+## Converting csvs to ingest packets
+
+Most of the heavy lifting is done in the CSVConvert.py script. This script:
+* takes an input directory of xlsx files and converts them to csv
+* for each field for each patient, applies the appropriate mapping function to transform the raw data into valid model data
+* exports the data into a json file(s) appropriate for ingest
+
 ```
 $ python CSVConvert.py [-h] [--input INPUT] [--mapping|manifest MAPPING]
 
---input: path to dataset to be converted to mCODE data model
+--input: path to dataset to be converted to data model
 
---mapping or --manifest: Path to a manifest file describing the mapping
+--manifest: Path to a manifest file describing the mapping
 ```
 
-The output mcode packets (`INPUT_map.json` and `INPUT_indexed.json`) will be  in the parent of the `INPUT` directory. 
+The output packets (`INPUT_map.json` and `INPUT_indexed.json`) will be in the parent of the `INPUT` directory. 
 
-## Generating mcode template file
+## Generating model template file
 
-The `generate_template.py` script will generate a template file based on the version of katsu specified in `requirements.txt`. 
+The `generate_template.py` script will generate a template file based an openapi.yaml file. 
+
+```
+$ python generate_schema.py -h
+usage: generate_schema.py [-h] --url URL [--out OUT]
+
+options:
+  -h, --help  show this help message and exit
+  --url URL   URL to openAPI schema file (raw github link)
+  --out OUT   name of output file; csv extension will be added. Default is template
+
+```
+
+For using katsu with the MoHCCN data model, the URL to the schema is https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml (note raw github url).
 
 ## Testing
 Continuous Integration is implemented through Pytest and Travis CI which runs when git pushes occur. Build results can be found at [this repository's Travis build page](https://travis-ci.com/github/CanDIG/medidata_mCode_ETL)

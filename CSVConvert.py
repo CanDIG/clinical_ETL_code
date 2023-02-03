@@ -11,6 +11,7 @@ import pandas
 import re
 import sys
 import yaml
+import pprint
 
 import argparse
 
@@ -19,8 +20,8 @@ def parse_args():
     parser.add_argument('--input', type=str, help="Path to either an xlsx file or a directory of csv files for ingest")
     # parser.add_argument('--api_key', type=str, help="BioPortal API key found in BioPortal personal account settings")
     # parser.add_argument('--email', type=str, help="Contact email to access NCBI clinvar API. Required by Entrez")
-    parser.add_argument('--schema', type=str, help="Schema to use for template; default is mCodePacket")
-    parser.add_argument('--mapping', '--manifest', type=str, help="Path to a manifest file describing the mapping."
+    #parser.add_argument('--schema', type=str, help="Schema to use for template; default is mCodePacket")
+    parser.add_argument('--manifest', type=str, help="Path to a manifest file describing the mapping."
                                                                   " See README for more information")
     parser.add_argument('--verbose', '--v', action="store_true", help="Print extra information")
     args = parser.parse_args()
@@ -199,6 +200,7 @@ def process_mapping(line, test=False):
         if line_match.group(2) != "" and not line_match.group(2).startswith("##"):
             value = line_match.group(2).replace(",", ";")
         elems = element.replace("*", "").replace("+", "").split(".")
+        print(f"processed {line} into {value},{elems}")
         return value, elems
     return line, None
 
@@ -245,6 +247,7 @@ def create_mapping_scaffold(lines, test=False):
 
     if len(props.keys()) == 0:
         return None
+    
     return props
 
 
@@ -308,17 +311,16 @@ def main(args):
     # api_key = args.api_key
     input_path = args.input
     # email = args.email
-    #template = args.template
-    mapping = args.mapping
+    manifest_file = args.manifest
     schema = args.schema
     mappings.VERBOSE = args.verbose
     metadata = ""
     
     # if mapping is provided, we should create a mapping scaffold
     if mapping is not None:
-        manifest = load_manifest(mapping)
+        manifest = load_manifest(manifest_file)
         identifier = manifest["identifier"]
-        schema = manifest["schema"]
+        #schema = manifest["schema"]
         mapping_scaffold = manifest["scaffold"]
         indexed = manifest["indexed"]
         if identifier is None:
@@ -353,6 +355,7 @@ def main(args):
 
     # for each identifier's row, make an mcodepacket
     for key in indexed_data["individuals"]:
+        print(f"Creating packet for {key}")
         mcodepackets.append(map_row_to_mcodepacket(key, indexed_data, deepcopy(mapping_scaffold)))
 
     # special case: if it was candigv1, we need to wrap the results in "metadata"

@@ -15,6 +15,7 @@ import requests
 import argparse
 #from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
 #from schemas import candigv1_schema
+from moh_mappings import mohschema
 
 
 def parse_args():
@@ -38,28 +39,37 @@ def get_schema_from_url(schema_url):
 def generate_schema_array(schema):
     """Create an array of the schema that can be easily be exported to csv"""
     components = schema["components"]["schemas"]
+    # hardcoding these for now, as the components section of the openapi schema 
+    # contains much more than is in this list
+    schemas = [
+        "SampleRegistration",
+        "Donor",
+        "Specimen",
+        "PrimaryDiagnosis",
+        "Treatment",
+        "Chemotherapy",
+        "HormoneTherapy",
+        "Radiation",
+        "Immunotherapy",
+        "Surgery",
+        "FollowUp",
+        "Biomarker",
+        "Comorbidity"
+        ]
     schema_array = []
-    for component in components.keys():
-        # each of these is an MoH schema, e.g. Donor, or Treatment
-        # skip the ones that are internal to katsu
-        if re.match("Patched",component):
-            continue 
-        if re.match("Paginated",component):
-            continue 
-        if re.match("Discovery",component):
-            continue 
-        if re.search("Request",component):
-            continue 
-        if re.match("data_ingest",component):
-            continue 
-        if re.match("moh",component):
-            continue 
-        schema_array.append(f"# Schema {component}\n")
-        properties = components[component]["properties"]
+    for s in schemas:
+        # separator row for documentation
+        schema_array.append(f"# Schema {s}\n")
+        print(f"# Schema {s}")
+        properties = components[s]["properties"]
+        required_fields = components[s]["required"]
         for k in properties.keys():
-            expected_type = properties[k]["type"]
-            # format of each line is : schema.field, # help text for expected value
-            schema_array.append(f"{component}.{k}, # expects {expected_type}\n")
+            # format of each line is : schema.field, # help text 
+            # adding a '*' at the end of the field if required
+            if k in required_fields:
+                schema_array.append(f"{s}.{k}*, # add mapping function here\n")
+            else:
+                schema_array.append(f"{s}.{k}, # add mapping function here\n")
     return schema_array
 
 
@@ -129,11 +139,14 @@ def main(args):
     if schema is None:
         print("Did not find an openapi schema at {}; please check link".format(url))
         return
+
     schema_array = generate_schema_array(schema)
     
     outputfile = "{}.csv".format(args.out)
     with open(outputfile,'w') as f:
         f.write("# Schema generated from {}\n".format(url))
+        f.write("# mohschema.fieldname,mapping_function\n")
+        f.write("# asterisk * after field name indicates required\n")
         f.writelines(schema_array)
     
 

@@ -1,175 +1,173 @@
 # Schema generated from https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml
-# Schema Biomarker
-Biomarker.id, # expects integer
-Biomarker.test_interval, # expects integer
-Biomarker.psa_level, # expects integer
-Biomarker.ca125, # expects integer
-Biomarker.cea, # expects integer
-Biomarker.program_id, # expects string
-Biomarker.submitter_donor_id, # expects string
-Biomarker.submitter_specimen_id, # expects string
-Biomarker.submitter_primary_diagnosis_id, # expects string
-Biomarker.submitter_treatment_id, # expects string
-Biomarker.submitter_follow_up_id, # expects string
-# Schema Chemotherapy
-Chemotherapy.id, # expects integer
-Chemotherapy.drug_name, # expects string
-Chemotherapy.drug_rxnormcui, # expects string
-Chemotherapy.chemotherapy_dosage_units, # expects string
-Chemotherapy.cumulative_drug_dosage_prescribed, # expects integer
-Chemotherapy.cumulative_drug_dosage_actual, # expects integer
-Chemotherapy.program_id, # expects string
-Chemotherapy.submitter_donor_id, # expects string
-Chemotherapy.submitter_treatment_id, # expects string
-# Schema Comorbidity
-Comorbidity.id, # expects integer
-Comorbidity.prior_malignancy, # expects string
-Comorbidity.laterality_of_prior_malignancy, # expects string
-Comorbidity.age_at_comorbidity_diagnosis, # expects integer
-Comorbidity.comorbidity_type_code, # expects string
-Comorbidity.comorbidity_treatment_status, # expects string
-Comorbidity.comorbidity_treatment, # expects string
-Comorbidity.program_id, # expects string
-Comorbidity.submitter_donor_id, # expects string
-# Schema Donor
-Donor.submitter_donor_id, # expects string
-Donor.is_deceased, # expects boolean
-Donor.cause_of_death, # expects string
-Donor.date_of_birth, # expects string
-Donor.date_of_death, # expects string
-Donor.primary_site, # expects string
-Donor.program_id, # expects string
-# Schema FollowUp
-FollowUp.submitter_follow_up_id, # expects string
-FollowUp.date_of_followup, # expects string
-FollowUp.lost_to_followup, # expects boolean
-FollowUp.lost_to_followup_reason, # expects string
-FollowUp.disease_status_at_followup, # expects string
-FollowUp.relapse_type, # expects string
-FollowUp.date_of_relapse, # expects string
-FollowUp.method_of_progression_status, # expects string
-FollowUp.anatomic_site_progression_or_recurrence, # expects string
-FollowUp.recurrence_tumour_staging_system, # expects string
-FollowUp.recurrence_t_category, # expects string
-FollowUp.recurrence_n_category, # expects string
-FollowUp.recurrence_m_category, # expects string
-FollowUp.recurrence_stage_group, # expects string
-FollowUp.program_id, # expects string
-FollowUp.submitter_donor_id, # expects string
-FollowUp.submitter_primary_diagnosis_id, # expects string
-FollowUp.submitter_treatment_id, # expects string
-# Schema HormoneTherapy
-HormoneTherapy.id, # expects integer
-HormoneTherapy.drug_name, # expects string
-HormoneTherapy.drug_rxnormcui, # expects string
-HormoneTherapy.hormone_drug_dosage_units, # expects string
-HormoneTherapy.cumulative_drug_dosage_prescribed, # expects integer
-HormoneTherapy.cumulative_drug_dosage_actual, # expects integer
-HormoneTherapy.program_id, # expects string
-HormoneTherapy.submitter_donor_id, # expects string
-HormoneTherapy.submitter_treatment_id, # expects string
-# Schema Immunotherapy
-Immunotherapy.id, # expects integer
-Immunotherapy.immunotherapy_type, # expects string
-Immunotherapy.drug_name, # expects string
-Immunotherapy.drug_rxnormcui, # expects string
-Immunotherapy.program_id, # expects string
-Immunotherapy.submitter_donor_id, # expects string
-Immunotherapy.submitter_treatment_id, # expects string
-# Schema PrimaryDiagnosis
-PrimaryDiagnosis.submitter_primary_diagnosis_id, # expects string
-PrimaryDiagnosis.date_of_diagnosis, # expects string
-PrimaryDiagnosis.cancer_type_code, # expects string
-PrimaryDiagnosis.basis_of_diagnosis, # expects string
-PrimaryDiagnosis.lymph_nodes_examined_status, # expects string
-PrimaryDiagnosis.lymph_nodes_examined_method, # expects string
-PrimaryDiagnosis.number_lymph_nodes_positive, # expects integer
-PrimaryDiagnosis.clinical_tumour_staging_system, # expects string
-PrimaryDiagnosis.clinical_t_category, # expects string
-PrimaryDiagnosis.clinical_n_category, # expects string
-PrimaryDiagnosis.clinical_m_category, # expects string
-PrimaryDiagnosis.clinical_stage_group, # expects string
-PrimaryDiagnosis.program_id, # expects string
-PrimaryDiagnosis.submitter_donor_id, # expects string
-# Schema Program
-Program.program_id, # expects string
-Program.name, # expects string
-Program.created, # expects string
-Program.updated, # expects string
-# Schema Radiation
-Radiation.id, # expects integer
-Radiation.radiation_therapy_modality, # expects string
-Radiation.radiation_therapy_type, # expects string
-Radiation.radiation_therapy_fractions, # expects integer
-Radiation.radiation_therapy_dosage, # expects integer
-Radiation.anatomical_site_irradiated, # expects string
-Radiation.radiation_boost, # expects boolean
-Radiation.reference_radiation_treatment_id, # expects string
-Radiation.program_id, # expects string
-Radiation.submitter_donor_id, # expects string
-Radiation.submitter_treatment_id, # expects string
+# mohschema.fieldname,mapping_function
+# asterisk * after field name indicates required
 # Schema SampleRegistration
-SampleRegistration.submitter_sample_id, # expects string
-SampleRegistration.program_id, # expects string
-SampleRegistration.gender, # expects string
-SampleRegistration.sex_at_birth, # expects string
-SampleRegistration.specimen_tissue_source, # expects string
-SampleRegistration.tumour_normal_designation, # expects string
-SampleRegistration.specimen_type, # expects string
-SampleRegistration.sample_type, # expects string
-SampleRegistration.submitter_donor_id, # expects string
-SampleRegistration.submitter_specimen_id, # expects string
+SampleRegistration.submitter_sample_id*, # add mapping function here
+SampleRegistration.gender*, # add mapping function here
+SampleRegistration.sex_at_birth*, # add mapping function here
+SampleRegistration.specimen_tissue_source*, # add mapping function here
+SampleRegistration.tumour_normal_designation*, # add mapping function here
+SampleRegistration.specimen_type*, # add mapping function here
+SampleRegistration.sample_type*, # add mapping function here
+SampleRegistration.program_id*, # add mapping function here
+SampleRegistration.submitter_donor_id*, # add mapping function here
+SampleRegistration.submitter_specimen_id*, # add mapping function here
+# Schema Donor
+Donor.submitter_donor_id*, # add mapping function here
+Donor.cause_of_death*, # add mapping function here
+Donor.date_of_birth*, # add mapping function here
+Donor.date_of_death*, # add mapping function here
+Donor.primary_site*, # add mapping function here
+Donor.is_deceased*, # add mapping function here
+Donor.program_id*, # add mapping function here
 # Schema Specimen
-Specimen.submitter_specimen_id, # expects string
-Specimen.pathological_tumour_staging_system, # expects string
-Specimen.pathological_t_category, # expects string
-Specimen.pathological_n_category, # expects string
-Specimen.pathological_m_category, # expects string
-Specimen.pathological_stage_group, # expects string
-Specimen.specimen_collection_date, # expects string
-Specimen.specimen_storage, # expects string
-Specimen.tumour_histological_type, # expects string
-Specimen.specimen_anatomic_location, # expects string
-Specimen.reference_pathology_confirmed_diagnosis, # expects string
-Specimen.reference_pathology_confirmed_tumour_presence, # expects string
-Specimen.tumour_grading_system, # expects string
-Specimen.tumour_grade, # expects string
-Specimen.percent_tumour_cells_range, # expects string
-Specimen.percent_tumour_cells_measurement_method, # expects string
-Specimen.program_id, # expects string
-Specimen.submitter_donor_id, # expects string
-Specimen.submitter_primary_diagnosis_id, # expects string
-# Schema Surgery
-Surgery.id, # expects integer
-Surgery.surgery_type, # expects string
-Surgery.surgery_site, # expects string
-Surgery.surgery_location, # expects string
-Surgery.tumour_length, # expects integer
-Surgery.tumour_width, # expects integer
-Surgery.greatest_dimension_tumour, # expects integer
-Surgery.tumour_focality, # expects string
-Surgery.residual_tumour_classification, # expects string
-Surgery.margin_types_involved, # expects string
-Surgery.margin_types_not_involved, # expects string
-Surgery.margin_types_not_assessed, # expects string
-Surgery.lymphovascular_invasion, # expects string
-Surgery.perineural_invasion, # expects string
-Surgery.program_id, # expects string
-Surgery.submitter_donor_id, # expects string
-Surgery.submitter_specimen_id, # expects string
-Surgery.submitter_treatment_id, # expects string
+Specimen.submitter_specimen_id*, # add mapping function here
+Specimen.pathological_tumour_staging_system*, # add mapping function here
+Specimen.pathological_t_category*, # add mapping function here
+Specimen.pathological_n_category*, # add mapping function here
+Specimen.pathological_m_category*, # add mapping function here
+Specimen.pathological_stage_group*, # add mapping function here
+Specimen.specimen_collection_date*, # add mapping function here
+Specimen.specimen_storage*, # add mapping function here
+Specimen.tumour_histological_type*, # add mapping function here
+Specimen.specimen_anatomic_location*, # add mapping function here
+Specimen.reference_pathology_confirmed_diagnosis*, # add mapping function here
+Specimen.reference_pathology_confirmed_tumour_presence*, # add mapping function here
+Specimen.tumour_grading_system*, # add mapping function here
+Specimen.tumour_grade*, # add mapping function here
+Specimen.percent_tumour_cells_range*, # add mapping function here
+Specimen.percent_tumour_cells_measurement_method*, # add mapping function here
+Specimen.program_id*, # add mapping function here
+Specimen.submitter_donor_id*, # add mapping function here
+Specimen.submitter_primary_diagnosis_id*, # add mapping function here
+# Schema PrimaryDiagnosis
+PrimaryDiagnosis.submitter_primary_diagnosis_id*, # add mapping function here
+PrimaryDiagnosis.date_of_diagnosis*, # add mapping function here
+PrimaryDiagnosis.basis_of_diagnosis*, # add mapping function here
+PrimaryDiagnosis.lymph_nodes_examined_status*, # add mapping function here
+PrimaryDiagnosis.lymph_nodes_examined_method*, # add mapping function here
+PrimaryDiagnosis.clinical_tumour_staging_system*, # add mapping function here
+PrimaryDiagnosis.clinical_t_category*, # add mapping function here
+PrimaryDiagnosis.clinical_n_category*, # add mapping function here
+PrimaryDiagnosis.clinical_m_category*, # add mapping function here
+PrimaryDiagnosis.clinical_stage_group*, # add mapping function here
+PrimaryDiagnosis.cancer_type_code*, # add mapping function here
+PrimaryDiagnosis.number_lymph_nodes_positive, # add mapping function here
+PrimaryDiagnosis.program_id*, # add mapping function here
+PrimaryDiagnosis.submitter_donor_id*, # add mapping function here
 # Schema Treatment
-Treatment.submitter_treatment_id, # expects string
-Treatment.treatment_type, # expects string
-Treatment.is_primary_treatment, # expects string
-Treatment.treatment_start_date, # expects string
-Treatment.treatment_end_date, # expects string
-Treatment.treatment_setting, # expects string
-Treatment.treatment_intent, # expects string
-Treatment.days_per_cycle, # expects integer
-Treatment.number_of_cycles, # expects integer
-Treatment.response_to_treatment_criteria_method, # expects string
-Treatment.response_to_treatment, # expects string
-Treatment.program_id, # expects string
-Treatment.submitter_donor_id, # expects string
-Treatment.submitter_primary_diagnosis_id, # expects string
+Treatment.submitter_treatment_id*, # add mapping function here
+Treatment.treatment_type*, # add mapping function here
+Treatment.is_primary_treatment*, # add mapping function here
+Treatment.treatment_start_date*, # add mapping function here
+Treatment.treatment_end_date*, # add mapping function here
+Treatment.treatment_setting*, # add mapping function here
+Treatment.treatment_intent*, # add mapping function here
+Treatment.response_to_treatment_criteria_method*, # add mapping function here
+Treatment.response_to_treatment*, # add mapping function here
+Treatment.days_per_cycle, # add mapping function here
+Treatment.number_of_cycles, # add mapping function here
+Treatment.program_id*, # add mapping function here
+Treatment.submitter_donor_id*, # add mapping function here
+Treatment.submitter_primary_diagnosis_id*, # add mapping function here
+# Schema Chemotherapy
+Chemotherapy.id, # add mapping function here
+Chemotherapy.chemotherapy_dosage_units*, # add mapping function here
+Chemotherapy.drug_name*, # add mapping function here
+Chemotherapy.drug_rxnormcui*, # add mapping function here
+Chemotherapy.cumulative_drug_dosage_prescribed, # add mapping function here
+Chemotherapy.cumulative_drug_dosage_actual, # add mapping function here
+Chemotherapy.program_id*, # add mapping function here
+Chemotherapy.submitter_donor_id*, # add mapping function here
+Chemotherapy.submitter_treatment_id*, # add mapping function here
+# Schema HormoneTherapy
+HormoneTherapy.id, # add mapping function here
+HormoneTherapy.chemotherapy_dosage_units*, # add mapping function here
+HormoneTherapy.drug_name*, # add mapping function here
+HormoneTherapy.drug_rxnormcui*, # add mapping function here
+HormoneTherapy.hormone_drug_dosage_units*, # add mapping function here
+HormoneTherapy.cumulative_drug_dosage_prescribed, # add mapping function here
+HormoneTherapy.cumulative_drug_dosage_actual, # add mapping function here
+HormoneTherapy.program_id*, # add mapping function here
+HormoneTherapy.submitter_donor_id*, # add mapping function here
+HormoneTherapy.submitter_treatment_id*, # add mapping function here
+# Schema Radiation
+Radiation.id, # add mapping function here
+Radiation.radiation_therapy_modality*, # add mapping function here
+Radiation.radiation_therapy_type*, # add mapping function here
+Radiation.anatomical_site_irradiated*, # add mapping function here
+Radiation.radiation_therapy_fractions*, # add mapping function here
+Radiation.radiation_therapy_dosage*, # add mapping function here
+Radiation.radiation_boost, # add mapping function here
+Radiation.reference_radiation_treatment_id, # add mapping function here
+Radiation.program_id*, # add mapping function here
+Radiation.submitter_donor_id*, # add mapping function here
+Radiation.submitter_treatment_id*, # add mapping function here
+# Schema Immunotherapy
+Immunotherapy.id, # add mapping function here
+Immunotherapy.immunotherapy_type*, # add mapping function here
+Immunotherapy.drug_name*, # add mapping function here
+Immunotherapy.drug_rxnormcui*, # add mapping function here
+Immunotherapy.program_id*, # add mapping function here
+Immunotherapy.submitter_donor_id*, # add mapping function here
+Immunotherapy.submitter_treatment_id*, # add mapping function here
+# Schema Surgery
+Surgery.id, # add mapping function here
+Surgery.surgery_type*, # add mapping function here
+Surgery.surgery_site*, # add mapping function here
+Surgery.surgery_location*, # add mapping function here
+Surgery.tumour_focality*, # add mapping function here
+Surgery.residual_tumour_classification*, # add mapping function here
+Surgery.margin_types_involved*, # add mapping function here
+Surgery.margin_types_not_involved*, # add mapping function here
+Surgery.margin_types_not_assessed*, # add mapping function here
+Surgery.lymphovascular_invasion*, # add mapping function here
+Surgery.perineural_invasion*, # add mapping function here
+Surgery.tumour_length, # add mapping function here
+Surgery.tumour_width, # add mapping function here
+Surgery.greatest_dimension_tumour, # add mapping function here
+Surgery.program_id*, # add mapping function here
+Surgery.submitter_donor_id*, # add mapping function here
+Surgery.submitter_specimen_id*, # add mapping function here
+Surgery.submitter_treatment_id*, # add mapping function here
+# Schema FollowUp
+FollowUp.submitter_follow_up_id*, # add mapping function here
+FollowUp.date_of_followup*, # add mapping function here
+FollowUp.lost_to_followup_reason*, # add mapping function here
+FollowUp.disease_status_at_followup*, # add mapping function here
+FollowUp.relapse_type*, # add mapping function here
+FollowUp.date_of_relapse*, # add mapping function here
+FollowUp.method_of_progression_status*, # add mapping function here
+FollowUp.anatomic_site_progression_or_recurrence*, # add mapping function here
+FollowUp.recurrence_tumour_staging_system*, # add mapping function here
+FollowUp.recurrence_t_category*, # add mapping function here
+FollowUp.recurrence_n_category*, # add mapping function here
+FollowUp.recurrence_m_category*, # add mapping function here
+FollowUp.recurrence_stage_group*, # add mapping function here
+FollowUp.lost_to_followup, # add mapping function here
+FollowUp.program_id*, # add mapping function here
+FollowUp.submitter_donor_id*, # add mapping function here
+FollowUp.submitter_primary_diagnosis_id, # add mapping function here
+FollowUp.submitter_treatment_id, # add mapping function here
+# Schema Biomarker
+Biomarker.id, # add mapping function here
+Biomarker.test_interval, # add mapping function here
+Biomarker.psa_level, # add mapping function here
+Biomarker.ca125, # add mapping function here
+Biomarker.cea, # add mapping function here
+Biomarker.program_id*, # add mapping function here
+Biomarker.submitter_donor_id*, # add mapping function here
+Biomarker.submitter_specimen_id, # add mapping function here
+Biomarker.submitter_primary_diagnosis_id, # add mapping function here
+Biomarker.submitter_treatment_id, # add mapping function here
+Biomarker.submitter_follow_up_id, # add mapping function here
+# Schema Comorbidity
+Comorbidity.id, # add mapping function here
+Comorbidity.prior_malignancy*, # add mapping function here
+Comorbidity.laterality_of_prior_malignancy*, # add mapping function here
+Comorbidity.comorbidity_type_code*, # add mapping function here
+Comorbidity.comorbidity_treatment_status*, # add mapping function here
+Comorbidity.comorbidity_treatment*, # add mapping function here
+Comorbidity.age_at_comorbidity_diagnosis, # add mapping function here
+Comorbidity.program_id*, # add mapping function here
+Comorbidity.submitter_donor_id*, # add mapping function here

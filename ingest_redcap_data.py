@@ -36,7 +36,7 @@ def ingest_redcap_files(input_path):
                 df = df.drop(empty_cols, axis=1)
                 print(f"final df shape: {df.shape}")
                 raw_csv_dfs[file_match.group(1)] = df 
-    return raw_csv_dfs, output_file
+    return raw_csv_dfs
 
 def extract_repeat_instruments(df):
     """ Transforms the single (very sparse) dataframe into one dataframe per 
@@ -70,8 +70,9 @@ def extract_repeat_instruments(df):
     new_dfs['Singleton']=df
     return new_dfs
 
-def output_dfs(df_list):
-    tmpdir = Path("tmp_out")
+def output_dfs(input_path,df_list):
+    parent_path = Path(input_path).parent
+    tmpdir = Path(parent_path,"tmp_out")
     if not tmpdir.is_dir():
         tmpdir.mkdir()
     for d in df_list:
@@ -81,12 +82,12 @@ def main(args):
     input_path = args.input
     #mappings.VERBOSE = args.verbose
 
-    raw_csv_dfs, output_file = ingest_redcap_files(input_path)
+    raw_csv_dfs = ingest_redcap_files(input_path)
     new_dfs = extract_repeat_instruments(raw_csv_dfs['combined'])
     for df in new_dfs:
         print(df)
         print(new_dfs[df])
-    output_dfs(new_dfs)
+    output_dfs(input_path,new_dfs)
 
     #repeat_instruments = raw_csv_dfs['combined']['redcap_repeat_instrument'].dropna()unique()
     #print(repeat_instruments)

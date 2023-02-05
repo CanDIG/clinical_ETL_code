@@ -17,7 +17,7 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input', type=str, help="Path to either an xlsx file or a directory of csv files for ingest")
+    parser.add_argument('--input', type=str, required = True, help="Path to either an xlsx file or a directory of csv files for ingest")
     # parser.add_argument('--api_key', type=str, help="BioPortal API key found in BioPortal personal account settings")
     # parser.add_argument('--email', type=str, help="Contact email to access NCBI clinvar API. Required by Entrez")
     #parser.add_argument('--schema', type=str, help="Schema to use for template; default is mCodePacket")
@@ -161,28 +161,6 @@ def eval_mapping(identifier, indexed_data, node):
             module = mappings.MODULES[subfunc_match.group(1)]
             method = subfunc_match.group(2)
         return eval(f'module.{method}({mapping})')
-
-
-def ingest_redcap_data(input_path):
-    """Test of ingest of redcap output files"""
-    raw_csv_dfs = {}
-    outputfile = "mohpacket"
-    if os.path.isdir(input_path):
-        output_file = os.path.normpath(input_path)
-        files = os.listdir(input_path)
-        for file in files:
-            print(f"Reading input file {file}")
-            file_match = re.match(r"(.+)\.csv$", file)
-            if file_match is not None:
-                df = pandas.read_csv(os.path.join(input_path, file), dtype=str, encoding = "latin-1")
-                #print(f"initial df shape: {df.shape}")
-                # find and drop empty columns
-                empty_cols = [col for col in df if df[col].isnull().all()]  
-                print(f"Dropped {len(empty_cols)} empty columns")
-                df = df.drop(empty_cols, axis=1)
-                print(f"final df shape: {df.shape}")
-                raw_csv_dfs[file_match.group(1)] = df 
-    return raw_csv_dfs, output_file
 
 def ingest_raw_data(input_path, indexed):
     """Ingest the csvs or xlsx and create dataframes for processing."""
@@ -336,7 +314,7 @@ def main(args):
     # from the template file specififed inside
     manifest = load_manifest(manifest_file)
     identifier = manifest["identifier"]
-    #schema = manifest["schema"]
+    # the mapping scaffold is created in load_manifest, not loaded from file
     mapping_scaffold = manifest["scaffold"]
     indexed = manifest["indexed"]
     if identifier is None:
@@ -346,16 +324,9 @@ def main(args):
         print("Could not create mapping scaffold. Make sure that the manifest specifies a valid mapping template.")
         return
 
-    raw_csv_dfs = ingest_redcap_data(input_path)
-    return
-
-    if input_path is not None:
-        raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
-        if not raw_csv_dfs:
-            print(f"No ingestable files (csv or xlsx) were found at {input_path}")
-            return
-    else:
-        print("An input file (or directory of input csvs) is required, using the --input argument")
+    raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
+    if not raw_csv_dfs:
+        print(f"No ingestable files (csv or xlsx) were found at {input_path}")
         return
 
     indexed_data = process_data(raw_csv_dfs, identifier)

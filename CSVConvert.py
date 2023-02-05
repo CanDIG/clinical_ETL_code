@@ -21,7 +21,7 @@ def parse_args():
     # parser.add_argument('--api_key', type=str, help="BioPortal API key found in BioPortal personal account settings")
     # parser.add_argument('--email', type=str, help="Contact email to access NCBI clinvar API. Required by Entrez")
     #parser.add_argument('--schema', type=str, help="Schema to use for template; default is mCodePacket")
-    parser.add_argument('--manifest', type=str, help="Path to a manifest file describing the mapping."
+    parser.add_argument('--manifest', type=str, required = True, help="Path to a manifest file describing the mapping."
                                                                   " See README for more information")
     parser.add_argument('--verbose', '--v', action="store_true", help="Print extra information")
     args = parser.parse_args()
@@ -163,6 +163,27 @@ def eval_mapping(identifier, indexed_data, node):
         return eval(f'module.{method}({mapping})')
 
 
+def ingest_redcap_data(input_path):
+    """Test of ingest of redcap output files"""
+    raw_csv_dfs = {}
+    outputfile = "mohpacket"
+    if os.path.isdir(input_path):
+        output_file = os.path.normpath(input_path)
+        files = os.listdir(input_path)
+        for file in files:
+            print(f"Reading input file {file}")
+            file_match = re.match(r"(.+)\.csv$", file)
+            if file_match is not None:
+                df = pandas.read_csv(os.path.join(input_path, file), dtype=str, encoding = "latin-1")
+                #print(f"initial df shape: {df.shape}")
+                # find and drop empty columns
+                empty_cols = [col for col in df if df[col].isnull().all()]  
+                print(f"Dropped {len(empty_cols)} empty columns")
+                df = df.drop(empty_cols, axis=1)
+                print(f"final df shape: {df.shape}")
+                raw_csv_dfs[file_match.group(1)] = df 
+    return raw_csv_dfs, output_file
+
 def ingest_raw_data(input_path, indexed):
     """Ingest the csvs or xlsx and create dataframes for processing."""
     raw_csv_dfs = {}
@@ -200,13 +221,12 @@ def process_mapping(line, test=False):
         if line_match.group(2) != "" and not line_match.group(2).startswith("##"):
             value = line_match.group(2).replace(",", ";")
         elems = element.replace("*", "").replace("+", "").split(".")
-        print(f"processed {line} into {value},{elems}")
         return value, elems
     return line, None
 
 
 def create_mapping_scaffold(lines, test=False):
-    """Given lines from a mapping csv file, create a scaffold mapping."""
+    """Given lines from a mapping csv file, create a scaffold mapping dict."""
     props = {}
     for line in lines:
         if line.startswith("#"):
@@ -308,30 +328,26 @@ def load_manifest(mapping):
 
 
 def main(args):
-    # api_key = args.api_key
     input_path = args.input
-    # email = args.email
     manifest_file = args.manifest
-    schema = args.schema
     mappings.VERBOSE = args.verbose
-    metadata = ""
     
-    # if mapping is provided, we should create a mapping scaffold
-    if mapping is not None:
-        manifest = load_manifest(manifest_file)
-        identifier = manifest["identifier"]
-        #schema = manifest["schema"]
-        mapping_scaffold = manifest["scaffold"]
-        indexed = manifest["indexed"]
-        if identifier is None:
-            print("Need to specify what the main identifier column name is in the manifest file")
-            return
-        if mapping_scaffold is None:
-            print("No mapping scaffold was loaded. Either katsu was not found or no schema was specified.")
-            return
-    else:
-        print("A manifest file is required, using the --manifest argument")
+    # read manifest data and create a mapping scaffold
+    # from the template file specififed inside
+    manifest = load_manifest(manifest_file)
+    identifier = manifest["identifier"]
+    #schema = manifest["schema"]
+    mapping_scaffold = manifest["scaffold"]
+    indexed = manifest["indexed"]
+    if identifier is None:
+        print("Need to specify what the main identifier column name is in the manifest file")
         return
+    if mapping_scaffold is None:
+        print("Could not create mapping scaffold. Make sure that the manifest specifies a valid mapping template.")
+        return
+
+    raw_csv_dfs = ingest_redcap_data(input_path)
+    return
 
     if input_path is not None:
         raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
@@ -359,8 +375,8 @@ def main(args):
         mcodepackets.append(map_row_to_mcodepacket(key, indexed_data, deepcopy(mapping_scaffold)))
 
     # special case: if it was candigv1, we need to wrap the results in "metadata"
-    if schema == "candigv1":
-        mcodepackets = {"metadata": mcodepackets}
+    # if schema == "candigv1":
+    #     mcodepackets = {"metadata": mcodepackets}
 
     with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(mcodepackets, f, indent=4)

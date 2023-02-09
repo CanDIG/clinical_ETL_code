@@ -12,7 +12,7 @@ import re
 import sys
 import yaml
 import pprint
-
+from pathlib import Path 
 import argparse
 
 def parse_args():
@@ -118,7 +118,8 @@ def map_row_to_mcodepacket(identifier, indexed_data, node):
 
 
 def translate_mapping(identifier, indexed_data, mapping):
-    """Given the identifier field, the data, and a particular mapping, figure out what the method and the mapped values are."""
+    """Given the identifier field, the data dict, and a particular mapping from 
+    the template file, figure out what the method and the mapped values are."""
     func_match = re.match(r".*\{(.+?)\((.+)\)\}.*", mapping)
     if func_match is not None:  # it's a function, prep the dictionary and exec it
         items = func_match.group(2).split(";")
@@ -203,7 +204,7 @@ def process_mapping(line, test=False):
     return line, None
 
 
-def create_mapping_scaffold(lines, test=False):
+def create_scaffold_from_mapping(lines, test=False):
     """Given lines from a mapping csv file, create a scaffold mapping dict."""
     props = {}
     for line in lines:
@@ -237,11 +238,11 @@ def create_mapping_scaffold(lines, test=False):
 
     for key in props.keys():
         if key == "0":  # this could map to a list
-            y = create_mapping_scaffold(props[key])
+            y = create_scaffold_from_mapping(props[key])
             if y is not None:
                 return [y]
             return None
-        props[key] = create_mapping_scaffold(props[key])
+        props[key] = create_scaffold_from_mapping(props[key])
 
     if len(props.keys()) == 0:
         return None
@@ -249,36 +250,29 @@ def create_mapping_scaffold(lines, test=False):
     return props
 
 
-def load_manifest(mapping):
+def load_manifest(manifest_file):
     """Given a manifest file's path, return the data inside it."""
     identifier = None
     schema = "mcode"
-    mapping_scaffold = None
+    mapping_path = None
     indexed = None
-    with open(mapping, 'r') as f:
-        manifest_dir = os.path.dirname(os.path.abspath(mapping))
+    with open(manifest_file, 'r') as f:
         manifest = yaml.safe_load(f)
     if manifest is None:
         print("Manifest file needs to be in YAML format")
         return
+
     if "identifier" in manifest:
         identifier = manifest["identifier"]
     if "schema" in manifest:
         schema = manifest["schema"]
     if "mapping" in manifest:
-        mapping_path = os.path.join(manifest_dir, manifest["mapping"])
-        if os.path.isabs(manifest["mapping"]):
-            mapping_path = manifest["mapping"]
-        mapping = []
-        with open(mapping_path, 'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                if line.startswith("#"):
-                    continue
-                if re.match(r"^\s*$", line):
-                    continue
-                mapping.append(line)
-        mapping_scaffold = create_mapping_scaffold(mapping)
+        mapping_file = manifest["mapping"]
+        manifest_dir = os.path.dirname(os.path.abspath(manifest_file))
+        mapping_path = os.path.join(manifest_dir, mapping_file)
+        if os.path.isabs(mapping_file):
+            mapping_path = manifest_file
+
     if "functions" in manifest:
         for mod in manifest["functions"]:
             try:
@@ -292,36 +286,52 @@ def load_manifest(mapping):
             except Exception as e:
                 print(e)
                 return
-                # mappings is a standard module: add it
+    # mappings is a standard module: add it
     mappings.MODULES["mappings"] = importlib.import_module("mappings")
     if "indexed" in manifest:
         indexed = manifest["indexed"]
     return {
         "identifier": identifier,
         "schema": schema,
-        "scaffold": mapping_scaffold,
-        "mapping": mapping,
+        "mapping": mapping_path,
         "indexed": indexed
     }
 
+def create_mapping_scaffold(mapping_path):
+    mapping = []
+    print(mapping_path)
+    try:
+        with open(mapping_path, 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                if line.startswith("#"):
+                    continue
+                if re.match(r"^\s*$", line):
+                    continue
+                mapping.append(line)
+    except FileNotFoundError:
+        print(f"Mapping template {mapping_path} not found")
+
+    mapping_scaffold = create_scaffold_from_mapping(mapping)
+    return mapping_scaffold
 
 def main(args):
     input_path = args.input
     manifest_file = args.manifest
     mappings.VERBOSE = args.verbose
     
-    # read manifest data and create a mapping scaffold
-    # from the template file specififed inside
+    # read manifest data 
     manifest = load_manifest(manifest_file)
     identifier = manifest["identifier"]
-    # the mapping scaffold is created in load_manifest, not loaded from file
-    mapping_scaffold = manifest["scaffold"]
     indexed = manifest["indexed"]
     if identifier is None:
         print("Need to specify what the main identifier column name is in the manifest file")
         return
+        
+    # create a mapping scaffold from the template file
+    mapping_scaffold = create_mapping_scaffold(manifest["mapping"])
     if mapping_scaffold is None:
-        print("Could not create mapping scaffold. Make sure that the manifest specifies a valid mapping template.")
+        print("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
         return
 
     raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)

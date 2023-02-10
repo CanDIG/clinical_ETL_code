@@ -12,7 +12,6 @@ import re
 import sys
 import yaml
 import pprint
-from pathlib import Path 
 import argparse
 
 def parse_args():
@@ -119,49 +118,59 @@ def map_row_to_mcodepacket(identifier, indexed_data, key, node):
         return scaffold
 
 
-def translate_mapping(identifier, indexed_data, mapping):
+def translate_mapping(identifier, key, indexed_data, mapping):
     """Given the identifier field, the data dict, and a particular mapping from 
-    the template file, figure out what the method and the mapped values are."""
+    the template file, parse out the mapping method and get the matching data."""
     
     # split the mapping into the function name and the field label, 
     # e.g. {single_val(submitter_donor_id)} -> match.group(1) = single_val 
     # and match.group(2) = submitter_donor_id (may be multiple fields)
     func_match = re.match(r".*\{(.+?)\((.+)\)\}.*", mapping)
     if func_match is not None:  # it's a function, prep the dictionary and exec it
-        items = func_match.group(2).split(";")
-        new_dict = {}
-        mappings.IDENTIFIER = {"id": identifier}
-        for item in items:
-            item = item.strip()
-            sheets = None
-            sheet_match = re.match(r"(.+?)\.(.+)", item)
-            if sheet_match is not None:
-                # this is a specific item on a specific sheet:
-                item = sheet_match.group(2)
-                sheets = [sheet_match.group(1).replace('"', '').replace("'", "")]
-            # check to see if this item is even present in the columns:
-            if item in indexed_data["columns"]:
-                new_dict[item] = {}
-                if sheets is None:
-                    # look for all sheets that match this item name:
-                    sheets = indexed_data["columns"][item]
-                for sheet in sheets:
-                    # for each of these sheets, add this identifier's contents as a key and array:
-                    if identifier in indexed_data["data"][sheet]:
-                        print(f"Adding data for {item}, {sheet}")
-                        new_dict[item][sheet] = indexed_data["data"][sheet][identifier][item]
-                    else:
-                        print(f"Adding stub for {item}, {sheet}")
-                        new_dict[item][sheet] = []
-        print(f"Translated {func_match.group(1)}, {new_dict}")
-        return func_match.group(1), new_dict
+        items = func_match.group(2).split(";") # get the fields that are the params
+        data_values = get_data_for_fields(identifier,indexed_data,items)
+        return func_match.group(1), data_values
+    else: # try and match the field name exactly
+        data_values = get_data_for_fields(identifier, indexed_data,[key])
+        if data_values is not None:
+            return None, data_values
     return None, None
 
+def get_data_for_fields(identifier,indexed_data,fields):
+    """Given a list of fields and the indexed_data, return a dictionary of the 
+    values for each field"""
+    data_values = {}
+    for item in fields:
+        item = item.strip()
+        sheets = None
+        sheet_match = re.match(r"(.+?)\.(.+)", item)
+        if sheet_match is not None:
+            # this is a specific item on a specific sheet:
+            item = sheet_match.group(2)
+            sheets = [sheet_match.group(1).replace('"', '').replace("'", "")]
+        # check to see if this item is even present in the columns:
+        if item in indexed_data["columns"]:
+            data_values[item] = {}
+            if sheets is None:
+                # look for all sheets that match this item name:
+                sheets = indexed_data["columns"][item]
+            for sheet in sheets:
+                # for each of these sheets, add this identifier's contents as a key and array:
+                if identifier in indexed_data["data"][sheet]:
+                    data_value = indexed_data["data"][sheet][identifier][item]
+                    #print(f"Adding {data_value} from {sheet}.{item}")
+                    data_values[item][sheet] = data_value
+                else:
+                    #print(f"Adding stub from {sheet}.{item}")
+                    data_values[item][sheet] = []   
+    return data_values 
 
 def eval_mapping(identifier, indexed_data, key, node):
-    """Given the identifier field, the data, and a particular schema node, evaluate the mapping and return the final JSON for the node in the schema."""
+    """Given the identifier field, the data, and a particular schema node, evaluate  
+    the mapping using the provider method and return the final JSON for the node 
+    in the schema."""
     #print(f"evaluating {identifier},{key},{node}")
-    method, mapping = translate_mapping(identifier, indexed_data, node)
+    method, mapping = translate_mapping(identifier, key, indexed_data, node)
     if method is not None:
         if "mappings" not in mappings.MODULES:
             mappings.MODULES["mappings"] = importlib.import_module("mappings")

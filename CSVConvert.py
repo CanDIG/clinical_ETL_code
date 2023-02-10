@@ -95,14 +95,15 @@ def process_data(raw_csv_dfs, identifier):
     }
 
 
-def map_row_to_mcodepacket(identifier, indexed_data, node):
-    """Given a particular individual's data, and a node in the schema, return the node with mapped data."""
+def map_row_to_mcodepacket(identifier, indexed_data, key, node):
+    """Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive. """
     if "str" in str(type(node)) and node != "":
-        return eval_mapping(identifier, indexed_data, node)
+        #print(f"mapping str {identifier},{node}")
+        return eval_mapping(identifier, indexed_data, key, node)
     elif "list" in str(type(node)):
         new_node = []
         for item in node:
-            m = map_row_to_mcodepacket(identifier, indexed_data, item)
+            m = map_row_to_mcodepacket(identifier, indexed_data, None, item)
             if "list" in str(type(m)):
                 new_node = m
             else:
@@ -111,7 +112,8 @@ def map_row_to_mcodepacket(identifier, indexed_data, node):
     elif "dict" in str(type(node)):
         scaffold = {}
         for key in node.keys():
-            x = map_row_to_mcodepacket(identifier, indexed_data, node[key])
+            #print(f"dict key {identifier},{key}")
+            x = map_row_to_mcodepacket(identifier, indexed_data, key, node[key])
             if x is not None:
                 scaffold[key] = x
         return scaffold
@@ -120,6 +122,10 @@ def map_row_to_mcodepacket(identifier, indexed_data, node):
 def translate_mapping(identifier, indexed_data, mapping):
     """Given the identifier field, the data dict, and a particular mapping from 
     the template file, figure out what the method and the mapped values are."""
+    
+    # split the mapping into the function name and the field label, 
+    # e.g. {single_val(submitter_donor_id)} -> match.group(1) = single_val 
+    # and match.group(2) = submitter_donor_id (may be multiple fields)
     func_match = re.match(r".*\{(.+?)\((.+)\)\}.*", mapping)
     if func_match is not None:  # it's a function, prep the dictionary and exec it
         items = func_match.group(2).split(";")
@@ -142,15 +148,19 @@ def translate_mapping(identifier, indexed_data, mapping):
                 for sheet in sheets:
                     # for each of these sheets, add this identifier's contents as a key and array:
                     if identifier in indexed_data["data"][sheet]:
+                        print(f"Adding data for {item}, {sheet}")
                         new_dict[item][sheet] = indexed_data["data"][sheet][identifier][item]
                     else:
+                        print(f"Adding stub for {item}, {sheet}")
                         new_dict[item][sheet] = []
+        print(f"Translated {func_match.group(1)}, {new_dict}")
         return func_match.group(1), new_dict
     return None, None
 
 
-def eval_mapping(identifier, indexed_data, node):
+def eval_mapping(identifier, indexed_data, key, node):
     """Given the identifier field, the data, and a particular schema node, evaluate the mapping and return the final JSON for the node in the schema."""
+    #print(f"evaluating {identifier},{key},{node}")
     method, mapping = translate_mapping(identifier, indexed_data, node)
     if method is not None:
         if "mappings" not in mappings.MODULES:
@@ -327,13 +337,16 @@ def main(args):
     if identifier is None:
         print("Need to specify what the main identifier column name is in the manifest file")
         return
-        
+
     # create a mapping scaffold from the template file
     mapping_scaffold = create_mapping_scaffold(manifest["mapping"])
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(mapping_scaffold)
     if mapping_scaffold is None:
         print("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
         return
 
+    # read the raw data
     raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
     if not raw_csv_dfs:
         print(f"No ingestable files (csv or xlsx) were found at {input_path}")
@@ -349,11 +362,12 @@ def main(args):
             mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(indexed_data['columns'][col])}")
 
     mcodepackets = []
-
     # for each identifier's row, make an mcodepacket
     for key in indexed_data["individuals"]:
         print(f"Creating packet for {key}")
-        mcodepackets.append(map_row_to_mcodepacket(key, indexed_data, deepcopy(mapping_scaffold)))
+        mcodepackets.append(map_row_to_mcodepacket(
+            key, indexed_data, None, deepcopy(mapping_scaffold))
+            )
 
     # special case: if it was candigv1, we need to wrap the results in "metadata"
     # if schema == "candigv1":

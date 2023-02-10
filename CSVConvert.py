@@ -169,8 +169,12 @@ def eval_mapping(identifier, indexed_data, key, node):
     """Given the identifier field, the data, and a particular schema node, evaluate  
     the mapping using the provider method and return the final JSON for the node 
     in the schema."""
-    #print(f"evaluating {identifier},{key},{node}")
-    method, mapping = translate_mapping(identifier, key, indexed_data, node)
+    method, data_values = translate_mapping(identifier, key, indexed_data, node)
+    if method is None: 
+    # if we have data but no method specified, use a single_val on it
+        if data_values is None:
+            return
+        method = "single_val"
     if method is not None:
         if "mappings" not in mappings.MODULES:
             mappings.MODULES["mappings"] = importlib.import_module("mappings")
@@ -180,7 +184,9 @@ def eval_mapping(identifier, indexed_data, key, node):
         if subfunc_match is not None:
             module = mappings.MODULES[subfunc_match.group(1)]
             method = subfunc_match.group(2)
-        return eval(f'module.{method}({mapping})')
+        #print(f"evaluating {key} for {identifier} using {method}")
+        return eval(f'module.{method}({data_values})')
+
 
 def ingest_raw_data(input_path, indexed):
     """Ingest the csvs or xlsx and create dataframes for processing."""

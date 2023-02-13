@@ -30,9 +30,6 @@ def ingest_redcap_files(input_path):
                 #print(f"initial df shape: {df.shape}")
                 # find and drop empty columns
                 df = drop_empty_columns(df)
-                #empty_cols = [col for col in df if df[col].isnull().all()]  
-                #print(f"Dropped {len(empty_cols)} empty columns")
-                #df = df.drop(empty_cols, axis=1)
                 # now we do some renaming, becuase for reasons we don't understand
                 # the program_id and submitter_donor_id columns are swapped
                 df.rename(columns={'program_id':'tempname'},inplace=True)
@@ -45,7 +42,8 @@ def ingest_redcap_files(input_path):
 
 def extract_repeat_instruments(df):
     """ Transforms the single (very sparse) dataframe into one dataframe per 
-    MoH schema."""
+    MoH schema. This makes it easier to look at, and also eliminates a bunch
+    of pandas warnings."""
     new_dfs={}
     starting_rows = df.shape[0]
     repeat_instruments = df['redcap_repeat_instrument'].dropna().unique()
@@ -58,8 +56,6 @@ def extract_repeat_instruments(df):
         schema_df = df.loc[df['redcap_repeat_instrument'] == i]
         # drop all of the empty columns that aren't relevent for this schema
         schema_df = drop_empty_columns(schema_df)
-        #empty_cols = [col for col in schema_df if schema_df[col].isnull().all()]  
-        #schema_df = schema_df.drop(empty_cols, axis=1)
         schema_df.rename(columns={
             'redcap_repeat_instance':'id'
             },
@@ -67,6 +63,7 @@ def extract_repeat_instruments(df):
             )
         total_rows += schema_df.shape[0]
         new_dfs[i]=schema_df
+
     # now save all of the rows that aren't a repeat_instrument and 
     # label them Singleton for now
     singletons = df.loc[df['redcap_repeat_instrument'].isnull()]
@@ -88,7 +85,7 @@ def output_dfs(input_path,df_list):
     if not tmpdir.is_dir():
         tmpdir.mkdir()
     for d in df_list:
-        df_list[d].to_csv(Path(tmpdir,f"{d}.csv"))
+        df_list[d].to_csv(Path(tmpdir,f"{d}.csv"), index=False)
 
 def main(args):
     input_path = args.input

@@ -8,10 +8,7 @@ import json
 import mappings
 import os
 import pandas
-import re
 import sys
-import yaml
-import requests 
 import argparse
 #from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
 #from schemas import candigv1_schema
@@ -24,53 +21,6 @@ def parse_args():
     parser.add_argument('--out', type=str, help="name of output file; csv extension will be added. Default is template", default="template")
     args = parser.parse_args()
     return args
-
-def get_schema_from_url(schema_url):
-    """Retrieve the schema from the supplied URL, return as dictionary."""
-    resp = requests.get(schema_url)
-    schema = yaml.safe_load(resp.text)
-    # rudimentary test that we have found something that looks like an openapi schema
-    # would be better to formally validate
-    if "openapi" in schema:
-        return schema
-    else:
-        return None
-
-def generate_schema_array(schema):
-    """Create an array of the schema that can be easily be exported to csv"""
-    components = schema["components"]["schemas"]
-    # hardcoding these for now, as the components section of the openapi schema 
-    # contains much more than is in this list
-    schemas = [
-        "SampleRegistration",
-        "Donor",
-        "Specimen",
-        "PrimaryDiagnosis",
-        "Treatment",
-        "Chemotherapy",
-        "HormoneTherapy",
-        "Radiation",
-        "Immunotherapy",
-        "Surgery",
-        "FollowUp",
-        "Biomarker",
-        "Comorbidity"
-        ]
-    schema_array = []
-    for s in schemas:
-        # separator row for documentation
-        schema_array.append(f"# Schema {s}\n")
-        print(f"# Schema {s}")
-        properties = components[s]["properties"]
-        required_fields = components[s]["required"]
-        for k in properties.keys():
-            # format of each line is : schema.field, # help text 
-            # adding a '*' at the end of the field if required
-            if k in required_fields:
-                schema_array.append(f"{s}.{k}*, # add mapping function here\n")
-            else:
-                schema_array.append(f"{s}.{k}, # add mapping function here\n")
-    return schema_array
 
 
 def generate_mapping_template(node, node_name="", node_names=None):
@@ -135,18 +85,16 @@ def generate_mapping_template(node, node_name="", node_names=None):
 
 def main(args):
     url = args.url
-    schema = get_schema_from_url(url)
+    schema = mohschema(url)
     if schema is None:
         print("Did not find an openapi schema at {}; please check link".format(url))
         return
-
-    schema_array = generate_schema_array(schema)
+    schema_array = schema.generate_schema_array()
     
     outputfile = "{}.csv".format(args.out)
     with open(outputfile,'w') as f:
         f.write("# Schema generated from {}\n".format(url))
         f.write("# mohschema.fieldname,mapping_function\n")
-        f.write("# asterisk * after field name indicates required\n")
         f.writelines(schema_array)
     
 

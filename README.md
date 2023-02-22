@@ -12,16 +12,17 @@ You'll need to set up a free [account](https://bioportal.bioontology.org/account
 ## Converting csvs to ingest packets
 
 Most of the heavy lifting is done in the CSVConvert.py script. This script:
-* takes an input directory of xlsx files and converts them to csv
-* for each field for each patient, applies the appropriate mapping function to transform the raw data into valid model data
+* reads an input directory of xlsx or csv files (if xlsx, converts them to csv)
+* reads a template file that contains a list of fields and (if needed) a mapping function
+* for each field for each patient, applies the mapping function to transform the raw data into valid model data
 * exports the data into a json file(s) appropriate for ingest
 
 ```
-$ python CSVConvert.py [-h] [--input INPUT] [--mapping|manifest MAPPING]
+$ python CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file]
 
 --input: path to dataset to be converted to data model
 
---manifest: Path to a manifest file describing the mapping
+--manifest: Path to a manifest file with settings for the ETL
 ```
 
 The output packets (`INPUT_map.json` and `INPUT_indexed.json`) will be in the parent of the `INPUT` directory. 

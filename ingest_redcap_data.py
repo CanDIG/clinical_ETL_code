@@ -14,6 +14,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, required = True, help="Path to either an xlsx file or a directory of csv files for ingest")
     parser.add_argument('--verbose', '--v', action="store_true", help="Print extra information")
+    parser.add_argument('--output', type=str, default="tmp_out", help="Optional name of output directory in parent of input path; default tmp_out")
     args = parser.parse_args()
     return args
 
@@ -56,8 +57,9 @@ def extract_repeat_instruments(df):
         schema_df = df.loc[df['redcap_repeat_instrument'] == i]
         # drop all of the empty columns that aren't relevent for this schema
         schema_df = drop_empty_columns(schema_df)
+        # rename the redcap_repeat_instance to the specific id (e.g. treatment_id)
         schema_df.rename(columns={
-            'redcap_repeat_instance':'id'
+            'redcap_repeat_instance': f"{i}_id"
             },
             inplace=True
             )
@@ -79,11 +81,12 @@ def drop_empty_columns(df):
     df = df.drop(empty_cols, axis=1)
     return df
 
-def output_dfs(input_path,df_list):
+def output_dfs(input_path,output_dir,df_list):
     parent_path = Path(input_path).parent
-    tmpdir = Path(parent_path,"tmp_out")
+    tmpdir = Path(parent_path,output_dir)
     if not tmpdir.is_dir():
         tmpdir.mkdir()
+    print(f"Writing output files to {tmpdir}")
     for d in df_list:
         df_list[d].to_csv(Path(tmpdir,f"{d}.csv"), index=False)
 
@@ -92,7 +95,8 @@ def main(args):
 
     raw_csv_dfs = ingest_redcap_files(input_path)
     new_dfs = extract_repeat_instruments(raw_csv_dfs['combined'])
-    output_dfs(input_path,new_dfs)
+    output_dir = args.output
+    output_dfs(input_path,output_dir,new_dfs)
 
 if __name__ == '__main__':
     main(parse_args())

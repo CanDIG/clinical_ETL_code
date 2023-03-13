@@ -14,6 +14,8 @@ import yaml
 import pprint
 import argparse
 
+from moh_mappings import mohschema
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, required = True, help="Path to either an xlsx file or a directory of csv files for ingest")
@@ -28,7 +30,7 @@ def parse_args():
 
 
 def process_data(raw_csv_dfs, identifier):
-    """Takes a set of raw dataframes with a common identifier and merges into the internal JSON data structure."""
+    """Takes a set of raw dataframes with a common identifier and merges into a  JSON data structure."""
     final_merged = {}
     cols_index = {}
     individuals = []
@@ -93,15 +95,17 @@ def process_data(raw_csv_dfs, identifier):
         "data": final_merged
     }
 
-
 def map_row_to_mcodepacket(identifier, indexed_data, key, node):
     """Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive. """
     if "str" in str(type(node)) and node != "":
-        #print(f"mapping str {identifier},{node}")
+        print(f"Str {identifier},{key},{node}")
         return eval_mapping(identifier, indexed_data, key, node)
     elif "list" in str(type(node)):
+        print(f"List {node} as part of {key}")
+        # if we get here with a node that can be a list (e.g. Treatments)
         new_node = []
         for item in node:
+            print(f"Mapping list item {item}")
             m = map_row_to_mcodepacket(identifier, indexed_data, None, item)
             if "list" in str(type(m)):
                 new_node = m
@@ -111,7 +115,7 @@ def map_row_to_mcodepacket(identifier, indexed_data, key, node):
     elif "dict" in str(type(node)):
         scaffold = {}
         for key in node.keys():
-            #print(f"dict key {identifier},{key}")
+            print(f"\nKey {key}")
             x = map_row_to_mcodepacket(identifier, indexed_data, key, node[key])
             if x is not None:
                 scaffold[key] = x
@@ -122,18 +126,21 @@ def translate_mapping(identifier, key, indexed_data, mapping):
     """Given the identifier field, the data dict, and a particular mapping from 
     the template file, parse out the mapping method and get the matching data."""
     
-    # split the mapping into the function name and the field label, 
+    # split the mapping into the function name and the raw data fields that 
+    # are the parameters
     # e.g. {single_val(submitter_donor_id)} -> match.group(1) = single_val 
     # and match.group(2) = submitter_donor_id (may be multiple fields)
     func_match = re.match(r".*\{(.+?)\((.+)\)\}.*", mapping)
     if func_match is not None:  # it's a function, prep the dictionary and exec it
-        items = func_match.group(2).split(";") # get the fields that are the params
+        # get the fields that are the params; separator is a semicolon because
+        # we replaced the commas back in process_mapping
+        items = func_match.group(2).split(";") 
         data_values = get_data_for_fields(identifier,indexed_data,items)
         return func_match.group(1), data_values
-    else: # try and match the field name exactly
-        data_values = get_data_for_fields(identifier, indexed_data,[key])
-        if data_values is not None:
-            return None, data_values
+    # else: # try and match the field name exactly
+    #     data_values = get_data_for_fields(identifier, indexed_data,[key])
+    #     if data_values is not None:
+    #         return None, data_values
     return None, None
 
 def get_data_for_fields(identifier,indexed_data,fields):
@@ -170,11 +177,11 @@ def eval_mapping(identifier, indexed_data, key, node):
     the mapping using the provider method and return the final JSON for the node 
     in the schema."""
     method, data_values = translate_mapping(identifier, key, indexed_data, node)
-    if method is None: 
-    # if we have data but no method specified, use a single_val on it
-        if data_values is None:
-            return
-        method = "single_val"
+    # if method is None: 
+    # # if we have data but no method specified, use a single_val on it
+    #     if data_values is None:
+    #         return
+    #     method = "single_val"
     if method is not None:
         if "mappings" not in mappings.MODULES:
             mappings.MODULES["mappings"] = importlib.import_module("mappings")
@@ -185,7 +192,11 @@ def eval_mapping(identifier, indexed_data, key, node):
             module = mappings.MODULES[subfunc_match.group(1)]
             method = subfunc_match.group(2)
         #print(f"evaluating {key} for {identifier} using {method}")
-        return eval(f'module.{method}({data_values})')
+        try:
+            return eval(f'module.{method}({data_values})')
+        except mappings.MappingError as e:
+            print(f"Error evaluating {method} for {key}")
+            raise
 
 
 def ingest_raw_data(input_path, indexed):
@@ -215,59 +226,106 @@ def ingest_raw_data(input_path, indexed):
     return raw_csv_dfs, output_file
 
 def process_mapping(line, test=False):
-    """Given a csv mapping line, process into its component pieces."""
+    """Given a csv mapping line, process into its component pieces.
+    Turns treatment_type, {list_val(Treatment.submitter_treatment_id)} into 
+    {list_val(Treatment.submitter_treatment_id)},['treatment_type']."""
     line_match = re.match(r"(.+?),(.*$)", line.replace("\"", ""))
     if line_match is not None:
         element = line_match.group(1)
         value = ""
         if test:
             value = "test"
-        if line_match.group(2) != "" and not line_match.group(2).startswith("##"):
-            value = line_match.group(2).replace(",", ";")
+        if line_match.group(2) != "":
+            test_value = line_match.group(2).strip()
+            if not test_value.startswith("##"):
+                # replace comma separated parameter list with semicolon separated
+                value = test_value.replace(",", ";")
+        # strip off the * (required field) and + (ontology term) notations
+        # TODO - check required fields
         elems = element.replace("*", "").replace("+", "").split(".")
         return value, elems
     return line, None
 
+def read_mapping_template(mapping_path):
+    """Given a path to a mapping template file, read the lines and 
+    return them as an array."""
+    template_lines = []
+    print(mapping_path)
+    try:
+        with open(mapping_path, 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                if line.startswith("#"):
+                    continue
+                if re.match(r"^\s*$", line):
+                    continue
+                template_lines.append(line)
+    except FileNotFoundError:
+        print(f"Mapping template {mapping_path} not found")
 
-def create_scaffold_from_mapping(lines, test=False):
-    """Given lines from a mapping csv file, create a scaffold mapping dict."""
-    props = {}
+    return template_lines
+
+def create_scaffold_from_template(lines, test=False):
+    """Given lines from a template mapping csv file, create a scaffold 
+    mapping dict."""
+    props = {} 
     for line in lines:
         if line.startswith("#"):
+            # this line is a comment, skip it
             continue
         if re.match(r"^\s*$", line):
+            #print(f"skipping {line}")
             continue
         value, elems = process_mapping(line, test)
+        # elems are the first column in the csv, the parts of the schema field, 
+        # i.e. Treatment.id becomes [Treatment, id]. value is the mapping function
         if elems is not None:
-            x = elems.pop(0)
+            # we are creating an array for schema field
+            # where each element is a string of "child field,mapping function"
+            # or just "mapping function" if no children
+            x = elems.pop(0) 
             if x not in props:
+                # not seen yet, add empty list
                 props[x] = []
             if len(elems) > 0:
+                tempvar=(".".join(elems)+","+value)
+                #print(f"Appending tempvar {tempvar} to props for {x}")
                 props[x].append(".".join(elems)+","+value)
             elif value != "":
+                #print(f"Appending value {value} to props for {x}")
                 props[x].append(value)
             else:
+                #print(f"How do we get here, {x}, adding empty list")
                 props[x] = []
+            #print(f"Now {props[x]} for {x}")
         else:
             return line
 
-    # clear out the empty keys:
+    # clear out the keys that just have empty lists (or just a single '0')
     empty_keys = []
     for key in props.keys():
         if len(props[key]) == 0:
             empty_keys.append(key)
         if len(props[key]) == 1 and props[key][0] == '0,':
+            print(f"did we get here for {key}?")
             empty_keys.append(key)
     for key in empty_keys:
         props.pop(key)
+    #print(f"Cleared empty keys {empty_keys}")
+
+    # print(f"Props:")
+    # pp = pprint.PrettyPrinter(indent=4)
+    # pp.pprint(props) 
 
     for key in props.keys():
         if key == "0":  # this could map to a list
-            y = create_scaffold_from_mapping(props[key])
+            # print(f"Found array element {props[key]}")
+            y = create_scaffold_from_template(props[key])
+            # print(f"What is {y}")
             if y is not None:
                 return [y]
             return None
-        props[key] = create_scaffold_from_mapping(props[key])
+        props[key] = create_scaffold_from_template(props[key])
 
     if len(props.keys()) == 0:
         return None
@@ -322,23 +380,12 @@ def load_manifest(manifest_file):
         "indexed": indexed
     }
 
-def create_mapping_scaffold(mapping_path):
-    mapping = []
-    print(mapping_path)
-    try:
-        with open(mapping_path, 'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                if line.startswith("#"):
-                    continue
-                if re.match(r"^\s*$", line):
-                    continue
-                mapping.append(line)
-    except FileNotFoundError:
-        print(f"Mapping template {mapping_path} not found")
+def map_data(scaffold, schema, template_lines):
+    print("Mapping data")
+    for k in scaffold.keys():
+        schema_type = schema.get_schema_type(k)
+        print(f"{k} : {schema_type}")
 
-    mapping_scaffold = create_scaffold_from_mapping(mapping)
-    return mapping_scaffold
 
 def main(args):
     input_path = args.input
@@ -353,15 +400,30 @@ def main(args):
         print("Need to specify what the main identifier column name is in the manifest file")
         return
 
-    # create a mapping scaffold from the template file
-    mapping_scaffold = create_mapping_scaffold(manifest["mapping"])
+    # read the schema (from the url specified in the manifest) and generate 
+    # a scaffold
+    schema = mohschema(manifest["schema"])
+    if schema is None:
+        print(f"Did not find an openapi schema at {url}; please check link")
+        return
+    scaffold = schema.generate_scaffold()
+    print("Scaffold from mohschema")
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(scaffold)
+
+    # read the mapping template (contains the mapping function for each
+    # field)
+    template_lines = read_mapping_template(manifest["mapping"])
+    map_data(scaffold, schema, template_lines)
+    mapping_scaffold = create_scaffold_from_template(template_lines)
+    print("Scaffold from template")
     pp = pprint.PrettyPrinter(indent=4)
     pp.pprint(mapping_scaffold)
     if mapping_scaffold is None:
         print("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
         return
 
-    # read the raw data
+    # # read the raw data
     raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
     if not raw_csv_dfs:
         print(f"No ingestable files (csv or xlsx) were found at {input_path}")
@@ -384,9 +446,9 @@ def main(args):
             key, indexed_data, None, deepcopy(mapping_scaffold))
             )
 
-    # special case: if it was candigv1, we need to wrap the results in "metadata"
-    # if schema == "candigv1":
-    #     mcodepackets = {"metadata": mcodepackets}
+    # # special case: if it was candigv1, we need to wrap the results in "metadata"
+    # # if schema == "candigv1":
+    # #     mcodepackets = {"metadata": mcodepackets}
 
     with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(mcodepackets, f, indent=4)

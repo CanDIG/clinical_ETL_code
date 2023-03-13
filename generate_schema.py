@@ -92,6 +92,7 @@ def main(args):
     schema_array = schema.generate_schema_array()
     
     outputfile = "{}.csv".format(args.out)
+    print(f"Outputting schema template to {outputfile}")
     with open(outputfile,'w') as f:
         f.write("# Schema generated from {}\n".format(url))
         f.write("# mohschema.fieldname,mapping_function\n")

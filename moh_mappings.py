@@ -16,8 +16,9 @@ The top-level keys of the schema are:
 
 class mohschema:
     schema = {} 
+    #skipped_schemas = []
     skipped_schemas = [
-        "Patched","Paginated","Discovery","Request","data_ingest","moh","Enum"
+        "Patched","Paginated","Discovery","DonorWithClinicalData","Request","Nested","data_ingest","moh","Enum"
         ]
 
     def __init__(self,url, simple=False):
@@ -53,8 +54,8 @@ class mohschema:
         return schema_array
 
     def generate_scaffold(self):
-        """Generate a simplied version of the schema that can be used by CSVConvert 
-        as the internal scaffold when parsing data. Similar code as 
+        """Generate a simplied version of the schema with only the schema 
+        objects that are not in skipped_schemas. Similar code as 
         generate_schema_array but returns a dict instead of an array."""
         scaffold = {}
         schema_objects = self.schema["components"]["schemas"]

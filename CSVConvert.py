@@ -16,6 +16,8 @@ import argparse
 
 from moh_mappings import mohschema
 
+VERBOSE = False
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, required = True, help="Path to either an xlsx file or a directory of csv files for ingest")
@@ -98,24 +100,30 @@ def process_data(raw_csv_dfs, identifier):
 def map_row_to_mcodepacket(identifier, indexed_data, key, node):
     """Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive. """
     if "str" in str(type(node)) and node != "":
-        print(f"Str {identifier},{key},{node}")
+        if VERBOSE:
+            print(f"Str {identifier},{key},{node}")
         return eval_mapping(identifier, indexed_data, key, node)
     elif "list" in str(type(node)):
-        print(f"List {node} as part of {key}")
+        if VERBOSE:
+            print(f"List {node} as part of {key}")
         # if we get here with a node that can be a list (e.g. Treatments)
         new_node = []
         for item in node:
-            print(f"Mapping list item {item}")
+            if VERBOSE:
+                print(f"Mapping list item {item}")
             m = map_row_to_mcodepacket(identifier, indexed_data, None, item)
             if "list" in str(type(m)):
                 new_node = m
             else:
+                if VERBOSE:
+                    print(f"Appending {m} for {key}")
                 new_node.append(m)
         return new_node
     elif "dict" in str(type(node)):
         scaffold = {}
         for key in node.keys():
-            print(f"\nKey {key}")
+            if VERBOSE:
+                print(f"\nKey {key}")
             x = map_row_to_mcodepacket(identifier, indexed_data, key, node[key])
             if x is not None:
                 scaffold[key] = x
@@ -250,7 +258,6 @@ def read_mapping_template(mapping_path):
     """Given a path to a mapping template file, read the lines and 
     return them as an array."""
     template_lines = []
-    print(mapping_path)
     try:
         with open(mapping_path, 'r') as f:
             lines = f.readlines()
@@ -391,13 +398,14 @@ def main(args):
     input_path = args.input
     manifest_file = args.manifest
     mappings.VERBOSE = args.verbose
+    VERBOSE = args.verbose
     
     # read manifest data 
     manifest = load_manifest(manifest_file)
     identifier = manifest["identifier"]
     indexed = manifest["indexed"]
     if identifier is None:
-        print("Need to specify what the main identifier column name is in the manifest file")
+        print("Need to specify what the main identifier column name as 'identifier' in the manifest file")
         return
 
     # read the schema (from the url specified in the manifest) and generate 
@@ -407,28 +415,31 @@ def main(args):
         print(f"Did not find an openapi schema at {url}; please check link")
         return
     scaffold = schema.generate_scaffold()
-    print("Scaffold from mohschema")
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(scaffold)
+    schema_list = list(scaffold)
+    if VERBOSE:
+        print(f"Imported schemas: {schema_list} from mohschema")
+
 
     # read the mapping template (contains the mapping function for each
     # field)
     template_lines = read_mapping_template(manifest["mapping"])
-    map_data(scaffold, schema, template_lines)
+    #map_data(scaffold, schema, template_lines)
     mapping_scaffold = create_scaffold_from_template(template_lines)
-    print("Scaffold from template")
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(mapping_scaffold)
+    # print("Scaffold from template")
+    # pp = pprint.PrettyPrinter(indent=4)
+    # pp.pprint(mapping_scaffold)
     if mapping_scaffold is None:
         print("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
         return
 
     # # read the raw data
+    print("Reading raw data")
     raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
     if not raw_csv_dfs:
         print(f"No ingestable files (csv or xlsx) were found at {input_path}")
         return
 
+    print("Indexing data")
     indexed_data = process_data(raw_csv_dfs, identifier)
     with open(f"{output_file}_indexed.json", 'w') as f:
         json.dump(indexed_data, f, indent=4)

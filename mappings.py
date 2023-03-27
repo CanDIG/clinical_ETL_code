@@ -46,11 +46,11 @@ def single_date(data_values):
 
 # Returns a boolean based on whether or not the key in the mapping has a value
 def has_value(data_values):
-    if len(mapping.keys()) == 0:
+    if len(data_values.keys()) == 0:
         warn(f"no values passed in")
     else:
-        key = list(mapping.keys())[0]
-        if not is_null(mapping[key]):
+        key = list(data_values.keys())[0]
+        if not is_null(data_values[key]):
             return True
     return False
 
@@ -61,7 +61,7 @@ def single_val(data_values):
     if len(all_items) == 0:
         return None
     if len(set(all_items)) > 1:
-        raise MappingError(f"More than one value was found for {list(mapping.keys())[0]}")
+        raise MappingError(f"More than one value was found for {list(data_values.keys())[0]}")
     return all_items[0]
 
 
@@ -69,12 +69,12 @@ def single_val(data_values):
 def list_val(data_values):
     all_items = []
     if has_value(data_values):
-        col = list(mapping.keys())[0]
-        for sheet in mapping[col].keys():
-            if "list" in str(type(mapping[col][sheet])):
-                all_items.extend(mapping[col][sheet])
+        col = list(data_values.keys())[0]
+        for sheet in data_values[col].keys():
+            if "list" in str(type(data_values[col][sheet])):
+                all_items.extend(data_values[col][sheet])
             else:
-                all_items.append(mapping[col][sheet])
+                all_items.append(data_values[col][sheet])
     return all_items
 
 

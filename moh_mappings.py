@@ -1,28 +1,31 @@
 # mappings and validation based on the mohccn schema
 
-import requests 
+import requests
 import yaml
+import json
 import re
 import mappings
-    
+
 """
-The top-level keys of the schema are: 
+The top-level keys of the schema are:
     [openapi, # required def line
     info, # metadata
     paths, # API paths
     components # schema parts, this is the core info for ETL
-    ] 
+    ]
 """
 
 class mohschema:
-    schema = {} 
-    #skipped_schemas = []
+    schema = {}
     skipped_schemas = [
         "Patched","Paginated","Discovery","DonorWithClinicalData","Request","Nested","data_ingest","moh","Enum"
         ]
 
     def __init__(self,url, simple=False):
         """Retrieve the schema from the supplied URL, return as dictionary."""
+        # TODO: this grabs the schema from a provided URL, which doesn't give us
+        # any information about the version. Better to check out a specific katsu
+        # version and get schema from local file? (delete repo afterwards)
         resp = requests.get(url)
         schema = yaml.safe_load(resp.text)
         # rudimentary test that we have found something that looks like an openapi schema
@@ -30,35 +33,58 @@ class mohschema:
         if not "openapi" in schema:
             print("Error: does not seem to be an openapi schema")
             schema = None
-        schema.pop("paths") # we don't need the path info
-        self.schema = schema
+        self.schema = schema["components"]["schemas"]
+
+
+    def expand_ref(self, ref):
+        refName = ref["$ref"].replace("#/components/schemas/", "")
+        return self.generate_schema_scaffold(json.loads(json.dumps(self.schema[refName])))
+
+
+    def generate_schema_scaffold(self, schema_obj):
+        result = {}
+        if "type" in schema_obj:
+            if schema_obj["type"] == "object":
+                for prop in schema_obj["properties"]:
+                    prop_obj = self.generate_schema_scaffold(schema_obj["properties"][prop])
+                    result[prop] = prop_obj
+            elif schema_obj["type"] == "array":
+                result = [self.generate_schema_scaffold(schema_obj["items"])]
+            else:
+                result = schema_obj["type"]
+        elif "$ref" in schema_obj:
+            result = self.expand_ref(schema_obj)
+        else:
+            result = "unknown"
+        return result
+
 
     def generate_schema_array(self):
         """Generates an array of schema objects and their properties that can
         then be export into a mapping template file. Same code as generate_scaffold
         but returns an array instead of a dict. """
         schema_array = []
-        schema_objects = self.schema["components"]["schemas"]
-        for s in schema_objects.keys():
-        # each of these is potentially an MoH schema, e.g. Donor, or Treatment
-        # skip the ones that are internal to katsu
-            for test in self.skipped_schemas:
-                if re.search(test,s):
-                    break
-            else: 
-                schema_array.append(f"# Schema {s}\n")
-                properties = schema_objects[s]["properties"]
-                for k in properties.keys():
-                    # format of each line is : schema.field, # help text 
-                    schema_array.append(f"{s}.{k}, ## add mapping function here\n")
-        return schema_array
+        schema_objects = self.schema
+
+        # find all schemas that have submitter_donor_id in them:
+        donor_schemas = []
+        for schema in self.schema:
+            if "type" in self.schema[schema] and self.schema[schema]["type"] == "object":
+                if "submitter_donor_id" in self.schema[schema]["properties"]:
+                    donor_schemas.append(schema)
+        schema_objs = {}
+        for schema in donor_schemas: # each of these high-level schemas is an object
+            schema_objs[schema] = self.generate_schema_scaffold(self.schema[schema])
+
+        return schema_objs
+
 
     def generate_scaffold(self):
-        """Generate a simplied version of the schema with only the schema 
-        objects that are not in skipped_schemas. Similar code as 
+        """Generate a simplied version of the schema with only the schema
+        objects that are not in skipped_schemas. Similar code as
         generate_schema_array but returns a dict instead of an array."""
         scaffold = {}
-        schema_objects = self.schema["components"]["schemas"]
+        schema_objects = self.schema
         for s in schema_objects.keys():
             for test in self.skipped_schemas:
                 if re.search(test,s):
@@ -72,7 +98,7 @@ class mohschema:
     def get_schema_data(self, schema_name):
         """Given the name of a schema object, return the type"""
         try:
-            return self.schema["components"]["schemas"][schema_name]
+            return self.schema[schema_name]
         except KeyError:
             raise KeyError(f"No schema oject {schema_name} in schema")
 
@@ -84,21 +110,21 @@ class mohschema:
         #schema_data = self.get_schema_data(schema_name)
         #return schema_data['type']
 
-        # but in the meantime, as a hack, we hard code everything 
+        # but in the meantime, as a hack, we hard code everything
         if schema_name == "Donor":
             return "not_an_array"
         else:
             return "array"
 
     def get_property_type(self,schema_name,node):
-        """Given the name of a schema object, and a property of that node, 
+        """Given the name of a schema object, and a property of that node,
         return the type"""
         schema_data = self.get_schema_data(schema_name)
         try:
             node_data = schema_data['properties'][node]
             return node_data['type']
         except KeyError:
-            raise KeyError(f"No property {node} for {schema_name}")        
+            raise KeyError(f"No property {node} for {schema_name}")
 
 
 

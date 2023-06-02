@@ -33,8 +33,13 @@ class mohschema:
         if not "openapi" in schema:
             print("Error: does not seem to be an openapi schema")
             schema = None
+        #schema.pop("paths") # we don't need the path info
         self.schema = schema["components"]["schemas"]
 
+
+    def expand_array(self, items):
+        if "$ref" in items:
+            print(f"found a ref {items['$ref']}")
 
     def expand_ref(self, ref):
         refName = ref["$ref"].replace("#/components/schemas/", "")
@@ -56,8 +61,8 @@ class mohschema:
             result = self.expand_ref(schema_obj)
         else:
             result = "unknown"
-        return result
 
+        return result
 
     def generate_schema_array(self):
         """Generates an array of schema objects and their properties that can
@@ -72,12 +77,12 @@ class mohschema:
             if "type" in self.schema[schema] and self.schema[schema]["type"] == "object":
                 if "submitter_donor_id" in self.schema[schema]["properties"]:
                     donor_schemas.append(schema)
+        print(donor_schemas)
         schema_objs = {}
         for schema in donor_schemas: # each of these high-level schemas is an object
             schema_objs[schema] = self.generate_schema_scaffold(self.schema[schema])
 
         return schema_objs
-
 
     def generate_scaffold(self):
         """Generate a simplied version of the schema with only the schema

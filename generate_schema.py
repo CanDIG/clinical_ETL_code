@@ -13,6 +13,7 @@ import argparse
 #from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
 #from schemas import candigv1_schema
 from moh_mappings import mohschema
+import re
 
 
 def parse_args():
@@ -34,7 +35,8 @@ def generate_mapping_template(node, node_name="", node_names=None):
             x_match = re.match(r"(.+?)\**,.*", x)
             if x_match is not None:
                 if x_match.group(1) in node_name:
-                    node_names.append(f"##{x}")
+                    #node_names.append(f"##{x}")
+                    print("hi")
                 else:
                     node_names.append(x)
             else:
@@ -43,44 +45,27 @@ def generate_mapping_template(node, node_name="", node_names=None):
             node_names.append(f"{node_name},\"##{node['description']}\"")
         else:
             node_names.append(f"{node_name},")
-    if "type" in node:
-        if node["type"] == "string":
-            return "string", node_names
-        elif node["type"] == "array":
-            new_node_name = ".".join((node_name, "0"))
-            sc, nn = generate_mapping_template(node["items"], new_node_name, node_names)
-            return [sc], nn
-        elif node["type"] in ["number", "integer"]:
-            return 0, node_names
-        elif node["type"] == "boolean":
-            return True, node_names
-        elif node["type"] == "object":
-            scaffold = {}
-            if "$id" in node:
-                scaffold["$id"] = node["$id"]
-            if len(node_names) > 0:
-                # if this is an ontology_class_schema, we'll update this data post-mapping
-                if "$id" in node and (node["$id"] == "katsu:common:ontology_class"
-                                      or node["$id"] == "katsu:mcode:complex_ontology"):
-                    # add a + to the name of the node to denote that this needs to be looked up in an ontology
-                    name = node_names.pop()
-                    name_match = re.match(r"(.+?),(.+)", name)
-                    if name_match is not None:
-                        name = f"{name_match.group(1)}+,{name_match.group(2)}"
-                    node_names.append(name)
-                    return node["$id"], node_names
-            if "properties" in node:
-                for prop in node["properties"]:
-                    if node_name == "":
-                        new_node_name = prop
-                    else:
-                        new_node_name = ".".join((node_name, prop))
-                    if "required" in node and prop in node["required"]:
-                        new_node_name += "*"
-                    scaffold[prop], node_names = generate_mapping_template(node["properties"][prop], new_node_name, node_names)
-            return scaffold, node_names
+    if "str" in str(type(node)):
+        return "string", node_names
+    elif "list" in str(type(node)):
+        new_node_name = ".".join((node_name, "0"))
+        sc, nn = generate_mapping_template(node[0], new_node_name, node_names)
+        return [sc], nn
+    elif "number" in str(type(node)) or "integer" in str(type(node)):
+        return 0, node_names
+    elif "boolean" in str(type(node)):
+        return True, node_names
+    elif "dict" in str(type(node)):
+        scaffold = {}
+        for prop in node.keys():
+            if node_name == "":
+                new_node_name = prop
+            else:
+                new_node_name = ".".join((node_name, prop))
+            scaffold[prop], node_names = generate_mapping_template(node[prop], new_node_name, node_names)
+        return scaffold, node_names
     else:
-        return {}, node_names
+        return str(type(node)), node_names
     return None, node_names
 
 def main(args):
@@ -90,17 +75,17 @@ def main(args):
         print("Did not find an openapi schema at {}; please check link".format(url))
         return
     schema_array = schema.generate_schema_array()
-    
-    outputfile = "{}.csv".format(args.out)
-    print(f"Outputting schema template to {outputfile}")
-    with open(outputfile,'w') as f:
-        f.write("# Schema generated from {}\n".format(url))
-        f.write("# mohschema.fieldname,mapping_function\n")
-        f.writelines(schema_array)
-    
 
-    # metadata = ""
-    
+    outputfile = "{}.csv".format(args.out)
+    # print(f"Outputting schema template to {outputfile}")
+    # with open(outputfile,'w') as f:
+    #     f.write("# Schema generated from {}\n".format(url))
+    #     f.write("# mohschema.fieldname,mapping_function\n")
+    #     f.writelines(schema_array)
+
+
+    metadata = ""
+
     # if schema is None:
     #     schema = MCODE_SCHEMA
     #     # get metadata about version of MCODE_SCHEMA used:
@@ -111,14 +96,14 @@ def main(args):
     #         metadata += f"## directly checked out from {d['url']}, commit {d['vcs_info']['commit_id']}\n"
     # if schema == "candigv1":
     #     schema = candigv1_schema
-    # sc, node_names = generate_mapping_template(schema)
-        
-    # with open(f"{template}.csv", 'w') as f:  # write to csv file for mapping
-    #     f.write(metadata)
-    #     f.write("## mcodepacket element, description (overwrite with mapped element)\n")
-    #     f.write("## (.0 is an array element) (* is required) (+ denotes ontology term),\n")
-    #     for nn in node_names:
-    #         f.write(f"{nn}\n")
+    sc, node_names = generate_mapping_template(schema_array["DonorWithClinicalData"])
+    print(sc)
+    with open(outputfile, 'w') as f:  # write to csv file for mapping
+        f.write(metadata)
+        f.write("## mohpacket element, description (overwrite with mapped element)\n")
+        # f.write("## (.0 is an array element) (* is required) (+ denotes ontology term),\n")
+        for nn in node_names:
+            f.write(f"{nn}\n")
     return
 
 if __name__ == '__main__':

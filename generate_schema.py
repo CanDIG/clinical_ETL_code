@@ -35,8 +35,7 @@ def generate_mapping_template(node, node_name="", node_names=None):
             x_match = re.match(r"(.+?)\**,.*", x)
             if x_match is not None:
                 if x_match.group(1) in node_name:
-                    #node_names.append(f"##{x}")
-                    print("hi")
+                    node_names.append(f"##{x}")
                 else:
                     node_names.append(x)
             else:
@@ -97,7 +96,7 @@ def main(args):
     # if schema == "candigv1":
     #     schema = candigv1_schema
     sc, node_names = generate_mapping_template(schema_array["DonorWithClinicalData"])
-    print(sc)
+    print(json.dumps(sc, indent=4))
     with open(outputfile, 'w') as f:  # write to csv file for mapping
         f.write(metadata)
         f.write("## mohpacket element, description (overwrite with mapped element)\n")

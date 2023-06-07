@@ -10,8 +10,6 @@ import os
 import pandas
 import sys
 import argparse
-#from chord_metadata_service.mcode.schemas import MCODE_SCHEMA
-#from schemas import candigv1_schema
 from moh_mappings import mohschema
 import re
 
@@ -96,7 +94,7 @@ def main(args):
     # if schema == "candigv1":
     #     schema = candigv1_schema
     sc, node_names = generate_mapping_template(schema_array["DonorWithClinicalData"])
-    print(json.dumps(sc, indent=4))
+
     with open(outputfile, 'w') as f:  # write to csv file for mapping
         f.write(metadata)
         f.write("## mohpacket element, description (overwrite with mapped element)\n")

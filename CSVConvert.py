@@ -100,11 +100,13 @@ def process_data(raw_csv_dfs, identifier):
 
 def map_row_to_mcodepacket(identifier, indexed_data, key, node):
     """Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive. """
+    print(f"hello {key} {str(type(node))} {node}")
     if "str" in str(type(node)) and node != "":
         if VERBOSE:
             print(f"Str {identifier},{key},{node}")
         return eval_mapping(identifier, indexed_data, key, node)
     elif "list" in str(type(node)):
+        print(node)
         if VERBOSE:
             print(f"List {node} as part of {key}")
         # if we get here with a node that can be a list (e.g. Treatments)
@@ -284,6 +286,8 @@ def create_scaffold_from_template(lines, test=False):
     mapping dict."""
     props = {}
     for line in lines:
+        print(f"LINE {line}")
+        line = line.strip()
         if line.startswith("#"):
             # this line is a comment, skip it
             continue
@@ -291,6 +295,7 @@ def create_scaffold_from_template(lines, test=False):
             #print(f"skipping {line}")
             continue
         value, elems = process_mapping(line, test)
+        print(f"POST {value} : {elems}")
         # elems are the first column in the csv, the parts of the schema field,
         # i.e. Treatment.id becomes [Treatment, id]. value is the mapping function
         if elems is not None:
@@ -303,17 +308,19 @@ def create_scaffold_from_template(lines, test=False):
                 props[x] = []
             if len(elems) > 0:
                 tempvar=(".".join(elems)+","+value)
-                #print(f"Appending tempvar {tempvar} to props for {x}")
+                print(f"Appending tempvar {tempvar} to props for {x} : {line}")
                 props[x].append(".".join(elems)+","+value)
             elif value != "":
-                #print(f"Appending value {value} to props for {x}")
+                print(f"Appending value {value} to props for {x} : {line}")
                 props[x].append(value)
             else:
                 #print(f"How do we get here, {x}, adding empty list")
                 props[x] = []
+                print(f"How do we get here, {x}, adding empty list : {line}")
             #print(f"Now {props[x]} for {x}")
         else:
             return line
+            print(f"END {line}")
 
     # clear out the keys that just have empty lists (or just a single '0')
     empty_keys = []
@@ -332,6 +339,7 @@ def create_scaffold_from_template(lines, test=False):
     # pp.pprint(props)
 
     for key in props.keys():
+        print(f"KEY {key} {props[key]}")
         if key == "0":  # this could map to a list
             # print(f"Found array element {props[key]}")
             y = create_scaffold_from_template(props[key])

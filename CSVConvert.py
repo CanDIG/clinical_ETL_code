@@ -131,18 +131,18 @@ def map_row_to_mcodepacket(identifier, indexed_data, key, node):
 
 
 def translate_mapping(identifier, key, indexed_data, mapping):
-    """Given the identifier field, the data dict, and a particular mapping from 
+    """Given the identifier field, the data dict, and a particular mapping from
     the template file, parse out the mapping method and get the matching data."""
-    
-    # split the mapping into the function name and the raw data fields that 
+
+    # split the mapping into the function name and the raw data fields that
     # are the parameters
-    # e.g. {single_val(submitter_donor_id)} -> match.group(1) = single_val 
+    # e.g. {single_val(submitter_donor_id)} -> match.group(1) = single_val
     # and match.group(2) = submitter_donor_id (may be multiple fields)
     func_match = re.match(r".*\{(.+?)\((.+)\)\}.*", mapping)
     if func_match is not None:  # it's a function, prep the dictionary and exec it
         # get the fields that are the params; separator is a semicolon because
         # we replaced the commas back in process_mapping
-        items = func_match.group(2).split(";") 
+        items = func_match.group(2).split(";")
         data_values = get_data_for_fields(identifier,indexed_data,items)
         return func_match.group(1), data_values
     # else: # try and match the field name exactly
@@ -152,7 +152,7 @@ def translate_mapping(identifier, key, indexed_data, mapping):
     return None, None
 
 def get_data_for_fields(identifier,indexed_data,fields):
-    """Given a list of fields and the indexed_data, return a dictionary of the 
+    """Given a list of fields and the indexed_data, return a dictionary of the
     values for each field"""
     data_values = {}
     for item in fields:
@@ -177,15 +177,16 @@ def get_data_for_fields(identifier,indexed_data,fields):
                     data_values[item][sheet] = data_value
                 else:
                     #print(f"Adding stub from {sheet}.{item}")
-                    data_values[item][sheet] = []   
-    return data_values 
+                    data_values[item][sheet] = []
+    return data_values
 
 def eval_mapping(identifier, indexed_data, key, node):
-    """Given the identifier field, the data, and a particular schema node, evaluate  
-    the mapping using the provider method and return the final JSON for the node 
+    """Given the identifier field, the data, and a particular schema node, evaluate
+    the mapping using the provider method and return the final JSON for the node
     in the schema."""
     method, data_values = translate_mapping(identifier, key, indexed_data, node)
-    # if method is None: 
+    # print(f"{method} {data_values}")
+    # if method is None:
     # # if we have data but no method specified, use a single_val on it
     #     if data_values is None:
     #         return
@@ -235,7 +236,7 @@ def ingest_raw_data(input_path, indexed):
 
 def process_mapping(line, test=False):
     """Given a csv mapping line, process into its component pieces.
-    Turns treatment_type, {list_val(Treatment.submitter_treatment_id)} into 
+    Turns treatment_type, {list_val(Treatment.submitter_treatment_id)} into
     {list_val(Treatment.submitter_treatment_id)},['treatment_type']."""
     line_match = re.match(r"(.+?),(.*$)", line.replace("\"", ""))
     if line_match is not None:
@@ -255,7 +256,7 @@ def process_mapping(line, test=False):
     return line, None
 
 def read_mapping_template(mapping_path):
-    """Given a path to a mapping template file, read the lines and 
+    """Given a path to a mapping template file, read the lines and
     return them as an array."""
     template_lines = []
     try:
@@ -273,9 +274,9 @@ def read_mapping_template(mapping_path):
     return template_lines
 
 def create_scaffold_from_template(lines, test=False):
-    """Given lines from a template mapping csv file, create a scaffold 
+    """Given lines from a template mapping csv file, create a scaffold
     mapping dict."""
-    props = {} 
+    props = {}
     for line in lines:
         if line.startswith("#"):
             # this line is a comment, skip it
@@ -284,13 +285,13 @@ def create_scaffold_from_template(lines, test=False):
             #print(f"skipping {line}")
             continue
         value, elems = process_mapping(line, test)
-        # elems are the first column in the csv, the parts of the schema field, 
+        # elems are the first column in the csv, the parts of the schema field,
         # i.e. Treatment.id becomes [Treatment, id]. value is the mapping function
         if elems is not None:
             # we are creating an array for schema field
             # where each element is a string of "child field,mapping function"
             # or just "mapping function" if no children
-            x = elems.pop(0) 
+            x = elems.pop(0)
             if x not in props:
                 # not seen yet, add empty list
                 props[x] = []
@@ -322,7 +323,7 @@ def create_scaffold_from_template(lines, test=False):
 
     # print(f"Props:")
     # pp = pprint.PrettyPrinter(indent=4)
-    # pp.pprint(props) 
+    # pp.pprint(props)
 
     for key in props.keys():
         if key == "0":  # this could map to a list
@@ -336,7 +337,7 @@ def create_scaffold_from_template(lines, test=False):
 
     if len(props.keys()) == 0:
         return None
-    
+
     return props
 
 
@@ -399,8 +400,8 @@ def main(args):
     manifest_file = args.manifest
     mappings.VERBOSE = args.verbose
     VERBOSE = args.verbose
-    
-    # read manifest data 
+
+    # read manifest data
     manifest = load_manifest(manifest_file)
     identifier = manifest["identifier"]
     indexed = manifest["indexed"]
@@ -408,7 +409,7 @@ def main(args):
         print("Need to specify what the main identifier column name as 'identifier' in the manifest file")
         return
 
-    # read the schema (from the url specified in the manifest) and generate 
+    # read the schema (from the url specified in the manifest) and generate
     # a scaffold
     schema = mohschema(manifest["schema"])
     if schema is None:
@@ -425,6 +426,7 @@ def main(args):
     template_lines = read_mapping_template(manifest["mapping"])
     #map_data(scaffold, schema, template_lines)
     mapping_scaffold = create_scaffold_from_template(template_lines)
+
     # print("Scaffold from template")
     # pp = pprint.PrettyPrinter(indent=4)
     # pp.pprint(mapping_scaffold)

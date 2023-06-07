@@ -192,21 +192,26 @@ def eval_mapping(identifier, indexed_data, key, node):
     #     if data_values is None:
     #         return
     #     method = "single_val"
+    if "mappings" not in mappings.MODULES:
+        mappings.MODULES["mappings"] = importlib.import_module("mappings")
     if method is not None:
-        if "mappings" not in mappings.MODULES:
-            mappings.MODULES["mappings"] = importlib.import_module("mappings")
         module = mappings.MODULES["mappings"]
         # is the function something in a dynamically-loaded module?
         subfunc_match = re.match(r"(.+)\.(.+)", method)
         if subfunc_match is not None:
             module = mappings.MODULES[subfunc_match.group(1)]
             method = subfunc_match.group(2)
-        #print(f"evaluating {key} for {identifier} using {method}")
-        try:
-            return eval(f'module.{method}({data_values})')
-        except mappings.MappingError as e:
-            print(f"Error evaluating {method} for {key}")
-            raise
+        # print(f"evaluating {key} for {identifier} using {method}")
+    else:
+        # print(f"evaluating {key} for {identifier} using {node}")
+        module = mappings.MODULES["mappings"]
+        method = "list_val"
+        data_values = get_data_for_fields(identifier,indexed_data,[node])
+    try:
+        return eval(f'module.{method}({data_values})')
+    except mappings.MappingError as e:
+        print(f"Error evaluating {method} for {key}")
+        raise
 
 
 def ingest_raw_data(input_path, indexed):

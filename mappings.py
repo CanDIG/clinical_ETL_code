@@ -19,7 +19,9 @@ class MappingError(Exception):
 
     def __str__(self):
         global IDENTIFIER
-        return repr(f"Check the values for {IDENTIFIER['id']} in {IDENTIFIER}: {self.value}")
+        if 'id' in IDENTIFIER:
+            return repr(f"Check the values for {IDENTIFIER['id']} in {IDENTIFIER}: {self.value}")
+        return repr(f"{self.value}")
 
 
 # Format a date field to ISO standard
@@ -67,6 +69,19 @@ def single_val(data_values):
 
 # Take a mapping with possibly multiple values from multiple sheets and return an array
 def list_val(data_values):
+    all_items = []
+    if has_value(data_values):
+        col = list(data_values.keys())[0]
+        for sheet in data_values[col].keys():
+            if "list" in str(type(data_values[col][sheet])):
+                all_items.extend(data_values[col][sheet])
+            else:
+                all_items.append(data_values[col][sheet])
+    return all_items
+
+
+# Take a mapping with possibly multiple values from multiple sheets and return an array
+def index_val(data_values):
     all_items = []
     if has_value(data_values):
         col = list(data_values.keys())[0]

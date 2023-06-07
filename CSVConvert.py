@@ -15,6 +15,7 @@ import pprint
 import argparse
 
 from moh_mappings import mohschema
+from generate_schema import generate_mapping_template
 
 VERBOSE = False
 
@@ -388,11 +389,14 @@ def load_manifest(manifest_file):
         "indexed": indexed
     }
 
-def map_data(scaffold, schema, template_lines):
-    print("Mapping data")
-    for k in scaffold.keys():
-        schema_type = schema.get_schema_type(k)
-        print(f"{k} : {schema_type}")
+
+def interpolate_mapping_into_scaffold(mapped_template, scaffold_template):
+    scaffold_keys = list(map(lambda x: x.split(",")[0].strip(), scaffold_template))
+    for mapped_line in mapped_template:
+        mapped_key = mapped_line.split(",")[0].strip()
+        if mapped_key in scaffold_keys:
+            scaffold_template[scaffold_keys.index(mapped_key)] = mapped_line
+    return scaffold_template
 
 
 def main(args):
@@ -416,6 +420,8 @@ def main(args):
         print(f"Did not find an openapi schema at {url}; please check link")
         return
     scaffold = schema.generate_scaffold()
+    sc, mapping_template = generate_mapping_template(schema.generate_schema_array()["DonorWithClinicalData"])
+
     schema_list = list(scaffold)
     if VERBOSE:
         print(f"Imported schemas: {schema_list} from mohschema")
@@ -424,7 +430,11 @@ def main(args):
     # read the mapping template (contains the mapping function for each
     # field)
     template_lines = read_mapping_template(manifest["mapping"])
-    #map_data(scaffold, schema, template_lines)
+
+    ## Replace the lines in the original template with any matching lines in template_lines
+    #interpolate_mapping_into_scaffold(template_lines, mapping_template)
+    # mapping_scaffold = create_scaffold_from_template(mapping_template)
+
     mapping_scaffold = create_scaffold_from_template(template_lines)
 
     # print("Scaffold from template")
@@ -452,6 +462,7 @@ def main(args):
             mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(indexed_data['columns'][col])}")
 
     mcodepackets = []
+    print(json.dumps(mapping_scaffold, indent=2))
     # for each identifier's row, make an mcodepacket
     for key in indexed_data["individuals"]:
         print(f"Creating packet for {key}")

@@ -251,6 +251,8 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
         for node in items:
             for sheet in data_values[node]:
                 index_identifier = f"INDEX_{sheet}_{identifier}"
+                # put back the data for the index_field:
+                data_values["INDEX"][index_identifier][x][f"{sheet}.{index_field}"] = x
                 new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{node}"]
                 data_values[node][sheet] = new_node_val
     try:

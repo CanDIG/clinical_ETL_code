@@ -247,24 +247,21 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
         method = "single_val"
         data_values, items = get_data_for_fields(identifier, index_field, indexed_data, [node])
     if "INDEX" in data_values:
-        result = []
         # find all the relevant keys in index_field:
         for node in items:
             for sheet in data_values[node]:
                 index_identifier = f"INDEX_{sheet}_{identifier}"
                 new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{node}"]
                 data_values[node][sheet] = new_node_val
-                try:
-                    return eval(f'module.{method}({data_values})')
-                except mappings.MappingError as e:
-                    print(f"Error evaluating {method}")
-                    raise
-    else:
-        try:
+    try:
+        if "INDEX" in data_values:
+            data_values.pop("INDEX")
+        # check to see if there are even any data values besides INDEX:
+        if len(data_values.keys()) > 0:
             return eval(f'module.{method}({data_values})')
-        except mappings.MappingError as e:
-            print(f"Error evaluating {method}")
-            raise
+    except mappings.MappingError as e:
+        print(f"Error evaluating {method}")
+        raise
 
 
 def ingest_raw_data(input_path, indexed):

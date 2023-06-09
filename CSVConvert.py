@@ -191,6 +191,7 @@ def translate_mapping(identifier, index_field, indexed_data, mapping):
         # get the fields that are the params; separator is a semicolon because
         # we replaced the commas back in process_mapping
         items = func_match.group(2).split(";")
+        mappings.IDENTIFIER = {"id": identifier}
         data_values, items = get_data_for_fields(identifier, index_field, indexed_data, items)
         if "INDEX" in items:
             items.remove("INDEX")

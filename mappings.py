@@ -21,7 +21,7 @@ class MappingError(Exception):
         global IDENTIFIER
         if 'id' in IDENTIFIER:
             return repr(f"Check the values for {IDENTIFIER['id']} in {IDENTIFIER}: {self.value}")
-        return repr(f"{self.value}")
+        return repr(f"{IDENTIFIER} {self.value}")
 
 
 # Format a date field to ISO standard
@@ -63,7 +63,7 @@ def single_val(data_values):
     if len(all_items) == 0:
         return None
     if len(set(all_items)) > 1:
-        raise MappingError(f"More than one value was found for {list(data_values.keys())[0]}")
+        raise MappingError(f"More than one value was found for {list(data_values.keys())[0]} in {data_values}")
     return all_items[0]
 
 

@@ -80,6 +80,9 @@ def list_val(data_values):
     return all_items
 
 
+def placeholder(data_values):
+    return {"placeholder": data_values}
+
 # Take a mapping with possibly multiple values from multiple sheets and return an array
 def index_val(data_values):
     all_items = []

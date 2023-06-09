@@ -109,10 +109,24 @@ def map_row_to_mcodepacket(identifier, index_field, indexed_data, node, x):
         node = node["NODES"]
         result = []
         if index_field is not None:
+            index_field_match = re.match(r"(.+)\.(.+)", index_field)
+            sheet_name = None
+            if index_field_match is not None:
+                index_field = index_field_match.group(2)
+                sheet_name = index_field_match.group(1)
             # create a new indexed_data for this array of objects:
             # find the sheet that the index_field is on:
-            if index_field in indexed_data["columns"] and len(indexed_data["columns"][index_field]) == 1:
-                sheet = indexed_data["columns"][index_field][0]
+            if index_field in indexed_data["columns"]:
+                sheet_num = 0
+                if sheet_name is not None:
+                    if len(indexed_data["columns"][index_field]) > 0:
+                        try:
+                            sheet_num = indexed_data["columns"][index_field].index(sheet_name)
+                        except Exception as e:
+                            raise Exception(f"No index_field {index_field} in sheet {sheet_name}")
+                    else:
+                        raise Exception(f"multiple possible index_fields named {index_field} in {indexed_data['columns'][index_field]}")
+                sheet = indexed_data["columns"][index_field][sheet_num]
                 new_data = deepcopy(indexed_data["data"][sheet][identifier])
                 new_sheet = f"INDEX_{sheet}_{identifier}"
                 global IDENTIFIER_KEY

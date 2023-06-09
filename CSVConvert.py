@@ -262,13 +262,13 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
         data_values, items = get_data_for_fields(identifier, index_field, indexed_data, [node])
     if "INDEX" in data_values:
         # find all the relevant keys in index_field:
-        for node in items:
-            for sheet in data_values[node]:
+        for item in items:
+            for sheet in data_values[item]:
                 index_identifier = f"INDEX_{sheet}_{identifier}"
                 # put back the data for the index_field:
                 data_values["INDEX"][index_identifier][x][f"{sheet}.{index_field}"] = x
-                new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{node}"]
-                data_values[node][sheet] = new_node_val
+                new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{item}"]
+                data_values[item][sheet] = new_node_val
     try:
         if "INDEX" in data_values:
             data_values.pop("INDEX")

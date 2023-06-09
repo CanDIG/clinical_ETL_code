@@ -18,6 +18,7 @@ from moh_mappings import mohschema
 from generate_schema import generate_mapping_template
 
 VERBOSE = False
+IDENTIFIER_KEY = None
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -98,28 +99,58 @@ def process_data(raw_csv_dfs, identifier):
         "data": final_merged
     }
 
-def map_row_to_mcodepacket(identifier, indexed_data, key, node):
-    """Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive. """
-    print(f"hello {key} {str(type(node))} {node}")
+def map_row_to_mcodepacket(identifier, index_field, indexed_data, node, x):
+    """
+    Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive.
+    If x is not None, it is an index into an object that is part of an array.
+    """
+    if "dict" in str(type(node)) and "INDEX" in node:
+        index_field = node["INDEX"]
+        node = node["NODES"]
+        result = []
+        if index_field is not None:
+            # create a new indexed_data for this array of objects:
+            # find the sheet that the index_field is on:
+            if index_field in indexed_data["columns"] and len(indexed_data["columns"][index_field]) == 1:
+                sheet = indexed_data["columns"][index_field][0]
+                new_data = deepcopy(indexed_data["data"][sheet][identifier])
+                new_sheet = f"INDEX_{sheet}_{identifier}"
+                global IDENTIFIER_KEY
+                if IDENTIFIER_KEY in new_data:
+                    new_data.pop(IDENTIFIER_KEY)
+                # for each index_field value, create a new object of data
+                if "INDEX" not in indexed_data["columns"]:
+                    indexed_data["columns"]["INDEX"] = []
+                indexed_data["columns"]["INDEX"].append(new_sheet)
+                indexed_data["data"][new_sheet] = {}
+                new_ids = new_data.pop(index_field)
+                for i in range(0,len(new_ids)):
+                    new_ident_dict = {}
+                    for key in new_data.keys():
+                        new_ident_dict[f"{sheet}.{key}"] = new_data[key][i]
+                    indexed_data["data"][new_sheet][new_ids[i]] = new_ident_dict
+                    result.append(map_row_to_mcodepacket(identifier, index_field, indexed_data, node, new_ids[i]))
+                return result
+            else:
+                raise Exception(f"couldn't identify index_field {index_field}")
     if "str" in str(type(node)) and node != "":
         if VERBOSE:
-            print(f"Str {identifier},{key},{node}")
-        return eval_mapping(identifier, indexed_data, key, node)
-    elif "list" in str(type(node)):
-        print(node)
+            print(f"Str {identifier},{index_field},{node}")
+        return eval_mapping(identifier, index_field, indexed_data, node, x)
+    if "list" in str(type(node)):
         if VERBOSE:
-            print(f"List {node} as part of {key}")
+            print(f"List {node}")
         # if we get here with a node that can be a list (e.g. Treatments)
         new_node = []
         for item in node:
             if VERBOSE:
                 print(f"Mapping list item {item}")
-            m = map_row_to_mcodepacket(identifier, indexed_data, None, item)
+            m = map_row_to_mcodepacket(identifier, index_field, indexed_data, item, x)
             if "list" in str(type(m)):
                 new_node = m
             else:
                 if VERBOSE:
-                    print(f"Appending {m} for {key}")
+                    print(f"Appending {m}")
                 new_node.append(m)
         return new_node
     elif "dict" in str(type(node)):
@@ -127,13 +158,13 @@ def map_row_to_mcodepacket(identifier, indexed_data, key, node):
         for key in node.keys():
             if VERBOSE:
                 print(f"\nKey {key}")
-            x = map_row_to_mcodepacket(identifier, indexed_data, key, node[key])
-            if x is not None:
-                scaffold[key] = x
+            dict = map_row_to_mcodepacket(identifier, index_field, indexed_data, node[key], x)
+            if dict is not None:
+                scaffold[key] = dict
         return scaffold
 
 
-def translate_mapping(identifier, key, indexed_data, mapping):
+def translate_mapping(identifier, index_field, indexed_data, mapping):
     """Given the identifier field, the data dict, and a particular mapping from
     the template file, parse out the mapping method and get the matching data."""
 
@@ -146,18 +177,26 @@ def translate_mapping(identifier, key, indexed_data, mapping):
         # get the fields that are the params; separator is a semicolon because
         # we replaced the commas back in process_mapping
         items = func_match.group(2).split(";")
-        data_values = get_data_for_fields(identifier,indexed_data,items)
-        return func_match.group(1), data_values
+        data_values, items = get_data_for_fields(identifier, index_field, indexed_data, items)
+        if "INDEX" in items:
+            items.remove("INDEX")
+        return func_match.group(1), data_values, items
     # else: # try and match the field name exactly
     #     data_values = get_data_for_fields(identifier, indexed_data,[key])
     #     if data_values is not None:
     #         return None, data_values
-    return None, None
+    return None, None, None
 
-def get_data_for_fields(identifier,indexed_data,fields):
-    """Given a list of fields and the indexed_data, return a dictionary of the
-    values for each field"""
+def get_data_for_fields(identifier, index_field, indexed_data, fields):
+    """
+    Given a list of fields and the indexed_data, return a dictionary of the
+    values for each field.
+    If index_field is not None, create an INDEX key that lists all the possible values that could use
+    """
     data_values = {}
+    items = []
+    if index_field is not None:
+        fields.append("INDEX")
     for item in fields:
         item = item.strip()
         sheets = None
@@ -168,6 +207,7 @@ def get_data_for_fields(identifier,indexed_data,fields):
             sheets = [sheet_match.group(1).replace('"', '').replace("'", "")]
         # check to see if this item is even present in the columns:
         if item in indexed_data["columns"]:
+            items.append(item)
             data_values[item] = {}
             if sheets is None:
                 # look for all sheets that match this item name:
@@ -176,24 +216,23 @@ def get_data_for_fields(identifier,indexed_data,fields):
                 # for each of these sheets, add this identifier's contents as a key and array:
                 if identifier in indexed_data["data"][sheet]:
                     data_value = indexed_data["data"][sheet][identifier][item]
-                    #print(f"Adding {data_value} from {sheet}.{item}")
                     data_values[item][sheet] = data_value
+                elif item == "INDEX":
+                    data_values[item][sheet] = indexed_data["data"][sheet]
                 else:
-                    #print(f"Adding stub from {sheet}.{item}")
                     data_values[item][sheet] = []
-    return data_values
+    if "INDEX" in items:
+        items.remove("INDEX")
+    return data_values, items
 
-def eval_mapping(identifier, indexed_data, key, node):
-    """Given the identifier field, the data, and a particular schema node, evaluate
+def eval_mapping(identifier, index_field, indexed_data, node, x):
+    """
+    Given the identifier field, the data, and a particular schema node, evaluate
     the mapping using the provider method and return the final JSON for the node
-    in the schema."""
-    method, data_values = translate_mapping(identifier, key, indexed_data, node)
-    # print(f"{method} {data_values}")
-    # if method is None:
-    # # if we have data but no method specified, use a single_val on it
-    #     if data_values is None:
-    #         return
-    #     method = "single_val"
+    in the schema.
+    If x is not None, it is an index into an object that is part of an array.
+    """
+    method, data_values, items = translate_mapping(identifier, index_field, indexed_data, node)
     if "mappings" not in mappings.MODULES:
         mappings.MODULES["mappings"] = importlib.import_module("mappings")
     if method is not None:
@@ -203,17 +242,29 @@ def eval_mapping(identifier, indexed_data, key, node):
         if subfunc_match is not None:
             module = mappings.MODULES[subfunc_match.group(1)]
             method = subfunc_match.group(2)
-        # print(f"evaluating {key} for {identifier} using {method}")
     else:
-        # print(f"evaluating {key} for {identifier} using {node}")
         module = mappings.MODULES["mappings"]
-        method = "list_val"
-        data_values = get_data_for_fields(identifier,indexed_data,[node])
-    try:
-        return eval(f'module.{method}({data_values})')
-    except mappings.MappingError as e:
-        print(f"Error evaluating {method} for {key}")
-        raise
+        method = "single_val"
+        data_values, items = get_data_for_fields(identifier, index_field, indexed_data, [node])
+    if "INDEX" in data_values:
+        result = []
+        # find all the relevant keys in index_field:
+        for node in items:
+            for sheet in data_values[node]:
+                index_identifier = f"INDEX_{sheet}_{identifier}"
+                new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{node}"]
+                data_values[node][sheet] = new_node_val
+                try:
+                    return eval(f'module.{method}({data_values})')
+                except mappings.MappingError as e:
+                    print(f"Error evaluating {method}")
+                    raise
+    else:
+        try:
+            return eval(f'module.{method}({data_values})')
+        except mappings.MappingError as e:
+            print(f"Error evaluating {method}")
+            raise
 
 
 def ingest_raw_data(input_path, indexed):
@@ -286,7 +337,6 @@ def create_scaffold_from_template(lines, test=False):
     mapping dict."""
     props = {}
     for line in lines:
-        print(f"LINE {line}")
         line = line.strip()
         if line.startswith("#"):
             # this line is a comment, skip it
@@ -295,7 +345,6 @@ def create_scaffold_from_template(lines, test=False):
             #print(f"skipping {line}")
             continue
         value, elems = process_mapping(line, test)
-        print(f"POST {value} : {elems}")
         # elems are the first column in the csv, the parts of the schema field,
         # i.e. Treatment.id becomes [Treatment, id]. value is the mapping function
         if elems is not None:
@@ -308,30 +357,28 @@ def create_scaffold_from_template(lines, test=False):
                 props[x] = []
             if len(elems) > 0:
                 tempvar=(".".join(elems)+","+value)
-                print(f"Appending tempvar {tempvar} to props for {x} : {line}")
+                #print(f"Appending tempvar {tempvar} to props for {x} : {line}")
                 props[x].append(".".join(elems)+","+value)
             elif value != "":
-                print(f"Appending value {value} to props for {x} : {line}")
+                #print(f"Appending value {value} to props for {x} : {line}")
                 props[x].append(value)
             else:
-                #print(f"How do we get here, {x}, adding empty list")
-                props[x] = []
-                print(f"How do we get here, {x}, adding empty list : {line}")
+                #print(f"How do we get here, {x}, adding empty list : {line}")
+                props[x] = [x]
             #print(f"Now {props[x]} for {x}")
         else:
             return line
-            print(f"END {line}")
 
     # clear out the keys that just have empty lists (or just a single '0')
-    empty_keys = []
-    for key in props.keys():
-        if len(props[key]) == 0:
-            empty_keys.append(key)
-        if len(props[key]) == 1 and props[key][0] == '0,':
-            print(f"did we get here for {key}?")
-            empty_keys.append(key)
-    for key in empty_keys:
-        props.pop(key)
+    # empty_keys = []
+    # for key in props.keys():
+    #     if len(props[key]) == 0:
+    #         empty_keys.append(key)
+    #     if len(props[key]) == 1 and props[key][0] == '0,':
+    #         print(f"did we get here for {key}?")
+    #         empty_keys.append(key)
+    # for key in empty_keys:
+    #     props.pop(key)
     #print(f"Cleared empty keys {empty_keys}")
 
     # print(f"Props:")
@@ -339,13 +386,20 @@ def create_scaffold_from_template(lines, test=False):
     # pp.pprint(props)
 
     for key in props.keys():
-        print(f"KEY {key} {props[key]}")
         if key == "0":  # this could map to a list
+            index = None
+            first_key = props[key].pop(0)
+            index_match = re.match(r"\{indexed_on\((.+)\)\}", first_key)
+            if index_match is not None:
+                index = index_match.group(1)
+            else:
+                props[key].insert(0, first_key)
             # print(f"Found array element {props[key]}")
             y = create_scaffold_from_template(props[key])
             # print(f"What is {y}")
             if y is not None:
-                return [y]
+                # return [y]
+                return {"INDEX": index, "NODES": y}
             return None
         props[key] = create_scaffold_from_template(props[key])
 
@@ -425,6 +479,8 @@ def main(args):
     if identifier is None:
         print("Need to specify what the main identifier column name as 'identifier' in the manifest file")
         return
+    global IDENTIFIER_KEY
+    IDENTIFIER_KEY = identifier
 
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold
@@ -475,17 +531,19 @@ def main(args):
             mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(indexed_data['columns'][col])}")
 
     mcodepackets = []
-    print(json.dumps(mapping_scaffold, indent=2))
     # for each identifier's row, make an mcodepacket
     for key in indexed_data["individuals"]:
         print(f"Creating packet for {key}")
         mcodepackets.append(map_row_to_mcodepacket(
-            key, indexed_data, None, deepcopy(mapping_scaffold))
+            key, None, indexed_data, deepcopy(mapping_scaffold), None)
             )
 
     # # special case: if it was candigv1, we need to wrap the results in "metadata"
     # # if schema == "candigv1":
     # #     mcodepackets = {"metadata": mcodepackets}
+
+    with open(f"{output_file}_indexed.json", 'w') as f:
+        json.dump(indexed_data, f, indent=4)
 
     with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(mcodepackets, f, indent=4)

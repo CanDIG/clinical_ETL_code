@@ -101,6 +101,7 @@ def main(args):
         # f.write("## (.0 is an array element) (* is required) (+ denotes ontology term),\n")
         for nn in node_names:
             f.write(f"{nn}\n")
+    print(f"Template written to {outputfile}")
     return
 
 if __name__ == '__main__':

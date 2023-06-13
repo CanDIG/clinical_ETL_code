@@ -35,7 +35,6 @@ def generate_mapping_template(node, node_name="", node_names=None):
                 if x_match.group(1) not in node_name:
                     node_names.append(x)
                 elif x.endswith(".INDEX,"):
-                    print(x)
                     node_names.append(x)
             else:
                 node_names.append(x)

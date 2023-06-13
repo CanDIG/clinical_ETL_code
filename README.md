@@ -1,16 +1,68 @@
 # clinical_ETL_code
 
-This repository converts MoH clinical data into the packet format needed for katsu.
+This repository converts input csv files with clinical (phenotypic) data into a json aligned with a provided openapi schema. You can provide custom mapping functions to transform data in your input file before writing to the json.
+
+Specifically, this code was designed to convert clinical data for the MOHCCN project into the packet format needed for ingest into CanDIG's clinical data service (katsu).
 
 ## Set-up & Installation
 Prerequisites:
 - [Python 3.6+](https://www.python.org/)
 - [pip](https://github.com/pypa/pip/)
 
-## Creating a mapping
-You'll need to create a mapping scheme for converting your raw data into the json packets for use by katsu. Mappings for existing CanDIG cohorts and ingesters are located in a [private repository](https://github.com/CanDIG/clinical_ETL_data); the following instructions will help you create a new mapping.
 
-#### 1. Generate a schema for the desired version of katsu:
+## Running from the command line
+
+Most of the heavy lifting is done in the CSVConvert.py script. See sections below for setting up the inputs. This script:
+* reads an file (.xlsx or .csv) or a directory of files (csv)
+* reads a template file that contains a list of fields and (if needed) a mapping function
+* for each field for each patient, applies the mapping function to transform the raw data into valid model data
+* exports the data into a json file(s) appropriate for ingest
+
+```
+$ python CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file]
+
+--input: path to dataset to be converted to data model
+
+--manifest: Path to a manifest file with settings for the ETL
+```
+
+The output packets (`INPUT_map.json` and `INPUT_indexed.json`) will be in the parent of the `INPUT` directory / file.
+
+## Input file format
+
+The input for CSVConvert is either a single xlsx file, a single csv, or a directory of csvs. If providing a spreadsheet, there can be multiple sheets (usually one for each sub-schema).
+
+All rows must contain identifiers that allow linkage to the containing schema, for example, a row that describes a Treatment must have a link to the Donor / Patient id for that Treatment.
+
+Data should be (tidy)[https://r4ds.had.co.nz/tidy-data.html], with each variable in a separate column, each row representing an observation, and a single data entry in each cell.
+
+Depending on the format of your raw data, you may need to write an additional tidying script to pre-process. For example, the `ingest_redcap_data.py` converts the export format from redcap into a set of input csvs for CSVConvert.
+
+## Setting up a cohort directory
+
+For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `data` repository. This cohort directory should contain:
+
+* a `manifest.yml` file with settings for the mapping
+* the template file lists custom mappings for each field
+* (if needed) a python file that implements any cohort-specific mapping functions
+
+**Important:** If you are placing this directory under version control and the cohort is not sample / synthetic data, do not place raw or processed data files in this directory, to avoid any possibility of committing protected data.
+
+## Manifest file
+The `manifest.yml` file contains settings for the cohort mapping. There is a sample file in `sample_inputs/manifest.yml` with documentation. The fields are:
+
+```
+description: A brief description
+mapping: the csv file that lists the mappings for each field
+identifier: submitter_donor_id
+schema: a URL to the openapi schema file
+functions:
+  - cohort-mapping-functions
+```
+## Mapping template
+
+You'll need to create a mapping template that defines which mapping functions (if any) should be used for which fields.
+
 The `generate_template.py` script will generate a template file based an openapi.yaml file.
 
 ```
@@ -26,6 +78,9 @@ options:
 
 For using katsu with the current MoHCCN data model, the URL to the schema is https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml (note raw github url).
 
+For each line in the mapping template, specify any mapping required to convert your input data to the align with the schema. See the [mapping instructions](mapping_functions.md) for detailed documentation on filling out the template.
+
+**Note**: If your input data aligns perfectly with the schema (the column names are exact and unambiguous, and the field data matches the format specified by the schema), you do not need to modify the entry for that field.
 
 #### 2. Fill in the fields in the template files by naming your mapping functions and their input.
 Example:

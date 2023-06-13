@@ -1,11 +1,42 @@
 # clinical_ETL_code
 
-This repository converts MoH clinical data into the packet format needed for katsu.
+This repository converts input csv files with clinical (phenotypic) data into a json aligned with a provided openapi schema. You can provide custom mapping functions to transform data in your input file before writing to the json. 
+
+Specifically, this code was designed to convert clinical data for the MOHCCN project into the packet format needed for ingest into CanDIG's clinical data service (katsu).
 
 ## Set-up & Installation
 Prerequisites:
 - [Python 3.6+](https://www.python.org/)
 - [pip](https://github.com/pypa/pip/)
+
+
+## Running from the command line
+
+Most of the heavy lifting is done in the CSVConvert.py script. This script:
+* reads an file (.xlsx or .csv) or a directory of files (csv)
+* reads a template file that contains a list of fields and (if needed) a mapping function
+* for each field for each patient, applies the mapping function to transform the raw data into valid model data
+* exports the data into a json file(s) appropriate for ingest
+
+```
+$ python CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file]
+
+--input: path to dataset to be converted to data model
+
+--manifest: Path to a manifest file with settings for the ETL
+```
+
+The output packets (`INPUT_map.json` and `INPUT_indexed.json`) will be in the parent of the `INPUT` directory.
+
+## Input file format
+
+The input for CSVConvert is either a single xlsx file, a single csv, or a directory of csvs. If providing a spreadsheet, there can be multiple sheets (usually one for each sub-schema).
+
+All rows must contain identifiers that allow linkage to the containing schema, for example, a row that describes a Treatment must have a link to the Donor / Patient id for that Treatment. 
+
+Data should be (tidy)[https://r4ds.had.co.nz/tidy-data.html], with each variable in a separate column, each row representing an observation, and a single data entry in each cell. 
+
+Depending on the format of your input data, you may need to write an additional tidying script to pre-process. For example, the `ingest_redcap_data.py` converts the export format from redcap into a set of input csvs for CSVConvert. 
 
 ## Creating a mapping
 You'll need to create a mapping scheme for converting your raw data into the json packets for use by katsu. Mappings for existing CanDIG cohorts and ingesters are located in a [private repository](https://github.com/CanDIG/clinical_ETL_data); the following instructions will help you create a new mapping.
@@ -188,34 +219,6 @@ sheets:
 indexed:
       - Diagnosis
 ```
-
-## Running from command line
-`$ python clinical_ETL_code/CSVConvert.py [-h] [--input INPUT] [--template TEMPLATE] [--mapping|manifest MAPPING]`
-
---input: path to dataset to be converted to MoH data model
-
---template: If provided, generate a mapping template at the specified file (only needed if you are creating a new template sheet)
-
---mapping or --manifest: Path to a manifest file describing the mapping
-
-
-## Converting csvs to ingest packets
-
-Most of the heavy lifting is done in the CSVConvert.py script. This script:
-* reads an input directory of xlsx or csv files (if xlsx, converts them to csv)
-* reads a template file that contains a list of fields and (if needed) a mapping function
-* for each field for each patient, applies the mapping function to transform the raw data into valid model data
-* exports the data into a json file(s) appropriate for ingest
-
-```
-$ python CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file]
-
---input: path to dataset to be converted to data model
-
---manifest: Path to a manifest file with settings for the ETL
-```
-
-The output packets (`INPUT_map.json` and `INPUT_indexed.json`) will be in the parent of the `INPUT` directory.
 
 
 ## Testing

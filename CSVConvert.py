@@ -384,12 +384,12 @@ def create_scaffold_from_template(lines, test=False):
         else:
             return line
 
-    # clear out the keys that just have empty lists (or just a single '0')
+    # clear out the keys that just have empty lists (or just a single 'INDEX')
     # empty_keys = []
     # for key in props.keys():
     #     if len(props[key]) == 0:
     #         empty_keys.append(key)
-    #     if len(props[key]) == 1 and props[key][0] == '0,':
+    #     if len(props[key]) == 1 and props[key][0] == 'INDEX,':
     #         print(f"did we get here for {key}?")
     #         empty_keys.append(key)
     # for key in empty_keys:
@@ -401,7 +401,7 @@ def create_scaffold_from_template(lines, test=False):
     # pp.pprint(props)
 
     for key in props.keys():
-        if key == "0":  # this could map to a list
+        if key == "INDEX":  # this could map to a list
             index = None
             first_key = props[key].pop(0)
             index_match = re.match(r"\{indexed_on\((.+)\)\}", first_key)

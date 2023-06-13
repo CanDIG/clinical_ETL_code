@@ -52,8 +52,6 @@ Note that you can specify the particular field from a particular raw input sheet
 - Entries that contain additional `.entry` parts represent nesting properties in a dictionary:
 
 ```
-##prop_a,
-##prop_a.prop_b,
 prop_a.prop_b.prop_c, {single_val(dataval_c)}
 prop_a.prop_b.prop_d, {single_val(dataval_d)}
 
@@ -76,7 +74,6 @@ Note that in this example, the entries for `prop_a` and `prop_b` are listed as i
 
 You can explicitly create a dictionary based on multiple raw data values and have the mapping method's return value overwrite the rest of the entries in the dictionary. Using the same example as above:
 ```
-##prop_a,
 prop_a.prop_b, {my_mapping_func(dataval_c, dataval_d)}
 
 with
@@ -102,12 +99,12 @@ represents the following JSON dict:
 ```
 </details>
 
-- Entries that end with a 0 in the name represent arrays: if there are subsequent entries after the first line ending with 0, this represents an array of dicts. The first entry ending in 0 can be mapped to an index field using the `{indexed_on(FIELD)}` notation. Any subsequent subentries in the dict will be mapped into the corresponding dict in the array.
+- Entries that end with `INDEX` in the name represent arrays: if there are subsequent entries after the first line ending with `INDEX`, this represents an array of dicts. The first entry ending in `INDEX` can be mapped to an index field using the `{indexed_on(FIELD)}` notation. Any subsequent subentries in the dict will be mapped into the corresponding dict in the array.
 
 ```
-prop_a.0
-prop_a.0.prop_b
-prop_a.0.prop_c
+prop_a.INDEX
+prop_a.INDEX.prop_b
+prop_a.INDEX.prop_c
 
 represents the following JSON:
 

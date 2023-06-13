@@ -45,7 +45,7 @@ def generate_mapping_template(node, node_name="", node_names=None):
     if "str" in str(type(node)):
         return "string", node_names
     elif "list" in str(type(node)):
-        new_node_name = ".".join((node_name, "0"))
+        new_node_name = ".".join((node_name, "INDEX"))
         sc, nn = generate_mapping_template(node[0], new_node_name, node_names)
         return [sc], nn
     elif "number" in str(type(node)) or "integer" in str(type(node)):
@@ -98,7 +98,7 @@ def main(args):
     with open(outputfile, 'w') as f:  # write to csv file for mapping
         f.write(metadata)
         f.write("## mohpacket element, description (overwrite with mapped element)\n")
-        # f.write("## (.0 is an array element) (* is required) (+ denotes ontology term),\n")
+        # f.write("## (.INDEX is an array element) (* is required) (+ denotes ontology term),\n")
         for nn in node_names:
             f.write(f"{nn}\n")
     print(f"Template written to {outputfile}")

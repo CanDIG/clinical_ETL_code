@@ -128,6 +128,9 @@ def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, n
                     else:
                         raise Exception(f"multiple possible index_fields named {index_field} in {indexed_data['columns'][index_field]}")
                 sheet = indexed_data["columns"][index_field][sheet_num]
+                if identifier not in indexed_data["data"][sheet]:
+                    print(f"WARNING: {identifier} not present in sheet {sheet}")
+                    return None
                 new_data = deepcopy(indexed_data["data"][sheet][identifier])
                 new_sheet = f"INDEX_{sheet}_{identifier}"
                 if "INDEX" not in indexed_data["columns"]:

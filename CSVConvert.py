@@ -98,7 +98,7 @@ def process_data(raw_csv_dfs, identifier):
         "data": final_merged
     }
 
-def map_row_to_mcodepacket(identifier, index_field, indexed_data, node, x):
+def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, node, x):
     """
     Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive.
     If x is not None, it is an index into an object that is part of an array.
@@ -108,6 +108,8 @@ def map_row_to_mcodepacket(identifier, index_field, indexed_data, node, x):
         node = node["NODES"]
         result = []
         if index_field is not None:
+            if mappings.VERBOSE:
+                print(f"Indexing {index_field} on {current_key}")
             index_field_match = re.match(r"(.+)\.(.+)", index_field)
             sheet_name = None
             if index_field_match is not None:
@@ -143,24 +145,30 @@ def map_row_to_mcodepacket(identifier, index_field, indexed_data, node, x):
                         new_ident_dict[f"{sheet}.{key}"] = new_data[key][i]
                     indexed_data["data"][new_sheet][new_ids[i]] = new_ident_dict
                     if mappings.VERBOSE:
-                        print(f"NODE {node} {i} {new_ids[i]}")
-                    result.append(map_row_to_mcodepacket(identifier, index_field, indexed_data, node, new_ids[i]))
+                        print(f"Appending {new_ids[i]} to {current_key}")
+                    result.append(map_row_to_mcodepacket(identifier, index_field, f"{current_key}.INDEX", indexed_data, node, new_ids[i]))
                 return result
             else:
                 raise Exception(f"couldn't identify index_field {index_field}")
+        else:
+            raise Exception(f"An indexed_on notation is required for {current_key}")
     if "str" in str(type(node)) and node != "":
         if mappings.VERBOSE:
-            print(f"Str {identifier},{index_field},{node}")
+            index_str = ""
+            if index_field is not None:
+                index_str = f" for index {index_field}"
+            print(f"Evaluating {node}{index_str}")
         return eval_mapping(identifier, index_field, indexed_data, node, x)
     if "list" in str(type(node)):
         if mappings.VERBOSE:
-            print(f"List {node}")
+            print(f"List {current_key}")
         # if we get here with a node that can be a list (e.g. Treatments)
         new_node = []
         for item in node:
+            new_key = f"{current_key}.{item}"
             if mappings.VERBOSE:
-                print(f"Mapping list item {item}")
-            m = map_row_to_mcodepacket(identifier, index_field, indexed_data, item, x)
+                print(f"Mapping list item {new_key}")
+            m = map_row_to_mcodepacket(identifier, index_field, new_key, indexed_data, item, x)
             if "list" in str(type(m)):
                 new_node = m
             else:
@@ -171,9 +179,12 @@ def map_row_to_mcodepacket(identifier, index_field, indexed_data, node, x):
     elif "dict" in str(type(node)):
         scaffold = {}
         for key in node.keys():
+            # if we're starting at the root, there will be a leading ROOT and .; we should remove those.
+            # (we add "ROOT" at the start so that we can differentiate the leading "." in replace())
+            new_key = f"{current_key}.{key}".replace("ROOT.", "")
             if mappings.VERBOSE:
-                print(f"\nKey {key}")
-            dict = map_row_to_mcodepacket(identifier, index_field, indexed_data, node[key], x)
+                print(f"\nMapping line {new_key}")
+            dict = map_row_to_mcodepacket(identifier, index_field, new_key, indexed_data, node[key], x)
             if dict is not None:
                 scaffold[key] = dict
         return scaffold
@@ -263,13 +274,16 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
         method = "single_val"
         data_values, items = get_data_for_fields(identifier, index_field, indexed_data, [node])
         if mappings.VERBOSE:
-            print(f"Default mapping for {identifier} {index_field} {node}")
+            print(f"Defaulting to single_val({node})")
     if "INDEX" in data_values:
         # find all the relevant keys in index_field:
         for item in items:
             for sheet in data_values[item]:
                 index_identifier = f"INDEX_{sheet}_{identifier}"
                 if index_identifier in indexed_data['columns']['INDEX']:
+                    if mappings.VERBOSE:
+                        print(f"Populating data values for {item}, based on index {x}")
+
                     # put back the data for the index_field:
                     data_values["INDEX"][index_identifier][x][f"{sheet}.{index_field}"] = x
                     new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{item}"]
@@ -552,7 +566,7 @@ def main(args):
     for key in indexed_data["individuals"]:
         print(f"Creating packet for {key}")
         mcodepackets.append(map_row_to_mcodepacket(
-            key, None, indexed_data, deepcopy(mapping_scaffold), None)
+            key, None, "ROOT", indexed_data, deepcopy(mapping_scaffold), None)
             )
 
     # # special case: if it was candigv1, we need to wrap the results in "metadata"

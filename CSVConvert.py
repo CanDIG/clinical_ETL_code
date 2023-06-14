@@ -17,7 +17,6 @@ import argparse
 from moh_mappings import mohschema
 from generate_schema import generate_mapping_template
 
-VERBOSE = False
 IDENTIFIER_KEY = None
 
 def parse_args():
@@ -143,34 +142,36 @@ def map_row_to_mcodepacket(identifier, index_field, indexed_data, node, x):
                     for key in new_data.keys():
                         new_ident_dict[f"{sheet}.{key}"] = new_data[key][i]
                     indexed_data["data"][new_sheet][new_ids[i]] = new_ident_dict
+                    if mappings.VERBOSE:
+                        print(f"NODE {node} {i} {new_ids[i]}")
                     result.append(map_row_to_mcodepacket(identifier, index_field, indexed_data, node, new_ids[i]))
                 return result
             else:
                 raise Exception(f"couldn't identify index_field {index_field}")
     if "str" in str(type(node)) and node != "":
-        if VERBOSE:
+        if mappings.VERBOSE:
             print(f"Str {identifier},{index_field},{node}")
         return eval_mapping(identifier, index_field, indexed_data, node, x)
     if "list" in str(type(node)):
-        if VERBOSE:
+        if mappings.VERBOSE:
             print(f"List {node}")
         # if we get here with a node that can be a list (e.g. Treatments)
         new_node = []
         for item in node:
-            if VERBOSE:
+            if mappings.VERBOSE:
                 print(f"Mapping list item {item}")
             m = map_row_to_mcodepacket(identifier, index_field, indexed_data, item, x)
             if "list" in str(type(m)):
                 new_node = m
             else:
-                if VERBOSE:
+                if mappings.VERBOSE:
                     print(f"Appending {m}")
                 new_node.append(m)
         return new_node
     elif "dict" in str(type(node)):
         scaffold = {}
         for key in node.keys():
-            if VERBOSE:
+            if mappings.VERBOSE:
                 print(f"\nKey {key}")
             dict = map_row_to_mcodepacket(identifier, index_field, indexed_data, node[key], x)
             if dict is not None:
@@ -261,6 +262,8 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
         module = mappings.MODULES["mappings"]
         method = "single_val"
         data_values, items = get_data_for_fields(identifier, index_field, indexed_data, [node])
+        if mappings.VERBOSE:
+            print(f"Default mapping for {identifier} {index_field} {node}")
     if "INDEX" in data_values:
         # find all the relevant keys in index_field:
         for item in items:
@@ -485,7 +488,6 @@ def main(args):
     input_path = args.input
     manifest_file = args.manifest
     mappings.VERBOSE = args.verbose
-    VERBOSE = args.verbose
 
     # read manifest data
     manifest = load_manifest(manifest_file)
@@ -507,7 +509,7 @@ def main(args):
     sc, mapping_template = generate_mapping_template(schema.generate_schema_array()["DonorWithClinicalData"])
 
     schema_list = list(scaffold)
-    if VERBOSE:
+    if mappings.VERBOSE:
         print(f"Imported schemas: {schema_list} from mohschema")
 
 

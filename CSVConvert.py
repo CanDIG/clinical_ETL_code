@@ -148,6 +148,8 @@ def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, n
                         print(f"Appending {new_ids[i]} to {current_key}")
                     result.append(map_row_to_mcodepacket(identifier, index_field, f"{current_key}.INDEX", indexed_data, node, new_ids[i]))
                 return result
+            elif index_field == "NONE":
+                return None
             else:
                 raise Exception(f"couldn't identify index_field {index_field}")
         else:

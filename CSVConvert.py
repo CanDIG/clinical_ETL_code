@@ -80,12 +80,12 @@ def process_data(raw_csv_dfs, identifier):
                 for k in row.keys():
                     merged_dict[i][k.strip()].append(row[k])
             # for the identifier key, just pick one, since they're all the same:
-            merged_dict[i][identifier] = merged_dict[i][identifier].pop()
+            merged_dict[i][identifier] = [merged_dict[i][identifier].pop()]
 
         # Now we can clean up the dicts: index them by identifier instead of int
         indexed_merged_dict = {}
         for i in range(0, len(merged_dict.keys())):
-            indiv = merged_dict[i][identifier]
+            indiv = merged_dict[i][identifier][0]
             indexed_merged_dict[indiv] = merged_dict[i]
             if indiv not in individuals:
                 individuals.append(indiv)
@@ -130,10 +130,6 @@ def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, n
                 sheet = indexed_data["columns"][index_field][sheet_num]
                 new_data = deepcopy(indexed_data["data"][sheet][identifier])
                 new_sheet = f"INDEX_{sheet}_{identifier}"
-                global IDENTIFIER_KEY
-                if IDENTIFIER_KEY in new_data:
-                    new_data.pop(IDENTIFIER_KEY)
-                # for each index_field value, create a new object of data
                 if "INDEX" not in indexed_data["columns"]:
                     indexed_data["columns"]["INDEX"] = []
                 indexed_data["columns"]["INDEX"].append(new_sheet)
@@ -142,7 +138,11 @@ def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, n
                 for i in range(0,len(new_ids)):
                     new_ident_dict = {}
                     for key in new_data.keys():
-                        new_ident_dict[f"{sheet}.{key}"] = new_data[key][i]
+                        global IDENTIFIER_KEY
+                        if key == IDENTIFIER_KEY:
+                            new_ident_dict[f"{sheet}.{key}"] = new_data[key][0]
+                        else:
+                            new_ident_dict[f"{sheet}.{key}"] = new_data[key][i]
                     indexed_data["data"][new_sheet][new_ids[i]] = new_ident_dict
                     if mappings.VERBOSE:
                         print(f"Appending {new_ids[i]} to {current_key}")
@@ -245,11 +245,11 @@ def get_data_for_fields(identifier, index_field, indexed_data, fields):
                 sheets = indexed_data["columns"][item]
             for sheet in sheets:
                 # for each of these sheets, add this identifier's contents as a key and array:
-                if identifier in indexed_data["data"][sheet]:
+                if item == "INDEX":
+                    data_values[item][sheet] = indexed_data["data"][sheet]
+                elif identifier in indexed_data["data"][sheet]:
                     data_value = indexed_data["data"][sheet][identifier][item]
                     data_values[item][sheet] = data_value
-                elif item == "INDEX":
-                    data_values[item][sheet] = indexed_data["data"][sheet]
                 else:
                     data_values[item][sheet] = []
     if "INDEX" in items:
@@ -563,10 +563,10 @@ def main(args):
 
     mcodepackets = []
     # for each identifier's row, make an mcodepacket
-    for key in indexed_data["individuals"]:
-        print(f"Creating packet for {key}")
+    for indiv in indexed_data["individuals"]:
+        print(f"Creating packet for {indiv}")
         mcodepackets.append(map_row_to_mcodepacket(
-            key, None, "ROOT", indexed_data, deepcopy(mapping_scaffold), None)
+            indiv, None, "ROOT", indexed_data, deepcopy(mapping_scaffold), None)
             )
 
     # # special case: if it was candigv1, we need to wrap the results in "metadata"

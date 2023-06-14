@@ -5,6 +5,8 @@ import yaml
 import json
 import re
 import mappings
+from copy import deepcopy
+
 
 """
 The top-level keys of the schema are:
@@ -28,6 +30,15 @@ class mohschema:
         # version and get schema from local file? (delete repo afterwards)
         resp = requests.get(url)
 
+        # rudimentary test that we have found something that looks like an openapi schema
+        # would be better to formally validate
+        schema = yaml.safe_load(resp.text)
+
+        if not "openapi" in schema:
+            print("Error: does not seem to be an openapi schema")
+            schema = None
+        self.schema = schema["components"]["schemas"]
+
         # save off all the component schemas into a "defs" component that can be passed into a jsonschema validation
         defs = set()
         schema_text = resp.text.split("\n")
@@ -35,18 +46,20 @@ class mohschema:
             ref_match = re.match(r"(.*\$ref:) *(.+)$", schema_text[i])
             if ref_match is not None:
                 schema_text[i] = schema_text[i].replace("#/components/schemas/", "#/$defs/")
+                # print(ref_match.group(2).strip('\"').strip("\'").replace("#/components/schemas/", ""))
                 defs.add(ref_match.group(2).strip('\"').strip("\'").replace("#/components/schemas/", ""))
 
-        schema = yaml.safe_load("\n".join(schema_text))
-        # rudimentary test that we have found something that looks like an openapi schema
-        # would be better to formally validate
-        if not "openapi" in schema:
-            print("Error: does not seem to be an openapi schema")
-            schema = None
-        self.schema = schema["components"]["schemas"]
+        self.json_schema = yaml.safe_load("\n".join(schema_text))["components"]["schemas"]
         self.defs = {}
         for d in defs:
-            self.defs[d] = self.schema[d]
+            self.defs[d] = self.json_schema[d]
+
+
+    def get_json_schema(self, schema_name):
+        result = deepcopy(self.json_schema[schema_name])
+        result["$defs"] = self.defs
+        return result
+
 
 
     def expand_ref(self, ref):

@@ -50,8 +50,7 @@ def main(args):
         print(f"Did not find an openapi schema at {url}; please check link")
         return
 
-    components = deepcopy(schema.schema)["DonorWithClinicalData"]
-    components["$defs"] = schema.defs
+    components = schema.get_json_schema("DonorWithClinicalData")
     result = jsonschema.validate(map_json[0], components)
     print(result)
     return

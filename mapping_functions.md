@@ -14,7 +14,7 @@ The `INDEX` after the field name indicates that there can be multiple instances,
 
 `primary_diagnoses.INDEX.specimens.INDEX.tumour_grade,`
 
-Entries that begin with `##` are informational. 
+Entries that begin with `##` are informational.
 
 ## Defining mapping functions
 
@@ -28,9 +28,9 @@ You define mappings by adding a `{function}` after the last comma in the line. D
 
 ## Perfectly matching data
 
-If your input data aligns perfectly with the schema (the column names are exact and unambiguous, and the field data matches the format specified by the schema), you do not need to add a mapping function for that field. 
+If your input data aligns perfectly with the schema (the column names are exact and unambiguous, and the field data matches the format specified by the schema), you do not need to add a mapping function for that field.
 
-For example, if the schema defines a field called `gender` with permissible values `[Man, Woman, Non-binary]` and your input file contains a field called `gender` with only these values, you do not have to add a mapping function. 
+For example, if the schema defines a field called `gender` with permissible values `[Man, Woman, Non-binary]` and your input file contains a field called `gender` with only these values, you do not have to add a mapping function.
 
 
 ### Aligning field names
@@ -57,17 +57,20 @@ You need to specify the indexing field for primary diagnosis. This field needs t
 
 `primary_diagnoses.INDEX,{Indexed_on(submitted_primary_diagnosis_id)}`
 
+If your schema doesn't contain any instances of a particular indexed field, you can specify `NONE`:
+`{indexed_on(NONE)}`
+
 
 ## Transforming data using standard functions
 
-In addition to mapping column names, you can also transform the values inside the cells to make them align with the schema. We've already seen the simplest case - the `single_val` function takes a single value for the named field and returns it (and should only be used when you expect one single value). 
+In addition to mapping column names, you can also transform the values inside the cells to make them align with the schema. We've already seen the simplest case - the `single_val` function takes a single value for the named field and returns it (and should only be used when you expect one single value).
 
-The standard functions are defined in `mappings.py`. They include functions for handling single values, list values, dates, and booleans. 
+The standard functions are defined in `mappings.py`. They include functions for handling single values, list values, dates, and booleans.
 
 
 ## Writing your own custom functions
 
-If the data cannot be transformed with one of the standard functions, you can define your own. In your data directory (the one that contains `manifest.yml`) create a python file (let's assume you called it `new_cohort.py`) and add the name of that file as the `mapping` entry in the manifest. 
+If the data cannot be transformed with one of the standard functions, you can define your own. In your data directory (the one that contains `manifest.yml`) create a python file (let's assume you called it `new_cohort.py`) and add the name of that file as the `mapping` entry in the manifest.
 
 Following the format in the generic `mappings.py`, write your own functions in your python file for how to translate the data. To specify a custom mapping function in the template:
 
@@ -81,7 +84,7 @@ To map input values to output values (in case your data capture used different v
 def sex(data_value):
     # make sure we only have one value
     mapping_val = mappings.single_val(data_value)
-    
+
     sex_dict = {
         'Female': 'F',
         'Male': 'M',

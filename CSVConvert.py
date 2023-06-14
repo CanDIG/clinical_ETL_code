@@ -289,9 +289,12 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
                         print(f"Populating data values for {item}, based on index {x}")
 
                     # put back the data for the index_field:
-                    data_values["INDEX"][index_identifier][x][f"{sheet}.{index_field}"] = x
-                    new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{item}"]
-                    data_values[item][sheet] = new_node_val
+                    if x not in data_values["INDEX"][index_identifier]:
+                        print(f"ERROR: {x} not in {sheet}.{index_field}")
+                    else:
+                        data_values["INDEX"][index_identifier][x][f"{sheet}.{index_field}"] = x
+                        new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{item}"]
+                        data_values[item][sheet] = new_node_val
     try:
         if "INDEX" in data_values:
             data_values.pop("INDEX")

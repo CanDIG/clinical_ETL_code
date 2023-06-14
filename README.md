@@ -1,6 +1,6 @@
 # clinical_ETL_code
 
-This repository converts input csv files with clinical (phenotypic) data into a json aligned with a provided openapi schema. You can provide custom mapping functions to transform data in your input file before writing to the json.
+This repository converts input csv files with clinical (phenotypic) data into a json aligned with a provided openapi schema. You can provide custom mapping functions to transform data in your input file before writing to the json. 
 
 Specifically, this code was designed to convert clinical data for the MOHCCN project into the packet format needed for ingest into CanDIG's clinical data service (katsu).
 
@@ -30,13 +30,13 @@ The output packets (`INPUT_map.json` and `INPUT_indexed.json`) will be in the pa
 
 ## Input file format
 
-The input for CSVConvert is either a single xlsx file, a single csv, or a directory of csvs. If providing a spreadsheet, there can be multiple sheets (usually one for each sub-schema).
+The input for CSVConvert is either a single xlsx file, a single csv, or a directory of csvs. If providing a spreadsheet, there can be multiple sheets (usually one for each sub-schema). 
 
-All rows must contain identifiers that allow linkage to the containing schema, for example, a row that describes a Treatment must have a link to the Donor / Patient id for that Treatment.
+All rows must contain identifiers that allow linkage to the containing schema, for example, a row that describes a Treatment must have a link to the Donor / Patient id for that Treatment. 
 
-Data should be (tidy)[https://r4ds.had.co.nz/tidy-data.html], with each variable in a separate column, each row representing an observation, and a single data entry in each cell.
+Data should be (tidy)[https://r4ds.had.co.nz/tidy-data.html], with each variable in a separate column, each row representing an observation, and a single data entry in each cell. 
 
-Depending on the format of your raw data, you may need to write an additional tidying script to pre-process. For example, the `ingest_redcap_data.py` converts the export format from redcap into a set of input csvs for CSVConvert.
+Depending on the format of your raw data, you may need to write an additional tidying script to pre-process. For example, the `ingest_redcap_data.py` converts the export format from redcap into a set of input csvs for CSVConvert. 
 
 ## Setting up a cohort directory
 
@@ -46,9 +46,9 @@ For each dataset (cohort) that you want to convert, create a directory outside o
 * the template file lists custom mappings for each field
 * (if needed) a python file that implements any cohort-specific mapping functions
 
-**Important:** If you are placing this directory under version control and the cohort is not sample / synthetic data, do not place raw or processed data files in this directory, to avoid any possibility of committing protected data.
+**Important:** If you are placing this directory under version control and the cohort is not sample / synthetic data, do not place raw or processed data files in this directory, to avoid any possibility of committing protected data. 
 
-## Manifest file
+## Manifest file 
 The `manifest.yml` file contains settings for the cohort mapping. There is a sample file in `sample_inputs/manifest.yml` with documentation. The fields are:
 
 ```
@@ -61,9 +61,9 @@ functions:
 ```
 ## Mapping template
 
-You'll need to create a mapping template that defines which mapping functions (if any) should be used for which fields.
+You'll need to create a mapping template that defines which mapping functions (if any) should be used for which fields.  
 
-The `generate_template.py` script will generate a template file based an openapi.yaml file.
+The `generate_template.py` script will generate a template file based an openapi.yaml file. For using katsu with the current MoHCCN data model, the URL to the schema is https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml (note raw github url).
 
 ```
 $ python generate_schema.py -h
@@ -76,202 +76,15 @@ options:
 
 ```
 
-For using katsu with the current MoHCCN data model, the URL to the schema is https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml (note raw github url).
+For each line in the mapping template, specify any mapping required to convert your input data to the align with the schema. See the [mapping instructions](mapping_functions.md) for detailed documentation on filling out the template. 
 
-For each line in the mapping template, specify any mapping required to convert your input data to the align with the schema. See the [mapping instructions](mapping_functions.md) for detailed documentation on filling out the template.
+**Note**: If your input data aligns perfectly with the schema (the column names are exact and unambiguous, and the field data matches the format specified by the schema), you do not need to modify the entry for that field. 
 
-**Note**: If your input data aligns perfectly with the schema (the column names are exact and unambiguous, and the field data matches the format specified by the schema), you do not need to modify the entry for that field.
-
-#### 2. Fill in the fields in the template files by naming your mapping functions and their input.
-Example:
-
-`id, {single_val(Subject)}`
-
-In this case,  the `id` field in the MoH packet is being mapped to the `Subject` column of the raw input data using the built-in `single_val` function.
-
-You can specify nodes to be mapped using custom mapping functions, passing in the set of fields from your raw dataset that you want to map:
-
-`subject.extra_properties, {additional_functions.vital_signs_node(WEIGHT_BEFORE_STD, WEIGHT_BEFORE_STD_UN, WEIGHT_25_AGE_STD, WEIGHT_25_AGE_STD_UN , HEIGHT_STD, HEIGHT_STD_UN)}`
-
-In this case, the `extra_properties` field in  the MoH packet is being mapped to multiple columns of the raw input data, and the custom mapping function is called `vital_signs_node` from the `additional_functions` module.
-
-Note that you can specify the particular field from a particular raw input sheet/csv:
-`Patient.provinceOfResidence, {COMPARISON.province_from_site(Demographics.Site)}`
-
-**Notes about mapping functions:**
-
-- The entries available in the template represent the data mappable by katsu's MoHpacket. Each entry can specify a mapping function to correlate an entry in the raw data to the entry in the MoHpacket.
-
-- Entries that begin with `##` are informational: they can be overwritten or deleted completely from the mapping file.
-
-- Entries that contain additional `.entry` parts represent nesting properties in a dictionary:
-
-```
-prop_a.prop_b.prop_c, {single_val(dataval_c)}
-prop_a.prop_b.prop_d, {single_val(dataval_d)}
-
-represents the following JSON dict:
-{
-  "prop_a": {
-      "prop_b":
-        {
-          "prop_c": dataval_c,
-          "prop_d": dataval_d
-        }
-    }
-}
-```
-
-Note that in this example, the entries for `prop_a` and `prop_b` are listed as informational: if `prop_c` and `prop_d` are explicitly mapped, `prop_a` and `prop_b` don't need to be.
-
-<details>
-<summary>What if I have a complex mapping?</summary>
-
-You can explicitly create a dictionary based on multiple raw data values and have the mapping method's return value overwrite the rest of the entries in the dictionary. Using the same example as above:
-```
-prop_a.prop_b, {my_mapping_func(dataval_c, dataval_d)}
-
-with
-
-def my_mapping_func(data_values) {
-  return {
-    "prop_c": "FOO_" + mappings.single_val(data_values['dataval_c']),
-    "prop_d": "BAR_" + mappings.single_val(data_values['dataval_d']),
-  }
-}
-
-represents the following JSON dict:
-{
-  "prop_a": {
-      "prop_b":
-        {
-          "prop_c": "FOO_dataval_c",
-          "prop_d": "BAR_dataval_d"
-        }
-    }
-}
-
-```
-</details>
-
-- Entries that end with `INDEX` in the name represent arrays: if there are subsequent entries after the first line ending with `INDEX`, this represents an array of dicts. The first entry ending in `INDEX` can be mapped to an index field using the `{indexed_on(FIELD)}` notation. Any subsequent subentries in the dict will be mapped into the corresponding dict in the array.
-
-```
-prop_a.INDEX
-prop_a.INDEX.prop_b
-prop_a.INDEX.prop_c
-
-represents the following JSON:
-
-{
-  "prop_a": [
-    {
-      "prop_b": mapping,
-      "prop_c": mapping
-    }
-  ]
-}
-```
-
-- Data that should be a single value should use the built-in mapping function `single_val`; likewise any that should be a list/array should use `list_val`. **Note**: single value means a patient will only have one value for that field, such as `id` or `sex`. Something like `genetic_variant` would not be single value, since a single patient can have more than one.
-
-- Some transformations are pretty standard, so are provided in `mappings.py`. These don't require a module to be specified:
-`subject.date_of_birth,{single_date(BIRTH_DATE_YM_RAW)}`
-
-- For template entries that do not have an explicit mapping specified, CSVConvert will try to find a value in the raw data with the same name. If none is found, CSVConvert will skip that entry.
-
-<!-- - Entries that have an asterisk are required values for MoHpacket. There is no validation for this at the moment so the tool will run even if there are missing required values.
- -->
-- Some editors (such as LibreOffice) insert commas in the template's empty fields and modify some names with hashtags. If the tool is not working, make sure to remove these characters using a text editor. Refer to this [example](https://github.com/CanDIG/clinical_ETL/blob/main/example/COMPARISON2mCODE.csv).
-
-
-
-#### 3. Write your custom mapping functions.
-
-Implement the custom mapping functions that you specified in your template file. These are functions that accept a single object, `data_values`, as an argument, and return a python object:
-
-```python
-# Example mapping function
-def vital_signs_node(data_values):
-    vital_signs = {
-        'WEIGHT_BEFORE_STD': 'weight_before_illness',
-        'WEIGHT_BEFORE_STD_UN': 'weight_before_illness_unit',
-        'WEIGHT_25_AGE_STD': 'weight_around_25',
-        'WEIGHT_25_AGE_STD_UN': 'weight_around_25_unit',
-        'HEIGHT_STD': 'height',
-        'HEIGHT_STD_UN': 'height_unit'
-    }
-    new_dict = {}
-    for item in data_values.keys():
-        new_dict[vital_signs[item]] = data_values[item]
-    return new_dict
-```
-
-#### 4. Create a new directory that contains your template and mapping functions, then create a `manifest.yml` file in the same directory with the following information:
-- `description`: description of the mapping
-- `identifier`: column used to identify patients in the input data
-- `mapping`: template file
-- `functions`: additional mapping functions
-- `sheets`: lists of sheets in the clinical data:
-    - raw (all sheets available for mapping)
-    - final (subset of sheets actually used in the mapping)
-- `indexed`: a list of sheets that need a numeric row index, e.g. for specifying particular rows. Any sheets here will have an `index` column available to mapping functions.
-
-**Note:** Files should be specified as paths relative to the location of the manifest file.
-
-Example:
-```yaml
-description: Test mapping of COMPARISON dataset to MoHpacket format for katsu
-identifier: Subject
-mapping: your_mapping.csv
-functions:
-  - additional_functions.py
-sheets:
-  raw:
-      - Vital Signs
-      - Diagnosis
-      - Diagnosis 2
-      - Hematology
-      - Outcome
-  final:
-      - Vital Signs
-      - Diagnosis
-      - Outcome
-indexed:
-      - Diagnosis
-```
-
-## Running from command line
-`$ python clinical_ETL_code/CSVConvert.py [-h] [--input INPUT] [--template TEMPLATE] [--mapping|manifest MAPPING]`
-
---input: path to dataset to be converted to MoH data model
-
---template: If provided, generate a mapping template at the specified file (only needed if you are creating a new template sheet)
-
---mapping or --manifest: Path to a manifest file describing the mapping
-
-
-## Converting csvs to ingest packets
-
-Most of the heavy lifting is done in the CSVConvert.py script. This script:
-* reads an input directory of xlsx or csv files (if xlsx, converts them to csv)
-* reads a template file that contains a list of fields and (if needed) a mapping function
-* for each field for each patient, applies the mapping function to transform the raw data into valid model data
-* exports the data into a json file(s) appropriate for ingest
-
-```
-$ python CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file]
-
---input: path to dataset to be converted to data model
-
---manifest: Path to a manifest file with settings for the ETL
-```
-
-The output packets (`INPUT_map.json` and `INPUT_indexed.json`) will be in the parent of the `INPUT` directory.
-
+**Note**: Do not edit, delete, or re-order the template lines, except to add mapping functions after the comma in each line. 
 
 ## Testing
-Continuous Integration is implemented through Pytest and GitHub Actions which run when pushes occur. Build results can be found at [this repository's GitHub Actions page](https://github.com/CanDIG/clinical_ETL_code/actions/workflows/test.yml).
+
+Continuous integration testing for this repository is implemented through Pytest and GitHub Actions which run when pushes occur. Build results can be found at [this repository's GitHub Actions page](https://github.com/CanDIG/clinical_ETL_code/actions/workflows/test.yml).
 
 To run tests manually, enter from command line `$ pytest`
 

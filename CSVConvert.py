@@ -152,6 +152,10 @@ def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, n
                 raise Exception(f"couldn't identify index_field {index_field}")
         else:
             raise Exception(f"An indexed_on notation is required for {current_key}")
+    if node is None and x is not None:
+        if mappings.VERBOSE:
+            print(f"Index {x} is the value for {current_key}")
+        return x
     if "str" in str(type(node)) and node != "":
         if mappings.VERBOSE:
             index_str = ""
@@ -428,11 +432,7 @@ def create_scaffold_from_template(lines, test=False):
                 props[key].insert(0, first_key)
             # print(f"Found array element {props[key]}")
             y = create_scaffold_from_template(props[key])
-            # print(f"What is {y}")
-            if y is not None:
-                # return [y]
-                return {"INDEX": index, "NODES": y}
-            return None
+            return {"INDEX": index, "NODES": y}
         props[key] = create_scaffold_from_template(props[key])
 
     if len(props.keys()) == 0:

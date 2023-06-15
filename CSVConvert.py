@@ -258,7 +258,7 @@ def populate_data_for_params(identifier, index_field, indexed_data, params):
         param_names.remove("INDEX")
     return data_values, param_names
 
-def eval_mapping(identifier, index_field, indexed_data, node, x):
+def eval_mapping(identifier, index_field, indexed_data, node_name, x):
     """
     Given the identifier field, the data, and a particular schema node, evaluate
     the mapping using the provider method and return the final JSON for the node
@@ -269,10 +269,12 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
         mappings.MODULES["mappings"] = importlib.import_module("mappings")
     modulename = "mappings"
 
-    method, parameters = parse_mapping_function(node)
     mappings.IDENTIFIER = {"id": identifier}
+
+    method, parameters = parse_mapping_function(node_name)
     if parameters is None:
-        parameters = [node]
+        # by default, map using the node name as a parameter
+        parameters = [node_name]
     data_values, parameters = populate_data_for_params(identifier, index_field, indexed_data, parameters)
 
     if method is not None:

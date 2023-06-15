@@ -216,43 +216,47 @@ def parse_mapping_function(mapping):
     return method, parameters
 
 
-def get_data_for_fields(identifier, index_field, indexed_data, fields):
+def populate_data_for_params(identifier, index_field, indexed_data, params):
     """
-    Given a list of fields and the indexed_data, return a dictionary of the
-    values for each field.
+    Given a list of params and the indexed_data, return a dictionary of the
+    values for each parameter.
     If index_field is not None, create an INDEX key that lists all the possible values that could use
     """
     data_values = {}
-    items = []
+    param_names = []
     if index_field is not None:
-        fields.append("INDEX")
-    for item in fields:
-        item = item.strip()
+        # temporarily add INDEX to the possible params to look for
+        params.append("INDEX")
+    for param in params:
+        param = param.strip()
         sheets = None
-        sheet_match = re.match(r"(.+?)\.(.+)", item)
+        sheet_match = re.match(r"(.+?)\.(.+)", param)
         if sheet_match is not None:
-            # this is a specific item on a specific sheet:
-            item = sheet_match.group(2)
+            # this param is a specific item on a specific sheet:
+            param = sheet_match.group(2)
             sheets = [sheet_match.group(1).replace('"', '').replace("'", "")]
-        # check to see if this item is even present in the columns:
-        if item in indexed_data["columns"]:
-            items.append(item)
-            data_values[item] = {}
+
+        # only process this param if it is even present in the columns:
+        if param in indexed_data["columns"]:
             if sheets is None:
-                # look for all sheets that match this item name:
-                sheets = indexed_data["columns"][item]
+                # look for all sheets that match this param name:
+                sheets = indexed_data["columns"][param]
+            param_names.append(param)
+            data_values[param] = {}
             for sheet in sheets:
                 # for each of these sheets, add this identifier's contents as a key and array:
-                if item == "INDEX":
-                    data_values[item][sheet] = indexed_data["data"][sheet]
+                if param == "INDEX":
+                    data_values[param][sheet] = indexed_data["data"][sheet]
                 elif identifier in indexed_data["data"][sheet]:
-                    data_value = indexed_data["data"][sheet][identifier][item]
-                    data_values[item][sheet] = data_value
+                    data_value = indexed_data["data"][sheet][identifier][param]
+                    data_values[param][sheet] = data_value
                 else:
-                    data_values[item][sheet] = []
-    if "INDEX" in items:
-        items.remove("INDEX")
-    return data_values, items
+                    data_values[param][sheet] = []
+        else:
+            print(f"WARNING: parameter {param} is not present in the input data")
+    if "INDEX" in param_names:
+        param_names.remove("INDEX")
+    return data_values, param_names
 
 def eval_mapping(identifier, index_field, indexed_data, node, x):
     """
@@ -269,7 +273,7 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
     mappings.IDENTIFIER = {"id": identifier}
     if parameters is None:
         parameters = [node]
-    data_values, items = get_data_for_fields(identifier, index_field, indexed_data, parameters)
+    data_values, items = populate_data_for_params(identifier, index_field, indexed_data, parameters)
     if "INDEX" in items:
         items.remove("INDEX")
 

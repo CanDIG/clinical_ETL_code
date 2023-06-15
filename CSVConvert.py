@@ -17,7 +17,6 @@ import argparse
 from moh_mappings import mohschema
 from generate_schema import generate_mapping_template
 
-VERBOSE = False
 IDENTIFIER_KEY = None
 
 def parse_args():
@@ -81,12 +80,12 @@ def process_data(raw_csv_dfs, identifier):
                 for k in row.keys():
                     merged_dict[i][k.strip()].append(row[k])
             # for the identifier key, just pick one, since they're all the same:
-            merged_dict[i][identifier] = merged_dict[i][identifier].pop()
+            merged_dict[i][identifier] = [merged_dict[i][identifier].pop()]
 
         # Now we can clean up the dicts: index them by identifier instead of int
         indexed_merged_dict = {}
         for i in range(0, len(merged_dict.keys())):
-            indiv = merged_dict[i][identifier]
+            indiv = merged_dict[i][identifier][0]
             indexed_merged_dict[indiv] = merged_dict[i]
             if indiv not in individuals:
                 individuals.append(indiv)
@@ -99,7 +98,7 @@ def process_data(raw_csv_dfs, identifier):
         "data": final_merged
     }
 
-def map_row_to_mcodepacket(identifier, index_field, indexed_data, node, x):
+def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, node, x):
     """
     Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive.
     If x is not None, it is an index into an object that is part of an array.
@@ -109,6 +108,8 @@ def map_row_to_mcodepacket(identifier, index_field, indexed_data, node, x):
         node = node["NODES"]
         result = []
         if index_field is not None:
+            if mappings.VERBOSE:
+                print(f"Indexing {index_field} on {current_key}")
             index_field_match = re.match(r"(.+)\.(.+)", index_field)
             sheet_name = None
             if index_field_match is not None:
@@ -127,12 +128,11 @@ def map_row_to_mcodepacket(identifier, index_field, indexed_data, node, x):
                     else:
                         raise Exception(f"multiple possible index_fields named {index_field} in {indexed_data['columns'][index_field]}")
                 sheet = indexed_data["columns"][index_field][sheet_num]
+                if identifier not in indexed_data["data"][sheet]:
+                    print(f"WARNING: {identifier} not present in sheet {sheet}")
+                    return None
                 new_data = deepcopy(indexed_data["data"][sheet][identifier])
                 new_sheet = f"INDEX_{sheet}_{identifier}"
-                global IDENTIFIER_KEY
-                if IDENTIFIER_KEY in new_data:
-                    new_data.pop(IDENTIFIER_KEY)
-                # for each index_field value, create a new object of data
                 if "INDEX" not in indexed_data["columns"]:
                     indexed_data["columns"]["INDEX"] = []
                 indexed_data["columns"]["INDEX"].append(new_sheet)
@@ -141,38 +141,59 @@ def map_row_to_mcodepacket(identifier, index_field, indexed_data, node, x):
                 for i in range(0,len(new_ids)):
                     new_ident_dict = {}
                     for key in new_data.keys():
-                        new_ident_dict[f"{sheet}.{key}"] = new_data[key][i]
+                        global IDENTIFIER_KEY
+                        if key == IDENTIFIER_KEY:
+                            new_ident_dict[f"{sheet}.{key}"] = new_data[key][0]
+                        else:
+                            new_ident_dict[f"{sheet}.{key}"] = new_data[key][i]
                     indexed_data["data"][new_sheet][new_ids[i]] = new_ident_dict
-                    result.append(map_row_to_mcodepacket(identifier, index_field, indexed_data, node, new_ids[i]))
+                    if mappings.VERBOSE:
+                        print(f"Appending {new_ids[i]} to {current_key}")
+                    result.append(map_row_to_mcodepacket(identifier, index_field, f"{current_key}.INDEX", indexed_data, node, new_ids[i]))
                 return result
+            elif index_field == "NONE":
+                return None
             else:
                 raise Exception(f"couldn't identify index_field {index_field}")
+        else:
+            raise Exception(f"An indexed_on notation is required for {current_key}")
+    if node is None and x is not None:
+        if mappings.VERBOSE:
+            print(f"Index {x} is the value for {current_key}")
+        return x
     if "str" in str(type(node)) and node != "":
-        if VERBOSE:
-            print(f"Str {identifier},{index_field},{node}")
+        if mappings.VERBOSE:
+            index_str = ""
+            if index_field is not None:
+                index_str = f" for index {index_field}"
+            print(f"Evaluating {node}{index_str}")
         return eval_mapping(identifier, index_field, indexed_data, node, x)
     if "list" in str(type(node)):
-        if VERBOSE:
-            print(f"List {node}")
+        if mappings.VERBOSE:
+            print(f"List {current_key}")
         # if we get here with a node that can be a list (e.g. Treatments)
         new_node = []
         for item in node:
-            if VERBOSE:
-                print(f"Mapping list item {item}")
-            m = map_row_to_mcodepacket(identifier, index_field, indexed_data, item, x)
+            new_key = f"{current_key}.{item}"
+            if mappings.VERBOSE:
+                print(f"Mapping list item {new_key}")
+            m = map_row_to_mcodepacket(identifier, index_field, new_key, indexed_data, item, x)
             if "list" in str(type(m)):
                 new_node = m
             else:
-                if VERBOSE:
+                if mappings.VERBOSE:
                     print(f"Appending {m}")
                 new_node.append(m)
         return new_node
     elif "dict" in str(type(node)):
         scaffold = {}
         for key in node.keys():
-            if VERBOSE:
-                print(f"\nKey {key}")
-            dict = map_row_to_mcodepacket(identifier, index_field, indexed_data, node[key], x)
+            # if we're starting at the root, there will be a leading ROOT and .; we should remove those.
+            # (we add "ROOT" at the start so that we can differentiate the leading "." in replace())
+            new_key = f"{current_key}.{key}".replace("ROOT.", "")
+            if mappings.VERBOSE:
+                print(f"\nMapping line {new_key}")
+            dict = map_row_to_mcodepacket(identifier, index_field, new_key, indexed_data, node[key], x)
             if dict is not None:
                 scaffold[key] = dict
         return scaffold
@@ -229,11 +250,11 @@ def get_data_for_fields(identifier, index_field, indexed_data, fields):
                 sheets = indexed_data["columns"][item]
             for sheet in sheets:
                 # for each of these sheets, add this identifier's contents as a key and array:
-                if identifier in indexed_data["data"][sheet]:
+                if item == "INDEX":
+                    data_values[item][sheet] = indexed_data["data"][sheet]
+                elif identifier in indexed_data["data"][sheet]:
                     data_value = indexed_data["data"][sheet][identifier][item]
                     data_values[item][sheet] = data_value
-                elif item == "INDEX":
-                    data_values[item][sheet] = indexed_data["data"][sheet]
                 else:
                     data_values[item][sheet] = []
     if "INDEX" in items:
@@ -261,16 +282,24 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
         module = mappings.MODULES["mappings"]
         method = "single_val"
         data_values, items = get_data_for_fields(identifier, index_field, indexed_data, [node])
+        if mappings.VERBOSE:
+            print(f"Defaulting to single_val({node})")
     if "INDEX" in data_values:
         # find all the relevant keys in index_field:
         for item in items:
             for sheet in data_values[item]:
                 index_identifier = f"INDEX_{sheet}_{identifier}"
                 if index_identifier in indexed_data['columns']['INDEX']:
+                    if mappings.VERBOSE:
+                        print(f"Populating data values for {item}, based on index {x}")
+
                     # put back the data for the index_field:
-                    data_values["INDEX"][index_identifier][x][f"{sheet}.{index_field}"] = x
-                    new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{item}"]
-                    data_values[item][sheet] = new_node_val
+                    if x not in data_values["INDEX"][index_identifier]:
+                        print(f"ERROR: {x} not in {sheet}.{index_field}")
+                    else:
+                        data_values["INDEX"][index_identifier][x][f"{sheet}.{index_field}"] = x
+                        new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{item}"]
+                        data_values[item][sheet] = new_node_val
     try:
         if "INDEX" in data_values:
             data_values.pop("INDEX")
@@ -411,11 +440,7 @@ def create_scaffold_from_template(lines, test=False):
                 props[key].insert(0, first_key)
             # print(f"Found array element {props[key]}")
             y = create_scaffold_from_template(props[key])
-            # print(f"What is {y}")
-            if y is not None:
-                # return [y]
-                return {"INDEX": index, "NODES": y}
-            return None
+            return {"INDEX": index, "NODES": y}
         props[key] = create_scaffold_from_template(props[key])
 
     if len(props.keys()) == 0:
@@ -485,7 +510,6 @@ def main(args):
     input_path = args.input
     manifest_file = args.manifest
     mappings.VERBOSE = args.verbose
-    VERBOSE = args.verbose
 
     # read manifest data
     manifest = load_manifest(manifest_file)
@@ -507,7 +531,7 @@ def main(args):
     sc, mapping_template = generate_mapping_template(schema.generate_schema_array()["DonorWithClinicalData"])
 
     schema_list = list(scaffold)
-    if VERBOSE:
+    if mappings.VERBOSE:
         print(f"Imported schemas: {schema_list} from mohschema")
 
 
@@ -547,10 +571,10 @@ def main(args):
 
     mcodepackets = []
     # for each identifier's row, make an mcodepacket
-    for key in indexed_data["individuals"]:
-        print(f"Creating packet for {key}")
+    for indiv in indexed_data["individuals"]:
+        print(f"Creating packet for {indiv}")
         mcodepackets.append(map_row_to_mcodepacket(
-            key, None, indexed_data, deepcopy(mapping_scaffold), None)
+            indiv, None, "ROOT", indexed_data, deepcopy(mapping_scaffold), None)
             )
 
     # # special case: if it was candigv1, we need to wrap the results in "metadata"

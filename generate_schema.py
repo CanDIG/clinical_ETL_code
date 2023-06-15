@@ -16,7 +16,7 @@ import re
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--url', type=str, help="URL to openAPI schema file (raw github link)", required=True)
+    parser.add_argument('--url', type=str, help="URL to openAPI schema file (raw github link)", default="https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml")
     parser.add_argument('--out', type=str, help="name of output file; csv extension will be added. Default is template", default="template")
     args = parser.parse_args()
     return args
@@ -26,7 +26,7 @@ def generate_mapping_template(node, node_name="", node_names=None):
     """Create a template for mcodepacket, for use with the --template flag."""
     if node_names is None:
         node_names = []
-    if node_name != "":
+    if node_name != "" and not node_name.endswith(".id"):
         # check to see if the last node_name is a header for this node_name:
         if len(node_names) > 0:
             x = node_names.pop()

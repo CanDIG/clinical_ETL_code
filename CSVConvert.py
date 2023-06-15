@@ -199,29 +199,22 @@ def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, n
         return scaffold
 
 
-def translate_mapping(identifier, index_field, indexed_data, mapping):
-    """Given the identifier field, the data dict, and a particular mapping from
-    the template file, parse out the mapping method and get the matching data."""
-
+def parse_mapping_function(mapping):
     # split the mapping into the function name and the raw data fields that
     # are the parameters
     # e.g. {single_val(submitter_donor_id)} -> match.group(1) = single_val
     # and match.group(2) = submitter_donor_id (may be multiple fields)
+
+    method = None
+    parameters = None
     func_match = re.match(r".*\{(.+?)\((.+)\)\}.*", mapping)
     if func_match is not None:  # it's a function, prep the dictionary and exec it
         # get the fields that are the params; separator is a semicolon because
         # we replaced the commas back in process_mapping
-        items = func_match.group(2).split(";")
-        mappings.IDENTIFIER = {"id": identifier}
-        data_values, items = get_data_for_fields(identifier, index_field, indexed_data, items)
-        if "INDEX" in items:
-            items.remove("INDEX")
-        return func_match.group(1), data_values, items
-    # else: # try and match the field name exactly
-    #     data_values = get_data_for_fields(identifier, indexed_data,[key])
-    #     if data_values is not None:
-    #         return None, data_values
-    return None, None, None
+        method = func_match.group(1)
+        parameters = func_match.group(2).split(";")
+    return method, parameters
+
 
 def get_data_for_fields(identifier, index_field, indexed_data, fields):
     """
@@ -268,22 +261,30 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
     in the schema.
     If x is not None, it is an index into an object that is part of an array.
     """
-    method, data_values, items = translate_mapping(identifier, index_field, indexed_data, node)
     if "mappings" not in mappings.MODULES:
         mappings.MODULES["mappings"] = importlib.import_module("mappings")
+    modulename = "mappings"
+
+    method, parameters = parse_mapping_function(node)
+    mappings.IDENTIFIER = {"id": identifier}
+    if parameters is None:
+        parameters = [node]
+    data_values, items = get_data_for_fields(identifier, index_field, indexed_data, parameters)
+    if "INDEX" in items:
+        items.remove("INDEX")
+
     if method is not None:
-        module = mappings.MODULES["mappings"]
         # is the function something in a dynamically-loaded module?
         subfunc_match = re.match(r"(.+)\.(.+)", method)
         if subfunc_match is not None:
-            module = mappings.MODULES[subfunc_match.group(1)]
+            modulename = subfunc_match.group(1)
             method = subfunc_match.group(2)
-    else:
-        module = mappings.MODULES["mappings"]
-        method = "single_val"
-        data_values, items = get_data_for_fields(identifier, index_field, indexed_data, [node])
         if mappings.VERBOSE:
-            print(f"Defaulting to single_val({node})")
+            print(f"Using method {modulename}.{method}({items})")
+    else:
+        method = "single_val"
+        if mappings.VERBOSE:
+            print(f"Defaulting to mappings.single_val({items})")
     if "INDEX" in data_values:
         # find all the relevant keys in index_field:
         for item in items:
@@ -305,6 +306,7 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
             data_values.pop("INDEX")
         # check to see if there are even any data values besides INDEX:
         if len(data_values.keys()) > 0:
+            module = mappings.MODULES[modulename]
             return eval(f'module.{method}({data_values})')
     except mappings.MappingError as e:
         print(f"Error evaluating {method}")

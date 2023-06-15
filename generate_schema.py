@@ -26,7 +26,7 @@ def generate_mapping_template(node, node_name="", node_names=None):
     """Create a template for mcodepacket, for use with the --template flag."""
     if node_names is None:
         node_names = []
-    if node_name != "":
+    if node_name != "" and not node_name.endswith(".id"):
         # check to see if the last node_name is a header for this node_name:
         if len(node_names) > 0:
             x = node_names.pop()

@@ -2,7 +2,7 @@ import ast
 import dateparser
 
 MODULES = {}
-IDENTIFIER = {}
+IDENTIFIER = {'main_id': None}
 VERBOSE = False
 
 
@@ -19,9 +19,7 @@ class MappingError(Exception):
 
     def __str__(self):
         global IDENTIFIER
-        if 'id' in IDENTIFIER:
-            return repr(f"Check the values for {IDENTIFIER['id']} in {IDENTIFIER}: {self.value}")
-        return repr(f"{IDENTIFIER} {self.value}")
+        return repr(f"Check the values for {IDENTIFIER['main_id']} in {IDENTIFIER}: {self.value}")
 
 
 # Format a date field to ISO standard

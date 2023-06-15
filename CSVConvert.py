@@ -17,7 +17,6 @@ import argparse
 from moh_mappings import mohschema
 from generate_schema import generate_mapping_template
 
-IDENTIFIER_KEY = None
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -75,8 +74,7 @@ def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, n
                 for i in range(0,len(new_ids)):
                     new_ident_dict = {}
                     for key in new_data.keys():
-                        global IDENTIFIER_KEY
-                        if key == IDENTIFIER_KEY:
+                        if key == mappings.IDENTIFIER["main_id"]:
                             new_ident_dict[f"{sheet}.{key}"] = new_data[key][0]
                         else:
                             new_ident_dict[f"{sheet}.{key}"] = new_data[key][i]
@@ -203,7 +201,7 @@ def eval_mapping(identifier, index_field, indexed_data, node_name, x):
         mappings.MODULES["mappings"] = importlib.import_module("mappings")
     modulename = "mappings"
 
-    mappings.IDENTIFIER = {"id": identifier}
+    # mappings.IDENTIFIER = {"id": identifier}
 
     method, parameters = parse_mapping_function(node_name)
     if parameters is None:
@@ -526,8 +524,7 @@ def main(args):
     if identifier is None:
         print("Need to specify what the main identifier column name as 'identifier' in the manifest file")
         return
-    global IDENTIFIER_KEY
-    IDENTIFIER_KEY = identifier
+    mappings.IDENTIFIER["main_id"] = identifier
 
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold

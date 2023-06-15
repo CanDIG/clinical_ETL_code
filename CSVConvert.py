@@ -37,10 +37,15 @@ def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, n
     If x is not None, it is an index into an object that is part of an array.
     """
     if "dict" in str(type(node)) and "INDEX" in node:
-        index_field = node["INDEX"]
-        node = node["NODES"]
         result = []
-        if index_field is not None:
+        if "INDEX" in node:
+            index_method, index_field = parse_mapping_function(node["INDEX"])
+            index_field = index_field[0]
+            if index_field is None:
+                return None
+
+            # process INDEX into index_field
+            node = node["NODES"]
             if mappings.VERBOSE:
                 print(f"Indexing {index_field} on {current_key}")
             index_field_match = re.match(r"(.+)\.(.+)", index_field)
@@ -436,17 +441,10 @@ def create_scaffold_from_template(lines, test=False):
     # pp.pprint(props)
 
     for key in props.keys():
-        if key == "INDEX":  # this could map to a list
-            index = None
+        if key == "INDEX":  # this maps to a list
             first_key = props[key].pop(0)
-            index_match = re.match(r"\{indexed_on\((.+)\)\}", first_key)
-            if index_match is not None:
-                index = index_match.group(1)
-            else:
-                props[key].insert(0, first_key)
-            # print(f"Found array element {props[key]}")
             y = create_scaffold_from_template(props[key])
-            return {"INDEX": index, "NODES": y}
+            return {"INDEX": first_key, "NODES": y}
         props[key] = create_scaffold_from_template(props[key])
 
     if len(props.keys()) == 0:

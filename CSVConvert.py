@@ -273,9 +273,7 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
     mappings.IDENTIFIER = {"id": identifier}
     if parameters is None:
         parameters = [node]
-    data_values, items = populate_data_for_params(identifier, index_field, indexed_data, parameters)
-    if "INDEX" in items:
-        items.remove("INDEX")
+    data_values, parameters = populate_data_for_params(identifier, index_field, indexed_data, parameters)
 
     if method is not None:
         # is the function something in a dynamically-loaded module?
@@ -284,27 +282,27 @@ def eval_mapping(identifier, index_field, indexed_data, node, x):
             modulename = subfunc_match.group(1)
             method = subfunc_match.group(2)
         if mappings.VERBOSE:
-            print(f"Using method {modulename}.{method}({items})")
+            print(f"Using method {modulename}.{method}({parameters})")
     else:
         method = "single_val"
         if mappings.VERBOSE:
-            print(f"Defaulting to mappings.single_val({items})")
+            print(f"Defaulting to mappings.single_val({parameters})")
     if "INDEX" in data_values:
         # find all the relevant keys in index_field:
-        for item in items:
-            for sheet in data_values[item]:
+        for param in parameters:
+            for sheet in data_values[param]:
                 index_identifier = f"INDEX_{sheet}_{identifier}"
                 if index_identifier in indexed_data['columns']['INDEX']:
                     if mappings.VERBOSE:
-                        print(f"Populating data values for {item}, based on index {x}")
+                        print(f"Populating data values for {param}, based on index {x}")
 
                     # put back the data for the index_field:
                     if x not in data_values["INDEX"][index_identifier]:
                         print(f"ERROR: {x} not in {sheet}.{index_field}")
                     else:
                         data_values["INDEX"][index_identifier][x][f"{sheet}.{index_field}"] = x
-                        new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{item}"]
-                        data_values[item][sheet] = new_node_val
+                        new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{param}"]
+                        data_values[param][sheet] = new_node_val
     try:
         if "INDEX" in data_values:
             data_values.pop("INDEX")

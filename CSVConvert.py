@@ -32,72 +32,6 @@ def parse_args():
     return args
 
 
-def process_data(raw_csv_dfs, identifier):
-    """Takes a set of raw dataframes with a common identifier and merges into a  JSON data structure."""
-    final_merged = {}
-    cols_index = {}
-    individuals = []
-
-    for page in raw_csv_dfs.keys():
-        print(f"Processing sheet {page}...")
-        df = raw_csv_dfs[page].dropna(axis='index', how='all')\
-            .dropna(axis='columns', how='all')\
-            .applymap(str)\
-            .applymap(lambda x: x.strip())\
-            .drop_duplicates()  # drop absolutely identical lines
-
-        # Sort by identifier and then tag any dups
-        df.set_index(identifier, inplace=True)
-        df.sort_index(inplace=True)
-        df.reset_index(inplace=True)
-        dups = df.duplicated(subset=[identifier], keep='first')
-
-        for col in list(df.columns):
-            col = col.strip()
-            if col not in cols_index:
-                cols_index[col] = [page]
-            else:
-                cols_index[col].append(page)
-
-        # For all rows with the same identifier, merge all of the occurrences into an array
-        rows_to_merge = {}  # this is going to hold all of the rows that will need to be merged...
-        df_dict = df.to_dict(orient="index")
-        for index in range(0, len(dups)):
-            if not dups[index]:  # this is the first occurrence
-                rows_to_merge[df_dict[index][identifier]] = [df_dict[index]]
-            else:
-                rows_to_merge[df_dict[index][identifier]].append(df_dict[index])
-        merged_dict = {}  # this is going to be the dict with arrays:
-        for i in range(0, len(rows_to_merge)):
-            merged_dict[i] = {}
-            row_to_merge = rows_to_merge[list(rows_to_merge.keys())[i]]
-            row = row_to_merge.pop(0)
-            for k in row.keys():
-                merged_dict[i][k.strip()] = [row[k]]
-            while len(row_to_merge) > 0:  # there are still entries to merge
-                mappings.warn(f"Duplicate row for {merged_dict[i][identifier][0]} in {page}")
-                row = row_to_merge.pop(0)
-                for k in row.keys():
-                    merged_dict[i][k.strip()].append(row[k])
-            # for the identifier key, just pick one, since they're all the same:
-            merged_dict[i][identifier] = [merged_dict[i][identifier].pop()]
-
-        # Now we can clean up the dicts: index them by identifier instead of int
-        indexed_merged_dict = {}
-        for i in range(0, len(merged_dict.keys())):
-            indiv = merged_dict[i][identifier][0]
-            indexed_merged_dict[indiv] = merged_dict[i]
-            if indiv not in individuals:
-                individuals.append(indiv)
-        final_merged[page] = indexed_merged_dict
-
-    return {
-        "identifier": identifier,
-        "columns": cols_index,
-        "individuals": individuals,
-        "data": final_merged
-    }
-
 def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, node, x):
     """
     Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive.
@@ -342,6 +276,74 @@ def ingest_raw_data(input_path, indexed):
             df = df.replace(".csv","")
             raw_csv_dfs[df].reset_index(inplace=True)
     return raw_csv_dfs, output_file
+
+
+def process_data(raw_csv_dfs, identifier):
+    """Takes a set of raw dataframes with a common identifier and merges into a  JSON data structure."""
+    final_merged = {}
+    cols_index = {}
+    individuals = []
+
+    for page in raw_csv_dfs.keys():
+        print(f"Processing sheet {page}...")
+        df = raw_csv_dfs[page].dropna(axis='index', how='all')\
+            .dropna(axis='columns', how='all')\
+            .applymap(str)\
+            .applymap(lambda x: x.strip())\
+            .drop_duplicates()  # drop absolutely identical lines
+
+        # Sort by identifier and then tag any dups
+        df.set_index(identifier, inplace=True)
+        df.sort_index(inplace=True)
+        df.reset_index(inplace=True)
+        dups = df.duplicated(subset=[identifier], keep='first')
+
+        for col in list(df.columns):
+            col = col.strip()
+            if col not in cols_index:
+                cols_index[col] = [page]
+            else:
+                cols_index[col].append(page)
+
+        # For all rows with the same identifier, merge all of the occurrences into an array
+        rows_to_merge = {}  # this is going to hold all of the rows that will need to be merged...
+        df_dict = df.to_dict(orient="index")
+        for index in range(0, len(dups)):
+            if not dups[index]:  # this is the first occurrence
+                rows_to_merge[df_dict[index][identifier]] = [df_dict[index]]
+            else:
+                rows_to_merge[df_dict[index][identifier]].append(df_dict[index])
+        merged_dict = {}  # this is going to be the dict with arrays:
+        for i in range(0, len(rows_to_merge)):
+            merged_dict[i] = {}
+            row_to_merge = rows_to_merge[list(rows_to_merge.keys())[i]]
+            row = row_to_merge.pop(0)
+            for k in row.keys():
+                merged_dict[i][k.strip()] = [row[k]]
+            while len(row_to_merge) > 0:  # there are still entries to merge
+                mappings.warn(f"Duplicate row for {merged_dict[i][identifier][0]} in {page}")
+                row = row_to_merge.pop(0)
+                for k in row.keys():
+                    merged_dict[i][k.strip()].append(row[k])
+            # for the identifier key, just pick one, since they're all the same:
+            merged_dict[i][identifier] = [merged_dict[i][identifier].pop()]
+
+        # Now we can clean up the dicts: index them by identifier instead of int
+        indexed_merged_dict = {}
+        for i in range(0, len(merged_dict.keys())):
+            indiv = merged_dict[i][identifier][0]
+            indexed_merged_dict[indiv] = merged_dict[i]
+            if indiv not in individuals:
+                individuals.append(indiv)
+        final_merged[page] = indexed_merged_dict
+
+    return {
+        "identifier": identifier,
+        "columns": cols_index,
+        "individuals": individuals,
+        "data": final_merged
+    }
+
 
 def process_mapping(line, test=False):
     """Given a csv mapping line, process into its component pieces.

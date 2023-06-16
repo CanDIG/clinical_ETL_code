@@ -598,6 +598,10 @@ def main(args):
         mappings.IDENTIFIER["main_id"] = indiv
         mappings.push_to_stack(None, None, indiv, "DONOR")
         packets.append(map_data_to_scaffold(indexed_data, deepcopy(mapping_scaffold)))
+        if mappings.pop_from_stack() is None:
+            raise Exception(f"Stack popped too far!\n{mappings.IDENTIFIER}")
+        if mappings.pop_from_stack() is not None:
+            raise Exception(f"Stack not empty\n{mappings.IDENTIFIER}")
 
     # # special case: if it was candigv1, we need to wrap the results in "metadata"
     # # if schema == "candigv1":

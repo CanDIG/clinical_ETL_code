@@ -31,12 +31,14 @@ def parse_args():
     return args
 
 
-def map_data_to_scaffold(identifier, index_field, current_key, indexed_data, node, x):
+def map_data_to_scaffold(identifier, current_key, indexed_data, node):
     """
     Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive.
     If x is not None, it is an index into an object that is part of an array.
     """
-
+    curr_id = mappings.IDENTIFIER["index_stack"][-1]
+    index_field = curr_id["id"]
+    x = curr_id["index"]
     # if we're looking at an array of objects:
     if "dict" in str(type(node)) and "INDEX" in node:
         return map_indexed_scaffold(identifier, index_field, current_key, indexed_data, node)
@@ -60,7 +62,7 @@ def map_data_to_scaffold(identifier, index_field, current_key, indexed_data, nod
             new_key = f"{current_key}.{item}"
             if mappings.VERBOSE:
                 print(f"Mapping list item {new_key}")
-            m = map_data_to_scaffold(identifier, index_field, new_key, indexed_data, item, x)
+            m = map_data_to_scaffold(identifier, new_key, indexed_data, item)
             if "list" in str(type(m)):
                 new_node = m
             else:
@@ -76,7 +78,7 @@ def map_data_to_scaffold(identifier, index_field, current_key, indexed_data, nod
             new_key = f"{current_key}.{key}".replace("ROOT.", "")
             if mappings.VERBOSE:
                 print(f"\nMapping line {new_key}")
-            dict = map_data_to_scaffold(identifier, index_field, new_key, indexed_data, node[key], x)
+            dict = map_data_to_scaffold(identifier, new_key, indexed_data, node[key])
             if dict is not None:
                 scaffold[key] = dict
         return scaffold
@@ -132,7 +134,9 @@ def map_indexed_scaffold(identifier, index_field, current_key, indexed_data, nod
                 indexed_data["data"][new_sheet][new_ids[i]] = new_ident_dict
                 if mappings.VERBOSE:
                     print(f"Appending {new_ids[i]} to {current_key}")
-                result.append(map_data_to_scaffold(identifier, index_field, f"{current_key}.INDEX", indexed_data, node, new_ids[i]))
+                mappings.IDENTIFIER["index_stack"].append({"id": index_field, "index": new_ids[i]})
+                result.append(map_data_to_scaffold(identifier, f"{current_key}.INDEX", indexed_data, node))
+                mappings.IDENTIFIER["index_stack"].pop()
             return result
         elif index_field == "NONE":
             return None
@@ -581,8 +585,8 @@ def main(args):
     for indiv in indexed_data["individuals"]:
         print(f"Creating packet for {indiv}")
         mappings.IDENTIFIER["main_id"] = indiv
-        packets.append(map_data_to_scaffold(
-            indiv, None, "ROOT", indexed_data, deepcopy(mapping_scaffold), None)
+        mappings.IDENTIFIER["index_stack"].append({"id": None, "index": None})
+        packets.append(map_data_to_scaffold(indiv, "ROOT", indexed_data, deepcopy(mapping_scaffold))
             )
 
     # # special case: if it was candigv1, we need to wrap the results in "metadata"

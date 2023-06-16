@@ -2,7 +2,7 @@ import ast
 import dateparser
 
 MODULES = {}
-IDENTIFIER = {'main_id': None}
+IDENTIFIER = {'main_id': None, 'main_id_col': None, 'index_stack': []}
 VERBOSE = False
 
 
@@ -114,6 +114,7 @@ def is_null(cell):
         return True
     return False
 
+
 # Placeholder function to make a fake ontology entry
 def ontology_placeholder(data_values):
     if "str" in str(type(data_values)):
@@ -125,3 +126,8 @@ def ontology_placeholder(data_values):
         "id": "placeholder",
         "label": single_val(data_values)
     }
+
+
+# Default indexing value for arrays
+def indexed_on(data_values):
+    return single_val(data_values)

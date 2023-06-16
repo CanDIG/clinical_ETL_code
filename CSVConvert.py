@@ -578,23 +578,23 @@ def main(args):
         if col != identifier and len(indexed_data["columns"][col]) > 1:
             mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(indexed_data['columns'][col])}")
 
-    mcodepackets = []
+    packets = []
     # for each identifier's row, make an mcodepacket
     for indiv in indexed_data["individuals"]:
         print(f"Creating packet for {indiv}")
-        mcodepackets.append(map_data_to_scaffold(
+        packets.append(map_data_to_scaffold(
             indiv, None, "ROOT", indexed_data, deepcopy(mapping_scaffold), None)
             )
 
     # # special case: if it was candigv1, we need to wrap the results in "metadata"
     # # if schema == "candigv1":
-    # #     mcodepackets = {"metadata": mcodepackets}
+    # #     packets = {"metadata": packets}
 
     with open(f"{output_file}_indexed.json", 'w') as f:
         json.dump(indexed_data, f, indent=4)
 
     with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
-        json.dump(mcodepackets, f, indent=4)
+        json.dump(packets, f, indent=4)
 
 
 if __name__ == '__main__':

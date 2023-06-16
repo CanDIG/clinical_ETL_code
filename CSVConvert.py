@@ -41,7 +41,7 @@ def map_data_to_scaffold(identifier, current_key, indexed_data, node):
     x = curr_id["value"]
     # if we're looking at an array of objects:
     if "dict" in str(type(node)) and "INDEX" in node:
-        return map_indexed_scaffold(identifier, index_field, current_key, indexed_data, node)
+        return map_indexed_scaffold(identifier, current_key, indexed_data, node)
     if node is None and x is not None:
         if mappings.VERBOSE:
             print(f"Index {x} is the value for {current_key}")
@@ -84,10 +84,11 @@ def map_data_to_scaffold(identifier, current_key, indexed_data, node):
         return scaffold
 
 
-def map_indexed_scaffold(identifier, index_field, current_key, indexed_data, node):
+def map_indexed_scaffold(identifier, current_key, indexed_data, node):
     result = []
     if "INDEX" in node:
         index_method, index_field = parse_mapping_function(node["INDEX"])
+        # TODO: right now, index_method is thrown away (it is always indexed_on)
         index_field = index_field[0]
         if index_field is None:
             return None

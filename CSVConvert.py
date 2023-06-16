@@ -31,69 +31,15 @@ def parse_args():
     return args
 
 
-def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, node, x):
+def map_data_to_scaffold(identifier, index_field, current_key, indexed_data, node, x):
     """
     Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive.
     If x is not None, it is an index into an object that is part of an array.
     """
-    if "dict" in str(type(node)) and "INDEX" in node:
-        result = []
-        if "INDEX" in node:
-            index_method, index_field = parse_mapping_function(node["INDEX"])
-            index_field = index_field[0]
-            if index_field is None:
-                return None
 
-            # process INDEX into index_field
-            node = node["NODES"]
-            if mappings.VERBOSE:
-                print(f"Indexing {index_field} on {current_key}")
-            index_field_match = re.match(r"(.+)\.(.+)", index_field)
-            sheet_name = None
-            if index_field_match is not None:
-                index_field = index_field_match.group(2)
-                sheet_name = index_field_match.group(1)
-            # create a new indexed_data for this array of objects:
-            # find the sheet that the index_field is on:
-            if index_field in indexed_data["columns"]:
-                sheet_num = 0
-                if sheet_name is not None:
-                    if len(indexed_data["columns"][index_field]) > 0:
-                        try:
-                            sheet_num = indexed_data["columns"][index_field].index(sheet_name)
-                        except Exception as e:
-                            raise Exception(f"No index_field {index_field} in sheet {sheet_name}")
-                    else:
-                        raise Exception(f"multiple possible index_fields named {index_field} in {indexed_data['columns'][index_field]}")
-                sheet = indexed_data["columns"][index_field][sheet_num]
-                if identifier not in indexed_data["data"][sheet]:
-                    print(f"WARNING: {identifier} not present in sheet {sheet}")
-                    return None
-                new_data = deepcopy(indexed_data["data"][sheet][identifier])
-                new_sheet = f"INDEX_{sheet}_{identifier}"
-                if "INDEX" not in indexed_data["columns"]:
-                    indexed_data["columns"]["INDEX"] = []
-                indexed_data["columns"]["INDEX"].append(new_sheet)
-                indexed_data["data"][new_sheet] = {}
-                new_ids = new_data.pop(index_field)
-                for i in range(0,len(new_ids)):
-                    new_ident_dict = {}
-                    for key in new_data.keys():
-                        if key == mappings.IDENTIFIER["main_id"]:
-                            new_ident_dict[f"{sheet}.{key}"] = new_data[key][0]
-                        else:
-                            new_ident_dict[f"{sheet}.{key}"] = new_data[key][i]
-                    indexed_data["data"][new_sheet][new_ids[i]] = new_ident_dict
-                    if mappings.VERBOSE:
-                        print(f"Appending {new_ids[i]} to {current_key}")
-                    result.append(map_row_to_mcodepacket(identifier, index_field, f"{current_key}.INDEX", indexed_data, node, new_ids[i]))
-                return result
-            elif index_field == "NONE":
-                return None
-            else:
-                raise Exception(f"couldn't identify index_field {index_field}")
-        else:
-            raise Exception(f"An indexed_on notation is required for {current_key}")
+    # if we're looking at an array of objects:
+    if "dict" in str(type(node)) and "INDEX" in node:
+        return map_indexed_scaffold(identifier, index_field, current_key, indexed_data, node)
     if node is None and x is not None:
         if mappings.VERBOSE:
             print(f"Index {x} is the value for {current_key}")
@@ -114,7 +60,7 @@ def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, n
             new_key = f"{current_key}.{item}"
             if mappings.VERBOSE:
                 print(f"Mapping list item {new_key}")
-            m = map_row_to_mcodepacket(identifier, index_field, new_key, indexed_data, item, x)
+            m = map_data_to_scaffold(identifier, index_field, new_key, indexed_data, item, x)
             if "list" in str(type(m)):
                 new_node = m
             else:
@@ -130,10 +76,70 @@ def map_row_to_mcodepacket(identifier, index_field, current_key, indexed_data, n
             new_key = f"{current_key}.{key}".replace("ROOT.", "")
             if mappings.VERBOSE:
                 print(f"\nMapping line {new_key}")
-            dict = map_row_to_mcodepacket(identifier, index_field, new_key, indexed_data, node[key], x)
+            dict = map_data_to_scaffold(identifier, index_field, new_key, indexed_data, node[key], x)
             if dict is not None:
                 scaffold[key] = dict
         return scaffold
+
+
+def map_indexed_scaffold(identifier, index_field, current_key, indexed_data, node):
+    result = []
+    if "INDEX" in node:
+        index_method, index_field = parse_mapping_function(node["INDEX"])
+        index_field = index_field[0]
+        if index_field is None:
+            return None
+
+        # process INDEX into index_field
+        node = node["NODES"]
+        if mappings.VERBOSE:
+            print(f"Indexing {index_field} on {current_key}")
+        index_field_match = re.match(r"(.+)\.(.+)", index_field)
+        sheet_name = None
+        if index_field_match is not None:
+            index_field = index_field_match.group(2)
+            sheet_name = index_field_match.group(1)
+        # create a new indexed_data for this array of objects:
+        # find the sheet that the index_field is on:
+        if index_field in indexed_data["columns"]:
+            sheet_num = 0
+            if sheet_name is not None:
+                if len(indexed_data["columns"][index_field]) > 0:
+                    try:
+                        sheet_num = indexed_data["columns"][index_field].index(sheet_name)
+                    except Exception as e:
+                        raise Exception(f"No index_field {index_field} in sheet {sheet_name}")
+                else:
+                    raise Exception(f"multiple possible index_fields named {index_field} in {indexed_data['columns'][index_field]}")
+            sheet = indexed_data["columns"][index_field][sheet_num]
+            if identifier not in indexed_data["data"][sheet]:
+                print(f"WARNING: {identifier} not present in sheet {sheet}")
+                return None
+            new_data = deepcopy(indexed_data["data"][sheet][identifier])
+            new_sheet = f"INDEX_{sheet}_{identifier}"
+            if "INDEX" not in indexed_data["columns"]:
+                indexed_data["columns"]["INDEX"] = []
+            indexed_data["columns"]["INDEX"].append(new_sheet)
+            indexed_data["data"][new_sheet] = {}
+            new_ids = new_data.pop(index_field)
+            for i in range(0,len(new_ids)):
+                new_ident_dict = {}
+                for key in new_data.keys():
+                    if key == mappings.IDENTIFIER["main_id"]:
+                        new_ident_dict[f"{sheet}.{key}"] = new_data[key][0]
+                    else:
+                        new_ident_dict[f"{sheet}.{key}"] = new_data[key][i]
+                indexed_data["data"][new_sheet][new_ids[i]] = new_ident_dict
+                if mappings.VERBOSE:
+                    print(f"Appending {new_ids[i]} to {current_key}")
+                result.append(map_data_to_scaffold(identifier, index_field, f"{current_key}.INDEX", indexed_data, node, new_ids[i]))
+            return result
+        elif index_field == "NONE":
+            return None
+        else:
+            raise Exception(f"couldn't identify index_field {index_field}")
+    else:
+        raise Exception(f"An indexed_on notation is required for {current_key}")
 
 
 def parse_mapping_function(mapping):
@@ -576,7 +582,7 @@ def main(args):
     # for each identifier's row, make an mcodepacket
     for indiv in indexed_data["individuals"]:
         print(f"Creating packet for {indiv}")
-        mcodepackets.append(map_row_to_mcodepacket(
+        mcodepackets.append(map_data_to_scaffold(
             indiv, None, "ROOT", indexed_data, deepcopy(mapping_scaffold), None)
             )
 

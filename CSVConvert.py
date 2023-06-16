@@ -81,7 +81,7 @@ def map_data_to_scaffold(indexed_data, node):
             new_key = f"{current_key}.{key}"#.replace("DONOR.", "")
             if mappings.VERBOSE:
                 print(f"\nMapping line {new_key}")
-            mappings.push_to_stack(None, None, identifier, new_key)
+            mappings.push_to_stack(index_field, x, identifier, new_key)
             dict = map_data_to_scaffold(indexed_data, node[key])
             mappings.pop_from_stack()
             if dict is not None:

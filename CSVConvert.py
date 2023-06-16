@@ -125,7 +125,7 @@ def map_indexed_scaffold(identifier, index_field, current_key, indexed_data, nod
             for i in range(0,len(new_ids)):
                 new_ident_dict = {}
                 for key in new_data.keys():
-                    if key == mappings.IDENTIFIER["main_id"]:
+                    if key == mappings.IDENTIFIER["main_id_col"]:
                         new_ident_dict[f"{sheet}.{key}"] = new_data[key][0]
                     else:
                         new_ident_dict[f"{sheet}.{key}"] = new_data[key][i]
@@ -211,8 +211,6 @@ def eval_mapping(identifier, index_field, indexed_data, node_name, x):
     if "mappings" not in mappings.MODULES:
         mappings.MODULES["mappings"] = importlib.import_module("mappings")
     modulename = "mappings"
-
-    # mappings.IDENTIFIER = {"id": identifier}
 
     method, parameters = parse_mapping_function(node_name)
     if parameters is None:
@@ -528,7 +526,7 @@ def main(args):
     if identifier is None:
         print("Need to specify what the main identifier column name as 'identifier' in the manifest file")
         return
-    mappings.IDENTIFIER["main_id"] = identifier
+    mappings.IDENTIFIER["main_id_col"] = identifier
 
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold
@@ -582,6 +580,7 @@ def main(args):
     # for each identifier's row, make an mcodepacket
     for indiv in indexed_data["individuals"]:
         print(f"Creating packet for {indiv}")
+        mappings.IDENTIFIER["main_id"] = indiv
         packets.append(map_data_to_scaffold(
             indiv, None, "ROOT", indexed_data, deepcopy(mapping_scaffold), None)
             )

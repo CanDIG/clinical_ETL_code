@@ -38,7 +38,7 @@ def map_data_to_scaffold(identifier, current_key, indexed_data, node):
     """
     curr_id = mappings.IDENTIFIER["index_stack"][-1]
     index_field = curr_id["id"]
-    x = curr_id["index"]
+    x = curr_id["value"]
     # if we're looking at an array of objects:
     if "dict" in str(type(node)) and "INDEX" in node:
         return map_indexed_scaffold(identifier, index_field, current_key, indexed_data, node)
@@ -134,7 +134,7 @@ def map_indexed_scaffold(identifier, index_field, current_key, indexed_data, nod
                 indexed_data["data"][new_sheet][new_ids[i]] = new_ident_dict
                 if mappings.VERBOSE:
                     print(f"Appending {new_ids[i]} to {current_key}")
-                mappings.IDENTIFIER["index_stack"].append({"id": index_field, "index": new_ids[i]})
+                mappings.IDENTIFIER["index_stack"].append({"id": index_field, "value": new_ids[i]})
                 result.append(map_data_to_scaffold(identifier, f"{current_key}.INDEX", indexed_data, node))
                 mappings.IDENTIFIER["index_stack"].pop()
             return result
@@ -585,7 +585,7 @@ def main(args):
     for indiv in indexed_data["individuals"]:
         print(f"Creating packet for {indiv}")
         mappings.IDENTIFIER["main_id"] = indiv
-        mappings.IDENTIFIER["index_stack"].append({"id": None, "index": None})
+        mappings.IDENTIFIER["index_stack"].append({"id": None, "value": None})
         packets.append(map_data_to_scaffold(indiv, "ROOT", indexed_data, deepcopy(mapping_scaffold))
             )
 

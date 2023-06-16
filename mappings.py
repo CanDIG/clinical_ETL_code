@@ -22,6 +22,24 @@ class MappingError(Exception):
         return repr(f"Check the values for {IDENTIFIER['main_id']} in {IDENTIFIER}: {self.value}")
 
 
+def push_to_stack(id, value, indiv, line):
+    IDENTIFIER["index_stack"].append(
+        {
+            "id": id,
+            "value": value,
+            "indiv": indiv,
+            "line": line
+        }
+    )
+
+
+def pop_from_stack():
+    if len(IDENTIFIER["index_stack"]) > 0:
+        return IDENTIFIER["index_stack"].pop()
+    else:
+        return None
+
+
 # Format a date field to ISO standard
 def date(data_values):
     raw_date = list_val(data_values)
@@ -130,4 +148,5 @@ def ontology_placeholder(data_values):
 
 # Default indexing value for arrays
 def indexed_on(data_values):
+    print("INDEX")
     return single_val(data_values)

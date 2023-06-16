@@ -31,7 +31,7 @@ def parse_args():
     return args
 
 
-def map_data_to_scaffold(identifier, current_key, indexed_data, node):
+def map_data_to_scaffold(indexed_data, node):
     """
     Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive.
     If x is not None, it is an index into an object that is part of an array.
@@ -39,6 +39,8 @@ def map_data_to_scaffold(identifier, current_key, indexed_data, node):
     curr_id = mappings.IDENTIFIER["index_stack"][-1]
     index_field = curr_id["id"]
     x = curr_id["value"]
+    identifier = curr_id["indiv"]
+    current_key = curr_id["line"]
     # if we're looking at an array of objects:
     if "dict" in str(type(node)) and "INDEX" in node:
         return map_indexed_scaffold(identifier, current_key, indexed_data, node)
@@ -54,37 +56,45 @@ def map_data_to_scaffold(identifier, current_key, indexed_data, node):
             print(f"Evaluating {node}{index_str}")
         return eval_mapping(identifier, index_field, indexed_data, node, x)
     if "list" in str(type(node)):
-        if mappings.VERBOSE:
-            print(f"List {current_key}")
-        # if we get here with a node that can be a list (e.g. Treatments)
-        new_node = []
-        for item in node:
-            new_key = f"{current_key}.{item}"
-            if mappings.VERBOSE:
-                print(f"Mapping list item {new_key}")
-            m = map_data_to_scaffold(identifier, new_key, indexed_data, item)
-            if "list" in str(type(m)):
-                new_node = m
-            else:
-                if mappings.VERBOSE:
-                    print(f"Appending {m}")
-                new_node.append(m)
-        return new_node
+        raise Exception(f"DEPRECATED: List {current_key}")
+        # if mappings.VERBOSE:
+        #     print(f"List {current_key}")
+        # # if we get here with a node that can be a list (e.g. Treatments)
+        # new_node = []
+        # for item in node:
+        #     new_key = f"{current_key}.{item}"
+        #     if mappings.VERBOSE:
+        #         print(f"Mapping list item {new_key}")
+        #     m = map_data_to_scaffold(identifier, new_key, indexed_data, item)
+        #     if "list" in str(type(m)):
+        #         new_node = m
+        #     else:
+        #         if mappings.VERBOSE:
+        #             print(f"Appending {m}")
+        #         new_node.append(m)
+        # return new_node
     elif "dict" in str(type(node)):
         scaffold = {}
         for key in node.keys():
-            # if we're starting at the root, there will be a leading ROOT and .; we should remove those.
-            # (we add "ROOT" at the start so that we can differentiate the leading "." in replace())
-            new_key = f"{current_key}.{key}".replace("ROOT.", "")
+            # if we're starting at the root, there will be a leading DONOR and .; we should remove those.
+            # (we add "DONOR" at the start so that we can differentiate the leading "." in replace())
+            new_key = f"{current_key}.{key}"#.replace("DONOR.", "")
             if mappings.VERBOSE:
                 print(f"\nMapping line {new_key}")
-            dict = map_data_to_scaffold(identifier, new_key, indexed_data, node[key])
+            mappings.push_to_stack(None, None, identifier, new_key)
+            dict = map_data_to_scaffold(indexed_data, node[key])
+            mappings.pop_from_stack()
             if dict is not None:
                 scaffold[key] = dict
         return scaffold
 
 
 def map_indexed_scaffold(identifier, current_key, indexed_data, node):
+    # prepare a new indexed_data for just this individual, keyed with the values of the index_field
+    subindexed_data = {
+        "columns": [],
+        "data": {}
+    }
     result = []
     if "INDEX" in node:
         index_method, index_field = parse_mapping_function(node["INDEX"])
@@ -135,9 +145,9 @@ def map_indexed_scaffold(identifier, current_key, indexed_data, node):
                 indexed_data["data"][new_sheet][new_ids[i]] = new_ident_dict
                 if mappings.VERBOSE:
                     print(f"Appending {new_ids[i]} to {current_key}")
-                mappings.IDENTIFIER["index_stack"].append({"id": index_field, "value": new_ids[i]})
-                result.append(map_data_to_scaffold(identifier, f"{current_key}.INDEX", indexed_data, node))
-                mappings.IDENTIFIER["index_stack"].pop()
+                mappings.push_to_stack(index_field, new_ids[i], identifier, f"{current_key}.INDEX")
+                result.append(map_data_to_scaffold(indexed_data, node))
+                mappings.pop_from_stack()
             return result
         elif index_field == "NONE":
             return None
@@ -586,9 +596,8 @@ def main(args):
     for indiv in indexed_data["individuals"]:
         print(f"Creating packet for {indiv}")
         mappings.IDENTIFIER["main_id"] = indiv
-        mappings.IDENTIFIER["index_stack"].append({"id": None, "value": None})
-        packets.append(map_data_to_scaffold(indiv, "ROOT", indexed_data, deepcopy(mapping_scaffold))
-            )
+        mappings.push_to_stack(None, None, indiv, "DONOR")
+        packets.append(map_data_to_scaffold(indexed_data, deepcopy(mapping_scaffold)))
 
     # # special case: if it was candigv1, we need to wrap the results in "metadata"
     # # if schema == "candigv1":

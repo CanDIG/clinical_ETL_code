@@ -11,11 +11,15 @@ import pandas
 import re
 import sys
 import yaml
-import pprint
 import argparse
 
 from moh_mappings import mohschema
 from generate_schema import generate_mapping_template
+
+
+def verbose_print(message):
+    if mappings.VERBOSE:
+        print(message)
 
 
 def parse_args():
@@ -41,24 +45,21 @@ def map_data_to_scaffold(indexed_data, node):
     x = curr_id["value"]
     identifier = curr_id["indiv"]
     current_key = curr_id["line"]
-    # print(f"Mapping {curr_id} for {node}")
     # if we're looking at an array of objects:
     if "dict" in str(type(node)) and "INDEX" in node:
-        print(f"Map indexed scaffold: {node['INDEX']}")
+        verbose_print(f"Map indexed scaffold: {node['INDEX']}")
         return map_indexed_scaffold(indexed_data, node)
     if "str" in str(type(node)) and node != "":
-        if mappings.VERBOSE:
-            index_str = ""
-            if index_field is not None:
-                index_str = f" for index {index_field}"
-            print(f"Evaluating {node}{index_str}")
+        index_str = ""
+        if index_field is not None:
+            index_str = f" for index {index_field}"
+        verbose_print(f"Evaluating {node}{index_str}")
         return eval_mapping(identifier, index_field, indexed_data, node, x)
     if "dict" in str(type(node)):
         scaffold = {}
         for key in node.keys():
             new_key = f"{current_key}.{key}"
-            if mappings.VERBOSE:
-                print(f"\nMapping line {new_key} {mappings.IDENTIFIER['index_stack']}")
+            verbose_print(f"\nMapping line {new_key} {mappings.IDENTIFIER['index_stack']}")
             #mappings.push_to_stack(index_field, x, identifier, new_key)
             dict = map_data_to_scaffold(indexed_data, node[key])
             #mappings.pop_from_stack()
@@ -89,25 +90,24 @@ def map_indexed_scaffold(indexed_data, node):
         index_values = eval_mapping(identifier, index_field, indexed_data, node["INDEX"], None)
         if index_values is None:
             return None
-        print(f"Is {stack_index_field} the same as curr_id[id]? {index_field} {index_values} {stack_index_value}")
+        verbose_print(f"Is {stack_index_field} the same as curr_id[id]? {index_field} {index_values} {stack_index_value}")
         if index_field == stack_index_field:
             if stack_index_value in index_values:
-                print("yes")
+                verbose_print("yes")
                 index_values = [stack_index_value]
             else:
-                print("no")
+                verbose_print("no")
                 index_values = []
-        print(f"INDEXED on {index_values} {index_field}")
+        verbose_print(f"INDEXED on {index_values} {index_field}")
     else:
         raise Exception(f"An indexed_on notation is required for {current_key}")
 
     if node["NODES"] is None:
         # there isn't any more depth to this, so just return the values
         return index_values
-    print(f"Processing some index values {index_values}")
+    verbose_print(f"Processing some index values {index_values}")
     for i in index_values:
-        if mappings.VERBOSE:
-            print(f"Appending {i} to {current_key}")
+        verbose_print(f"Appending {i} to {current_key}")
         mappings.push_to_stack(index_field, i, identifier, f"{current_key}.INDEX")
         result.append(map_data_to_scaffold(indexed_data, node["NODES"]))
         mappings.pop_from_stack()
@@ -163,13 +163,13 @@ def populate_data_for_params(identifier, index_field, index_value, indexed_data,
     data_values = {}
     param_names = []
 
-    print(f"populating with {identifier} {index_field} {index_value} {params}")
+    verbose_print(f"populating with {identifier} {index_field} {index_value} {params}")
     for param in params:
         param, sheets = find_sheets_with_field(param, indexed_data)
         if sheets is None or len(sheets) == 0:
-            print(f"WARNING: parameter {param} is not present in the input data")
+            verbose_print(f"WARNING: parameter {param} is not present in the input data")
         else:
-            print(f"populating {param} {sheets}")
+            verbose_print(f"populating {param} {sheets}")
             param_names.append(param)
             for sheet in sheets:
                 if param not in data_values:
@@ -182,31 +182,31 @@ def populate_data_for_params(identifier, index_field, index_value, indexed_data,
                     # if index_field is the same as stack_index_field, then index_value should equal stack's value
                     if index_field is not None and index_value is not None:
                         index_field, index_sheets = find_sheets_with_field(index_field, indexed_data)
-                        print(f"checking if {index_field} == {stack_index_field} and {index_value} == {stack_index_value}")
+                        verbose_print(f"checking if {index_field} == {stack_index_field} and {index_value} == {stack_index_value}")
                         if index_field == stack_index_field and index_value == stack_index_value:
-                            print("yes")
-                            print(f"Is {index_value} in {sheet}>{identifier}>{index_field}? {indexed_data['data'][sheet][identifier][index_field]}")
+                            verbose_print("yes")
+                            verbose_print(f"Is {index_value} in {sheet}>{identifier}>{index_field}? {indexed_data['data'][sheet][identifier][index_field]}")
                             if index_value in indexed_data["data"][sheet][identifier][index_field]:
-                                print(f"yes, data_values[{sheet}] = {indexed_data['data'][sheet][identifier]}")
+                                verbose_print(f"yes, data_values[{sheet}] = {indexed_data['data'][sheet][identifier]}")
                                 # if indexed_data["data"][sheet][identifier][index_field] has more than one value, find the index for index_value and use just that one
                                 data_values[param][sheet] = {}
                                 i = indexed_data["data"][sheet][identifier][index_field].index(index_value)
-                                print(f"is {i} a valid index for {indexed_data['data'][sheet][identifier][param]}?")
+                                verbose_print(f"is {i} a valid index for {indexed_data['data'][sheet][identifier][param]}?")
                                 if len(indexed_data["data"][sheet][identifier][param]) >= i:
-                                    print("yes")
+                                    verbose_print("yes")
                                     data_values[param][sheet] = [indexed_data["data"][sheet][identifier][param][i]]
                                 else:
-                                    print("no")
+                                    verbose_print("no")
                         else:
-                            print("no")
+                            verbose_print("no")
                     else:
-                        print("regular")
+                        verbose_print("regular")
                         data_values[param][sheet] = indexed_data["data"][sheet][identifier][param]
                 else:
-                    print(f"{identifier} not on sheet {sheet}")
+                    verbose_print(f"{identifier} not on sheet {sheet}")
                     data_values[param][sheet] = []
 
-    print(f"populated {data_values} {param_names}")
+    verbose_print(f"populated {data_values} {param_names}")
     return data_values, param_names
 
 def eval_mapping(identifier, index_field, indexed_data, node_name, x):
@@ -216,7 +216,7 @@ def eval_mapping(identifier, index_field, indexed_data, node_name, x):
     in the schema.
     If x is not None, it is an index into an object that is part of an array.
     """
-    print(f"EVAL {identifier}, {index_field}, indexed_data, {node_name}, {x}")
+    verbose_print(f"EVAL {identifier}, {index_field}, indexed_data, {node_name}, {x}")
     if "mappings" not in mappings.MODULES:
         mappings.MODULES["mappings"] = importlib.import_module("mappings")
     modulename = "mappings"
@@ -227,7 +227,7 @@ def eval_mapping(identifier, index_field, indexed_data, node_name, x):
         parameters = [node_name]
     data_values, parameters = populate_data_for_params(identifier, index_field, x, indexed_data, parameters)
     if parameters is None or (len(parameters) > 0 and parameters[0] == "NONE"):
-        print("NONE")
+        verbose_print("NONE")
         return None
 
     if method is not None:
@@ -238,10 +238,8 @@ def eval_mapping(identifier, index_field, indexed_data, node_name, x):
             method = subfunc_match.group(2)
     else:
         method = "single_val"
-        if mappings.VERBOSE:
-            print(f"Defaulting single_val({parameters})")
-    if mappings.VERBOSE:
-        print(f"Using method {modulename}.{method}({parameters}) with {data_values}")
+        verbose_print(f"Defaulting to single_val({parameters})")
+    verbose_print(f"Using method {modulename}.{method}({parameters}) with {data_values}")
     try:
         if len(data_values.keys()) > 0:
             module = mappings.MODULES[modulename]
@@ -433,10 +431,6 @@ def create_scaffold_from_template(lines, test=False):
     #     props.pop(key)
     #print(f"Cleared empty keys {empty_keys}")
 
-    # print(f"Props:")
-    # pp = pprint.PrettyPrinter(indent=4)
-    # pp.pprint(props)
-
     for key in props.keys():
         if key == "INDEX":  # this maps to a list
             first_key = props[key].pop(0)
@@ -531,8 +525,7 @@ def main(args):
     sc, mapping_template = generate_mapping_template(schema.generate_schema_array()["DonorWithClinicalData"])
 
     schema_list = list(scaffold)
-    if mappings.VERBOSE:
-        print(f"Imported schemas: {schema_list} from mohschema")
+    verbose_print(f"Imported schemas: {schema_list} from mohschema")
 
 
     # read the mapping template (contains the mapping function for each
@@ -545,9 +538,6 @@ def main(args):
 
     mapping_scaffold = create_scaffold_from_template(template_lines)
 
-    # print("Scaffold from template")
-    # pp = pprint.PrettyPrinter(indent=4)
-    # pp.pprint(mapping_scaffold)
     if mapping_scaffold is None:
         print("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
         return

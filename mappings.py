@@ -13,11 +13,6 @@ def warn(message):
         print(f"WARNING for {IDENTIFIER}: {message}")
 
 
-def verbose_print(message):
-    if VERBOSE:
-        print(message)
-
-
 class MappingError(Exception):
     def __init__(self, value):
         self.value = value
@@ -36,12 +31,14 @@ def push_to_stack(id, value, indiv, line):
             "line": line
         }
     )
-    print(f"Pushed to stack: {IDENTIFIER['index_stack']}")
+    if VERBOSE:
+        print(f"Pushed to stack: {IDENTIFIER['index_stack']}")
 
 
 
 def pop_from_stack():
-    print("Popped from stack")
+    if VERBOSE:
+        print("Popped from stack")
     if len(IDENTIFIER["index_stack"]) > 0:
         return IDENTIFIER["index_stack"].pop()
     else:

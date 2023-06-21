@@ -36,18 +36,16 @@ def map_data_to_scaffold(indexed_data, node):
     Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive.
     If x is not None, it is an index into an object that is part of an array.
     """
-    curr_id = mappings.IDENTIFIER["index_stack"][-1]
+    curr_id = mappings.peek_at_top_of_stack()
     index_field = curr_id["id"]
     x = curr_id["value"]
     identifier = curr_id["indiv"]
     current_key = curr_id["line"]
+    # print(f"Mapping {curr_id} for {node}")
     # if we're looking at an array of objects:
     if "dict" in str(type(node)) and "INDEX" in node:
-        return map_indexed_scaffold(identifier, current_key, indexed_data, node)
-    if node is None and x is not None:
-        if mappings.VERBOSE:
-            print(f"Index {x} is the value for {current_key}")
-        return x
+        print(f"Map indexed scaffold: {node['INDEX']}")
+        return map_indexed_scaffold(indexed_data, node)
     if "str" in str(type(node)) and node != "":
         if mappings.VERBOSE:
             index_str = ""
@@ -55,106 +53,84 @@ def map_data_to_scaffold(indexed_data, node):
                 index_str = f" for index {index_field}"
             print(f"Evaluating {node}{index_str}")
         return eval_mapping(identifier, index_field, indexed_data, node, x)
-    if "list" in str(type(node)):
-        raise Exception(f"DEPRECATED: List {current_key}")
-        # if mappings.VERBOSE:
-        #     print(f"List {current_key}")
-        # # if we get here with a node that can be a list (e.g. Treatments)
-        # new_node = []
-        # for item in node:
-        #     new_key = f"{current_key}.{item}"
-        #     if mappings.VERBOSE:
-        #         print(f"Mapping list item {new_key}")
-        #     m = map_data_to_scaffold(identifier, new_key, indexed_data, item)
-        #     if "list" in str(type(m)):
-        #         new_node = m
-        #     else:
-        #         if mappings.VERBOSE:
-        #             print(f"Appending {m}")
-        #         new_node.append(m)
-        # return new_node
-    elif "dict" in str(type(node)):
+    if "dict" in str(type(node)):
         scaffold = {}
         for key in node.keys():
-            # if we're starting at the root, there will be a leading DONOR and .; we should remove those.
-            # (we add "DONOR" at the start so that we can differentiate the leading "." in replace())
-            new_key = f"{current_key}.{key}"#.replace("DONOR.", "")
+            new_key = f"{current_key}.{key}"
             if mappings.VERBOSE:
-                print(f"\nMapping line {new_key}")
-            mappings.push_to_stack(index_field, x, identifier, new_key)
+                print(f"\nMapping line {new_key} {mappings.IDENTIFIER['index_stack']}")
+            #mappings.push_to_stack(index_field, x, identifier, new_key)
             dict = map_data_to_scaffold(indexed_data, node[key])
-            mappings.pop_from_stack()
+            #mappings.pop_from_stack()
             if dict is not None:
                 scaffold[key] = dict
         return scaffold
 
 
-def map_indexed_scaffold(identifier, current_key, indexed_data, node):
-    # prepare a new indexed_data for just this individual, keyed with the values of the index_field
-    subindexed_data = {
-        "columns": [],
-        "data": {}
-    }
+def map_indexed_scaffold(indexed_data, node):
+    curr_id = mappings.peek_at_top_of_stack()
+    index_field = curr_id["id"]
+    identifier = curr_id["indiv"]
+    current_key = curr_id["line"]
+    stack_index_value = curr_id["value"]
+    stack_index_field, stack_index_sheets = find_sheets_with_field(index_field, indexed_data)
+
     result = []
+    index_values = None
+    # process the index
     if "INDEX" in node:
         index_method, index_field = parse_mapping_function(node["INDEX"])
-        # TODO: right now, index_method is thrown away (it is always indexed_on)
-        index_field = index_field[0]
         if index_field is None:
             return None
-
-        # process INDEX into index_field
-        node = node["NODES"]
-        if mappings.VERBOSE:
-            print(f"Indexing {index_field} on {current_key}")
-        index_field_match = re.match(r"(.+)\.(.+)", index_field)
-        sheet_name = None
-        if index_field_match is not None:
-            index_field = index_field_match.group(2)
-            sheet_name = index_field_match.group(1)
-        # create a new indexed_data for this array of objects:
-        # find the sheet that the index_field is on:
-        if index_field in indexed_data["columns"]:
-            sheet_num = 0
-            if sheet_name is not None:
-                if len(indexed_data["columns"][index_field]) > 0:
-                    try:
-                        sheet_num = indexed_data["columns"][index_field].index(sheet_name)
-                    except Exception as e:
-                        raise Exception(f"No index_field {index_field} in sheet {sheet_name}")
-                else:
-                    raise Exception(f"multiple possible index_fields named {index_field} in {indexed_data['columns'][index_field]}")
-            sheet = indexed_data["columns"][index_field][sheet_num]
-            if identifier not in indexed_data["data"][sheet]:
-                print(f"WARNING: {identifier} not present in sheet {sheet}")
-                return None
-            new_data = deepcopy(indexed_data["data"][sheet][identifier])
-            new_sheet = f"INDEX_{sheet}_{identifier}"
-            if "INDEX" not in indexed_data["columns"]:
-                indexed_data["columns"]["INDEX"] = []
-            indexed_data["columns"]["INDEX"].append(new_sheet)
-            indexed_data["data"][new_sheet] = {}
-            new_ids = new_data.pop(index_field)
-            for i in range(0,len(new_ids)):
-                new_ident_dict = {}
-                for key in new_data.keys():
-                    if key == mappings.IDENTIFIER["main_id_col"]:
-                        new_ident_dict[f"{sheet}.{key}"] = new_data[key][0]
-                    else:
-                        new_ident_dict[f"{sheet}.{key}"] = new_data[key][i]
-                indexed_data["data"][new_sheet][new_ids[i]] = new_ident_dict
-                if mappings.VERBOSE:
-                    print(f"Appending {new_ids[i]} to {current_key}")
-                mappings.push_to_stack(index_field, new_ids[i], identifier, f"{current_key}.INDEX")
-                result.append(map_data_to_scaffold(indexed_data, node))
-                mappings.pop_from_stack()
-            return result
-        elif index_field == "NONE":
+        if len(index_field) > 1:
+            raise mappings.MappingError(f"Indexing methods can only have one parameter, not {index_field}")
+        index_field, index_sheets = find_sheets_with_field(index_field[0], indexed_data)
+        # index_field = index_field[0]
+        index_values = eval_mapping(identifier, index_field, indexed_data, node["INDEX"], None)
+        if index_values is None:
             return None
-        else:
-            raise Exception(f"couldn't identify index_field {index_field}")
+        print(f"Is {stack_index_field} the same as curr_id[id]? {index_field} {index_values} {stack_index_value}")
+        if index_field == stack_index_field:
+            if stack_index_value in index_values:
+                print("yes")
+                index_values = [stack_index_value]
+            else:
+                print("no")
+                index_values = []
+        print(f"INDEXED on {index_values} {index_field}")
     else:
         raise Exception(f"An indexed_on notation is required for {current_key}")
+
+    if node["NODES"] is None:
+        # there isn't any more depth to this, so just return the values
+        return index_values
+    print(f"Processing some index values {index_values}")
+    for i in index_values:
+        if mappings.VERBOSE:
+            print(f"Appending {i} to {current_key}")
+        mappings.push_to_stack(index_field, i, identifier, f"{current_key}.INDEX")
+        result.append(map_data_to_scaffold(indexed_data, node["NODES"]))
+        mappings.pop_from_stack()
+    return result
+
+
+def find_sheets_with_field(param, indexed_data):
+    if param is None:
+        return None, None
+    param = param.strip()
+    sheet_match = re.match(r"(.+?)\.(.+)", param)
+    if sheet_match is not None:
+        # this param is a specific item on a specific sheet:
+        param = sheet_match.group(2)
+        sheet = sheet_match.group(1).replace('"', '').replace("'", "")
+        # is this param a column?
+        if param in indexed_data["columns"]:
+            if sheet in indexed_data["columns"][param]:
+                return param, [sheet]
+    else:
+        if param in indexed_data["columns"]:
+            return param, indexed_data["columns"][param]
+    return None, None
 
 
 def parse_mapping_function(mapping):
@@ -174,46 +150,63 @@ def parse_mapping_function(mapping):
     return method, parameters
 
 
-def populate_data_for_params(identifier, index_field, indexed_data, params):
+def populate_data_for_params(identifier, index_field, index_value, indexed_data, params):
     """
     Given a list of params and the indexed_data, return a dictionary of the
     values for each parameter.
     If index_field is not None, create an INDEX key that lists all the possible values that could use
     """
+    curr_id = mappings.peek_at_top_of_stack()
+    stack_index_field, stack_index_sheets = find_sheets_with_field(curr_id["id"], indexed_data)
+    stack_index_value = curr_id["value"]
+
     data_values = {}
     param_names = []
-    if index_field is not None:
-        # temporarily add INDEX to the possible params to look for
-        params.append("INDEX")
-    for param in params:
-        param = param.strip()
-        sheets = None
-        sheet_match = re.match(r"(.+?)\.(.+)", param)
-        if sheet_match is not None:
-            # this param is a specific item on a specific sheet:
-            param = sheet_match.group(2)
-            sheets = [sheet_match.group(1).replace('"', '').replace("'", "")]
 
-        # only process this param if it is even present in the columns:
-        if param in indexed_data["columns"]:
-            if sheets is None:
-                # look for all sheets that match this param name:
-                sheets = indexed_data["columns"][param]
-            param_names.append(param)
-            data_values[param] = {}
-            for sheet in sheets:
-                # for each of these sheets, add this identifier's contents as a key and array:
-                if param == "INDEX":
-                    data_values[param][sheet] = indexed_data["data"][sheet]
-                elif identifier in indexed_data["data"][sheet]:
-                    data_value = indexed_data["data"][sheet][identifier][param]
-                    data_values[param][sheet] = data_value
-                else:
-                    data_values[param][sheet] = []
-        else:
+    print(f"populating with {identifier} {index_field} {index_value} {params}")
+    for param in params:
+        param, sheets = find_sheets_with_field(param, indexed_data)
+        if sheets is None or len(sheets) == 0:
             print(f"WARNING: parameter {param} is not present in the input data")
-    if "INDEX" in param_names:
-        param_names.remove("INDEX")
+        else:
+            print(f"populating {param} {sheets}")
+            param_names.append(param)
+            for sheet in sheets:
+                if param not in data_values:
+                    data_values[param] = {}
+                # for each of these sheets, add this identifier's contents as a key and array:
+                if identifier in indexed_data["data"][sheet]:
+                    if sheet not in data_values[param]:
+                        data_values[param][sheet] = []
+                    # if index_field is not None, add only the indexed data where the index_field's value is identifier
+                    # if index_field is the same as stack_index_field, then index_value should equal stack's value
+                    if index_field is not None and index_value is not None:
+                        index_field, index_sheets = find_sheets_with_field(index_field, indexed_data)
+                        print(f"checking if {index_field} == {stack_index_field} and {index_value} == {stack_index_value}")
+                        if index_field == stack_index_field and index_value == stack_index_value:
+                            print("yes")
+                            print(f"Is {index_value} in {sheet}>{identifier}>{index_field}? {indexed_data['data'][sheet][identifier][index_field]}")
+                            if index_value in indexed_data["data"][sheet][identifier][index_field]:
+                                print(f"yes, data_values[{sheet}] = {indexed_data['data'][sheet][identifier]}")
+                                # if indexed_data["data"][sheet][identifier][index_field] has more than one value, find the index for index_value and use just that one
+                                data_values[param][sheet] = {}
+                                i = indexed_data["data"][sheet][identifier][index_field].index(index_value)
+                                print(f"is {i} a valid index for {indexed_data['data'][sheet][identifier][param]}?")
+                                if len(indexed_data["data"][sheet][identifier][param]) >= i:
+                                    print("yes")
+                                    data_values[param][sheet] = [indexed_data["data"][sheet][identifier][param][i]]
+                                else:
+                                    print("no")
+                        else:
+                            print("no")
+                    else:
+                        print("regular")
+                        data_values[param][sheet] = indexed_data["data"][sheet][identifier][param]
+                else:
+                    print(f"{identifier} not on sheet {sheet}")
+                    data_values[param][sheet] = []
+
+    print(f"populated {data_values} {param_names}")
     return data_values, param_names
 
 def eval_mapping(identifier, index_field, indexed_data, node_name, x):
@@ -223,6 +216,7 @@ def eval_mapping(identifier, index_field, indexed_data, node_name, x):
     in the schema.
     If x is not None, it is an index into an object that is part of an array.
     """
+    print(f"EVAL {identifier}, {index_field}, indexed_data, {node_name}, {x}")
     if "mappings" not in mappings.MODULES:
         mappings.MODULES["mappings"] = importlib.import_module("mappings")
     modulename = "mappings"
@@ -231,7 +225,10 @@ def eval_mapping(identifier, index_field, indexed_data, node_name, x):
     if parameters is None:
         # by default, map using the node name as a parameter
         parameters = [node_name]
-    data_values, parameters = populate_data_for_params(identifier, index_field, indexed_data, parameters)
+    data_values, parameters = populate_data_for_params(identifier, index_field, x, indexed_data, parameters)
+    if parameters is None or (len(parameters) > 0 and parameters[0] == "NONE"):
+        print("NONE")
+        return None
 
     if method is not None:
         # is the function something in a dynamically-loaded module?
@@ -239,38 +236,19 @@ def eval_mapping(identifier, index_field, indexed_data, node_name, x):
         if subfunc_match is not None:
             modulename = subfunc_match.group(1)
             method = subfunc_match.group(2)
-        if mappings.VERBOSE:
-            print(f"Using method {modulename}.{method}({parameters})")
     else:
         method = "single_val"
         if mappings.VERBOSE:
-            print(f"Defaulting to mappings.single_val({parameters})")
-    if "INDEX" in data_values:
-        # find all the relevant keys in index_field:
-        for param in parameters:
-            for sheet in data_values[param]:
-                index_identifier = f"INDEX_{sheet}_{identifier}"
-                if index_identifier in indexed_data['columns']['INDEX']:
-                    if mappings.VERBOSE:
-                        print(f"Populating data values for {param}, based on index {x}")
-
-                    # put back the data for the index_field:
-                    if x not in data_values["INDEX"][index_identifier]:
-                        print(f"ERROR: {x} not in {sheet}.{index_field}")
-                    else:
-                        data_values["INDEX"][index_identifier][x][f"{sheet}.{index_field}"] = x
-                        new_node_val = data_values["INDEX"][index_identifier][x][f"{sheet}.{param}"]
-                        data_values[param][sheet] = new_node_val
+            print(f"Defaulting single_val({parameters})")
+    if mappings.VERBOSE:
+        print(f"Using method {modulename}.{method}({parameters}) with {data_values}")
     try:
-        if "INDEX" in data_values:
-            data_values.pop("INDEX")
-        # check to see if there are even any data values besides INDEX:
         if len(data_values.keys()) > 0:
             module = mappings.MODULES[modulename]
             return eval(f'module.{method}({data_values})')
     except mappings.MappingError as e:
         print(f"Error evaluating {method}")
-        raise
+        raise e
 
 
 def ingest_raw_data(input_path, indexed):

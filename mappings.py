@@ -13,6 +13,11 @@ def warn(message):
         print(f"WARNING for {IDENTIFIER}: {message}")
 
 
+def verbose_print(message):
+    if VERBOSE:
+        print(message)
+
+
 class MappingError(Exception):
     def __init__(self, value):
         self.value = value
@@ -31,13 +36,26 @@ def push_to_stack(id, value, indiv, line):
             "line": line
         }
     )
+    print(f"Pushed to stack: {IDENTIFIER['index_stack']}")
+
 
 
 def pop_from_stack():
+    print("Popped from stack")
     if len(IDENTIFIER["index_stack"]) > 0:
         return IDENTIFIER["index_stack"].pop()
     else:
         return None
+
+
+def peek_at_top_of_stack():
+    val = IDENTIFIER["index_stack"][-1]
+    return {
+        "id": val["id"],
+        "value": val["value"],
+        "indiv": val["indiv"],
+        "line": val["line"]
+    }
 
 
 # Format a date field to ISO standard
@@ -148,5 +166,8 @@ def ontology_placeholder(data_values):
 
 # Default indexing value for arrays
 def indexed_on(data_values):
-    print("INDEX")
-    return single_val(data_values)
+    result = set()
+    for key in data_values:
+        for item in data_values[key]:
+            result = result.union(data_values[key][item])
+    return list(result)

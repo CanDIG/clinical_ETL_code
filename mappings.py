@@ -1,17 +1,21 @@
 import ast
 import dateparser
+import json
 
-MODULES = {}
-IDENTIFIER = {'main_id': None, 'main_id_col': None, 'index_stack': []}
 VERBOSE = False
+MODULES = {}
+IDENTIFIER_FIELD = None
+IDENTIFIER = None
+INDEX_STACK = []
 INDEXED_DATA = None
+CURRENT_LINE = ""
 
 
 def warn(message):
     global VERBOSE
     global IDENTIFIER
     if VERBOSE:
-        print(f"WARNING for {IDENTIFIER}: {message}")
+        print(f"WARNING for {IDENTIFIER_FIELD}={IDENTIFIER}: {message}")
 
 
 class MappingError(Exception):
@@ -19,40 +23,37 @@ class MappingError(Exception):
         self.value = value
 
     def __str__(self):
-        global IDENTIFIER
-        return repr(f"Check the values for {IDENTIFIER['main_id']} in {IDENTIFIER}: {self.value}")
+        return repr(f"Check the values for {IDENTIFIER} in {IDENTIFIER_FIELD}: {self.value}")
 
 
-def push_to_stack(id, value, indiv, line):
-    IDENTIFIER["index_stack"].append(
+def push_to_stack(id, value, indiv):
+    INDEX_STACK.append(
         {
             "id": id,
             "value": value,
-            "indiv": indiv,
-            "line": line
+            "indiv": indiv
         }
     )
     if VERBOSE:
-        print(f"Pushed to stack: {IDENTIFIER['index_stack']}")
+        print(f"Pushed to stack: {INDEX_STACK}")
 
 
 
 def pop_from_stack():
     if VERBOSE:
         print("Popped from stack")
-    if len(IDENTIFIER["index_stack"]) > 0:
-        return IDENTIFIER["index_stack"].pop()
+    if len(INDEX_STACK) > 0:
+        return INDEX_STACK.pop()
     else:
         return None
 
 
 def peek_at_top_of_stack():
-    val = IDENTIFIER["index_stack"][-1]
+    val = INDEX_STACK[-1]
     return {
         "id": val["id"],
         "value": val["value"],
-        "indiv": val["indiv"],
-        "line": val["line"]
+        "indiv": val["indiv"]
     }
 
 

@@ -10,7 +10,7 @@ import os
 import pandas
 import sys
 import argparse
-from moh_mappings import mohschema
+from mohschema import mohschema
 import re
 
 

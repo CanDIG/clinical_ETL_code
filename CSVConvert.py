@@ -12,7 +12,7 @@ import sys
 import yaml
 import argparse
 
-from moh_mappings import mohschema
+from mohschema import mohschema
 from generate_schema import generate_mapping_template
 
 

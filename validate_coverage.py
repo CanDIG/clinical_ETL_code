@@ -5,7 +5,7 @@ import os
 import re
 from CSVConvert import load_manifest
 from copy import deepcopy
-from moh_mappings import mohschema
+from mohschema import mohschema
 
 
 

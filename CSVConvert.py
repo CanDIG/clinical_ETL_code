@@ -109,6 +109,11 @@ def map_indexed_scaffold(node):
 
 
 def find_sheets_with_field(param):
+    """
+    For a named parameter, find all of the sheets that have this parameter on them.
+    If the parameter specifies a sheet, return just that sheet and the parameter's base name.
+    Returns None, None if the parameter is not found.
+    """
     if param is None:
         return None, None
     param = param.strip()
@@ -202,7 +207,7 @@ def eval_mapping(identifier, index_field, node_name, index_value):
     Given the identifier field, the data, and a particular schema node, evaluate
     the mapping using the provider method and return the final JSON for the node
     in the schema.
-    If x is not None, it is an index into an object that is part of an array.
+    If index_value is not None, it is an index into an object that is part of an array.
     """
     verbose_print(f"Evaluating {identifier}, {index_field}, {node_name}, {index_value}")
     if "mappings" not in mappings.MODULES:
@@ -547,7 +552,7 @@ def main(args):
             mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
 
     packets = []
-    # for each identifier's row, make an mcodepacket
+    # for each identifier's row, make a packet
     for indiv in mappings.INDEXED_DATA["individuals"]:
         print(f"Creating packet for {indiv}")
         mappings.IDENTIFIER["main_id"] = indiv
@@ -557,10 +562,6 @@ def main(args):
             raise Exception(f"Stack popped too far!\n{mappings.IDENTIFIER}")
         if mappings.pop_from_stack() is not None:
             raise Exception(f"Stack not empty\n{mappings.IDENTIFIER}")
-
-    # # special case: if it was candigv1, we need to wrap the results in "metadata"
-    # # if schema == "candigv1":
-    # #     packets = {"metadata": packets}
 
     with open(f"{output_file}_indexed.json", 'w') as f:
         json.dump(mappings.INDEXED_DATA, f, indent=4)

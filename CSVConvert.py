@@ -199,14 +199,14 @@ def populate_data_for_params(identifier, index_field, index_value, params):
     verbose_print(f"populated {data_values} {param_names}")
     return data_values, param_names
 
-def eval_mapping(identifier, index_field, node_name, x):
+def eval_mapping(identifier, index_field, node_name, index_value):
     """
     Given the identifier field, the data, and a particular schema node, evaluate
     the mapping using the provider method and return the final JSON for the node
     in the schema.
     If x is not None, it is an index into an object that is part of an array.
     """
-    verbose_print(f"Evaluating {identifier}, {index_field}, {node_name}, {x}")
+    verbose_print(f"Evaluating {identifier}, {index_field}, {node_name}, {index_value}")
     if "mappings" not in mappings.MODULES:
         mappings.MODULES["mappings"] = importlib.import_module("mappings")
     modulename = "mappings"
@@ -215,7 +215,7 @@ def eval_mapping(identifier, index_field, node_name, x):
     if parameters is None:
         # by default, map using the node name as a parameter
         parameters = [node_name]
-    data_values, parameters = populate_data_for_params(identifier, index_field, x, parameters)
+    data_values, parameters = populate_data_for_params(identifier, index_field, index_value, parameters)
     if parameters is None or (len(parameters) > 0 and parameters[0] == "NONE"):
         return None
     if method is not None:

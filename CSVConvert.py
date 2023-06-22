@@ -3,7 +3,6 @@
 
 from copy import deepcopy
 import importlib.util
-from importlib.metadata import files, version
 import json
 import mappings
 import os
@@ -87,13 +86,10 @@ def map_indexed_scaffold(node):
         index_values = eval_mapping(identifier, index_field, node["INDEX"], None)
         if index_values is None:
             return None
-        verbose_print(f"Is {stack_index_field} the same as curr_id[id]? {index_field} {index_values} {stack_index_value}")
         if index_field == stack_index_field:
             if stack_index_value in index_values:
-                verbose_print("yes")
                 index_values = [stack_index_value]
             else:
-                verbose_print("no")
                 index_values = []
         verbose_print(f"INDEXED on {index_values} {index_field}")
     else:
@@ -197,7 +193,6 @@ def populate_data_for_params(identifier, index_field, index_value, params):
                 else:
                     verbose_print(f"{identifier} not on sheet {sheet}")
                     data_values[param][sheet] = []
-
     verbose_print(f"populated {data_values} {param_names}")
     return data_values, param_names
 

@@ -4,6 +4,7 @@ import dateparser
 MODULES = {}
 IDENTIFIER = {'main_id': None, 'main_id_col': None, 'index_stack': []}
 VERBOSE = False
+INDEXED_DATA = None
 
 
 def warn(message):

@@ -35,7 +35,7 @@ def parse_args():
     return args
 
 
-def map_data_to_scaffold(indexed_data, node):
+def map_data_to_scaffold(node):
     """
     Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive.
     If x is not None, it is an index into an object that is part of an array.
@@ -48,33 +48,30 @@ def map_data_to_scaffold(indexed_data, node):
     # if we're looking at an array of objects:
     if "dict" in str(type(node)) and "INDEX" in node:
         verbose_print(f"Map indexed scaffold: {node['INDEX']}")
-        return map_indexed_scaffold(indexed_data, node)
+        return map_indexed_scaffold(node)
     if "str" in str(type(node)) and node != "":
         index_str = ""
         if index_field is not None:
             index_str = f" for index {index_field}"
         verbose_print(f"Evaluating {node}{index_str}")
-        return eval_mapping(identifier, index_field, indexed_data, node, x)
+        return eval_mapping(identifier, index_field, node, x)
     if "dict" in str(type(node)):
         scaffold = {}
         for key in node.keys():
             new_key = f"{current_key}.{key}"
-            verbose_print(f"\nMapping line {new_key} {mappings.IDENTIFIER['index_stack']}")
-            #mappings.push_to_stack(index_field, x, identifier, new_key)
-            dict = map_data_to_scaffold(indexed_data, node[key])
-            #mappings.pop_from_stack()
+            dict = map_data_to_scaffold(node[key])
             if dict is not None:
                 scaffold[key] = dict
         return scaffold
 
 
-def map_indexed_scaffold(indexed_data, node):
+def map_indexed_scaffold(node):
     curr_id = mappings.peek_at_top_of_stack()
     index_field = curr_id["id"]
     identifier = curr_id["indiv"]
     current_key = curr_id["line"]
     stack_index_value = curr_id["value"]
-    stack_index_field, stack_index_sheets = find_sheets_with_field(index_field, indexed_data)
+    stack_index_field, stack_index_sheets = find_sheets_with_field(index_field)
 
     result = []
     index_values = None
@@ -85,9 +82,9 @@ def map_indexed_scaffold(indexed_data, node):
             return None
         if len(index_field) > 1:
             raise mappings.MappingError(f"Indexing methods can only have one parameter, not {index_field}")
-        index_field, index_sheets = find_sheets_with_field(index_field[0], indexed_data)
+        index_field, index_sheets = find_sheets_with_field(index_field[0])
         # index_field = index_field[0]
-        index_values = eval_mapping(identifier, index_field, indexed_data, node["INDEX"], None)
+        index_values = eval_mapping(identifier, index_field, node["INDEX"], None)
         if index_values is None:
             return None
         verbose_print(f"Is {stack_index_field} the same as curr_id[id]? {index_field} {index_values} {stack_index_value}")
@@ -109,12 +106,12 @@ def map_indexed_scaffold(indexed_data, node):
     for i in index_values:
         verbose_print(f"Appending {i} to {current_key}")
         mappings.push_to_stack(index_field, i, identifier, f"{current_key}.INDEX")
-        result.append(map_data_to_scaffold(indexed_data, node["NODES"]))
+        result.append(map_data_to_scaffold(node["NODES"]))
         mappings.pop_from_stack()
     return result
 
 
-def find_sheets_with_field(param, indexed_data):
+def find_sheets_with_field(param):
     if param is None:
         return None, None
     param = param.strip()
@@ -124,12 +121,12 @@ def find_sheets_with_field(param, indexed_data):
         param = sheet_match.group(2)
         sheet = sheet_match.group(1).replace('"', '').replace("'", "")
         # is this param a column?
-        if param in indexed_data["columns"]:
-            if sheet in indexed_data["columns"][param]:
+        if param in mappings.INDEXED_DATA["columns"]:
+            if sheet in mappings.INDEXED_DATA["columns"][param]:
                 return param, [sheet]
     else:
-        if param in indexed_data["columns"]:
-            return param, indexed_data["columns"][param]
+        if param in mappings.INDEXED_DATA["columns"]:
+            return param, mappings.INDEXED_DATA["columns"][param]
     return None, None
 
 
@@ -150,14 +147,14 @@ def parse_mapping_function(mapping):
     return method, parameters
 
 
-def populate_data_for_params(identifier, index_field, index_value, indexed_data, params):
+def populate_data_for_params(identifier, index_field, index_value, params):
     """
-    Given a list of params and the indexed_data, return a dictionary of the
+    Given a list of params, return a dictionary of the
     values for each parameter.
     If index_field is not None, create an INDEX key that lists all the possible values that could use
     """
     curr_id = mappings.peek_at_top_of_stack()
-    stack_index_field, stack_index_sheets = find_sheets_with_field(curr_id["id"], indexed_data)
+    stack_index_field, stack_index_sheets = find_sheets_with_field(curr_id["id"])
     stack_index_value = curr_id["value"]
 
     data_values = {}
@@ -165,7 +162,7 @@ def populate_data_for_params(identifier, index_field, index_value, indexed_data,
 
     verbose_print(f"populating with {identifier} {index_field} {index_value} {params}")
     for param in params:
-        param, sheets = find_sheets_with_field(param, indexed_data)
+        param, sheets = find_sheets_with_field(param)
         if sheets is None or len(sheets) == 0:
             verbose_print(f"WARNING: parameter {param} is not present in the input data")
         else:
@@ -175,33 +172,26 @@ def populate_data_for_params(identifier, index_field, index_value, indexed_data,
                 if param not in data_values:
                     data_values[param] = {}
                 # for each of these sheets, add this identifier's contents as a key and array:
-                if identifier in indexed_data["data"][sheet]:
+                if identifier in mappings.INDEXED_DATA["data"][sheet]:
                     if sheet not in data_values[param]:
                         data_values[param][sheet] = []
                     # if index_field is not None, add only the indexed data where the index_field's value is identifier
-                    # if index_field is the same as stack_index_field, then index_value should equal stack's value
                     if index_field is not None and index_value is not None:
-                        index_field, index_sheets = find_sheets_with_field(index_field, indexed_data)
+                        index_field, index_sheets = find_sheets_with_field(index_field)
                         verbose_print(f"checking if {index_field} == {stack_index_field} and {index_value} == {stack_index_value}")
+                        # if index_field is the same as stack_index_field, then index_value should equal stack's value
                         if index_field == stack_index_field and index_value == stack_index_value:
-                            verbose_print("yes")
-                            verbose_print(f"Is {index_value} in {sheet}>{identifier}>{index_field}? {indexed_data['data'][sheet][identifier][index_field]}")
-                            if index_value in indexed_data["data"][sheet][identifier][index_field]:
-                                verbose_print(f"yes, data_values[{sheet}] = {indexed_data['data'][sheet][identifier]}")
+                            verbose_print(f"Is {index_value} in {sheet}>{identifier}>{index_field}? {mappings.INDEXED_DATA['data'][sheet][identifier][index_field]}")
+                            if index_value in mappings.INDEXED_DATA["data"][sheet][identifier][index_field]:
+                                verbose_print(f"yes, data_values[{sheet}] = {mappings.INDEXED_DATA['data'][sheet][identifier]}")
                                 # if indexed_data["data"][sheet][identifier][index_field] has more than one value, find the index for index_value and use just that one
                                 data_values[param][sheet] = {}
-                                i = indexed_data["data"][sheet][identifier][index_field].index(index_value)
-                                verbose_print(f"is {i} a valid index for {indexed_data['data'][sheet][identifier][param]}?")
-                                if len(indexed_data["data"][sheet][identifier][param]) >= i:
-                                    verbose_print("yes")
-                                    data_values[param][sheet] = [indexed_data["data"][sheet][identifier][param][i]]
-                                else:
-                                    verbose_print("no")
-                        else:
-                            verbose_print("no")
+                                i = mappings.INDEXED_DATA["data"][sheet][identifier][index_field].index(index_value)
+                                verbose_print(f"is {i} a valid index for {mappings.INDEXED_DATA['data'][sheet][identifier][param]}?")
+                                if len(mappings.INDEXED_DATA["data"][sheet][identifier][param]) >= i:
+                                    data_values[param][sheet] = [mappings.INDEXED_DATA["data"][sheet][identifier][param][i]]
                     else:
-                        verbose_print("regular")
-                        data_values[param][sheet] = indexed_data["data"][sheet][identifier][param]
+                        data_values[param][sheet] = mappings.INDEXED_DATA["data"][sheet][identifier][param]
                 else:
                     verbose_print(f"{identifier} not on sheet {sheet}")
                     data_values[param][sheet] = []
@@ -209,14 +199,14 @@ def populate_data_for_params(identifier, index_field, index_value, indexed_data,
     verbose_print(f"populated {data_values} {param_names}")
     return data_values, param_names
 
-def eval_mapping(identifier, index_field, indexed_data, node_name, x):
+def eval_mapping(identifier, index_field, node_name, x):
     """
     Given the identifier field, the data, and a particular schema node, evaluate
     the mapping using the provider method and return the final JSON for the node
     in the schema.
     If x is not None, it is an index into an object that is part of an array.
     """
-    verbose_print(f"EVAL {identifier}, {index_field}, indexed_data, {node_name}, {x}")
+    verbose_print(f"Evaluating {identifier}, {index_field}, {node_name}, {x}")
     if "mappings" not in mappings.MODULES:
         mappings.MODULES["mappings"] = importlib.import_module("mappings")
     modulename = "mappings"
@@ -225,11 +215,9 @@ def eval_mapping(identifier, index_field, indexed_data, node_name, x):
     if parameters is None:
         # by default, map using the node name as a parameter
         parameters = [node_name]
-    data_values, parameters = populate_data_for_params(identifier, index_field, x, indexed_data, parameters)
+    data_values, parameters = populate_data_for_params(identifier, index_field, x, parameters)
     if parameters is None or (len(parameters) > 0 and parameters[0] == "NONE"):
-        verbose_print("NONE")
         return None
-
     if method is not None:
         # is the function something in a dynamically-loaded module?
         subfunc_match = re.match(r"(.+)\.(.+)", method)
@@ -550,22 +538,22 @@ def main(args):
         return
 
     print("Indexing data")
-    indexed_data = process_data(raw_csv_dfs, identifier)
+    mappings.INDEXED_DATA = process_data(raw_csv_dfs, identifier)
     with open(f"{output_file}_indexed.json", 'w') as f:
-        json.dump(indexed_data, f, indent=4)
+        json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     # if verbose flag is set, warn if column name is present in multiple sheets:
-    for col in indexed_data["columns"]:
-        if col != identifier and len(indexed_data["columns"][col]) > 1:
-            mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(indexed_data['columns'][col])}")
+    for col in mappings.INDEXED_DATA["columns"]:
+        if col != identifier and len(mappings.INDEXED_DATA["columns"][col]) > 1:
+            mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
 
     packets = []
     # for each identifier's row, make an mcodepacket
-    for indiv in indexed_data["individuals"]:
+    for indiv in mappings.INDEXED_DATA["individuals"]:
         print(f"Creating packet for {indiv}")
         mappings.IDENTIFIER["main_id"] = indiv
         mappings.push_to_stack(None, None, indiv, "DONOR")
-        packets.append(map_data_to_scaffold(indexed_data, deepcopy(mapping_scaffold)))
+        packets.append(map_data_to_scaffold(deepcopy(mapping_scaffold)))
         if mappings.pop_from_stack() is None:
             raise Exception(f"Stack popped too far!\n{mappings.IDENTIFIER}")
         if mappings.pop_from_stack() is not None:
@@ -576,7 +564,7 @@ def main(args):
     # #     packets = {"metadata": packets}
 
     with open(f"{output_file}_indexed.json", 'w') as f:
-        json.dump(indexed_data, f, indent=4)
+        json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(packets, f, indent=4)

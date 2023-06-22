@@ -29,6 +29,7 @@ def parse_args():
     #parser.add_argument('--schema', type=str, help="Schema to use for template; default is mCodePacket")
     parser.add_argument('--manifest', type=str, required = True, help="Path to a manifest file describing the mapping."
                                                                   " See README for more information")
+    parser.add_argument('--test', action="store_true", help="Use exact template specified in manifest: do not remove extra lines")
     parser.add_argument('--verbose', '--v', action="store_true", help="Print extra information")
     args = parser.parse_args()
     return args
@@ -518,10 +519,11 @@ def main(args):
     template_lines = read_mapping_template(manifest["mapping"])
 
     ## Replace the lines in the original template with any matching lines in template_lines
-    #interpolate_mapping_into_scaffold(template_lines, mapping_template)
-    # mapping_scaffold = create_scaffold_from_template(mapping_template)
-
-    mapping_scaffold = create_scaffold_from_template(template_lines)
+    if not args.test:
+        interpolate_mapping_into_scaffold(template_lines, mapping_template)
+        mapping_scaffold = create_scaffold_from_template(mapping_template)
+    else:
+        mapping_scaffold = create_scaffold_from_template(template_lines)
 
     if mapping_scaffold is None:
         print("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")

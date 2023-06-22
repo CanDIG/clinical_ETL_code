@@ -502,12 +502,7 @@ def main(args):
     if schema is None:
         print(f"Did not find an openapi schema at {url}; please check link")
         return
-    scaffold = schema.generate_scaffold()
     sc, mapping_template = generate_mapping_template(schema.generate_schema_array()["DonorWithClinicalData"])
-
-    schema_list = list(scaffold)
-    verbose_print(f"Imported schemas: {schema_list} from mohschema")
-
 
     # read the mapping template (contains the mapping function for each
     # field)

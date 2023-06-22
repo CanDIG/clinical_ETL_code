@@ -163,6 +163,8 @@ def populate_data_for_params(identifier, index_field, index_value, params):
     verbose_print(f"populating with {identifier} {index_field} {index_value} {params}")
     for param in params:
         param, sheets = find_sheets_with_field(param)
+        if param is None:
+            return None, None
         if sheets is None or len(sheets) == 0:
             verbose_print(f"WARNING: parameter {param} is not present in the input data")
         else:

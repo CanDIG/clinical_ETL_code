@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.9]
-    
+
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -19,6 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+          pip install openpyxl
       - name: Test with pytest
         run: |
           pytest

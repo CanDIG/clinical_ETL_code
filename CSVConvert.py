@@ -71,12 +71,11 @@ def map_indexed_scaffold(node, line):
     # process the index
     if "INDEX" in node:
         index_method, index_field = parse_mapping_function(node["INDEX"])
+        verbose_print(f"  Mapping indexed scaffold for {index_field}")
         if index_field is None:
             return None
-        if len(index_field) > 1:
-            raise mappings.MappingError(f"Indexing methods can only have one parameter, not {index_field}")
         index_field, index_sheets = find_sheets_with_field(index_field[0])
-        index_values = eval_mapping(identifier, node["INDEX"], index_field, None)
+        index_values = eval_mapping(identifier, node["INDEX"], index_field, stack_index_value)
         if index_values is None:
             return None
         if index_field == stack_index_field:
@@ -170,7 +169,7 @@ def populate_data_for_params(identifier, index_field, index_value, params):
                 # for each of these sheets, add this identifier's contents as a key and array:
                 if identifier in mappings.INDEXED_DATA["data"][sheet]:
                     if sheet not in data_values[param]:
-                        data_values[param][sheet] = []
+                        data_values[param][sheet] = mappings.INDEXED_DATA["data"][sheet][identifier][param]
                     # if index_field is not None, add only the indexed data where the index_field's value is identifier
                     if index_field is not None and index_value is not None:
                         index_field, index_sheets = find_sheets_with_field(index_field)
@@ -185,8 +184,8 @@ def populate_data_for_params(identifier, index_field, index_value, params):
                                 i = mappings.INDEXED_DATA["data"][sheet][identifier][index_field].index(index_value)
                                 if len(mappings.INDEXED_DATA["data"][sheet][identifier][param]) >= i:
                                     data_values[param][sheet] = [mappings.INDEXED_DATA["data"][sheet][identifier][param][i]]
-                    else:
-                        data_values[param][sheet] = mappings.INDEXED_DATA["data"][sheet][identifier][param]
+                            else:
+                                data_values[param].pop(sheet)
                 else:
                     verbose_print(f"  WARNING: {identifier} not on sheet {sheet}")
                     data_values[param][sheet] = []

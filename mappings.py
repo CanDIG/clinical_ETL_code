@@ -38,7 +38,6 @@ def push_to_stack(id, value, indiv):
         print(f"Pushed to stack: {INDEX_STACK}")
 
 
-
 def pop_from_stack():
     if VERBOSE:
         print("Popped from stack")
@@ -50,6 +49,8 @@ def pop_from_stack():
 
 def peek_at_top_of_stack():
     val = INDEX_STACK[-1]
+    if VERBOSE:
+        print(json.dumps(val, indent=2))
     return {
         "id": val["id"],
         "value": val["value"],
@@ -148,6 +149,19 @@ def is_null(cell):
     if cell == 'nan' or cell is None or cell == '':
         return True
     return False
+
+
+# Convert various responses to boolean
+def boolean(data_values):
+    cell = single_val(data_values)
+    if cell is None or cell.lower() == "no" or cell.lower == "false":
+        return False
+    return True
+
+
+def integer(data_values):
+    cell = single_val(data_values)
+    return int(cell)
 
 
 # Placeholder function to make a fake ontology entry

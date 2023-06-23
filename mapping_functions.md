@@ -53,12 +53,14 @@ primary_diagnoses.INDEX.submitter_primary_diagnosis_id,
 primary_diagnoses.INDEX.date_of_diagnosis,
 ```
 
-You need to specify the indexing field for primary diagnosis. This field needs to be unique for each primary diagnosis in your raw data. Use the `Indexed_on` mapping to define the index field:
+You need to specify the indexing field for primary diagnosis. This field needs to be unique for each primary diagnosis in your raw data. Use the `indexed_on` mapping to define the index field:
 
-`primary_diagnoses.INDEX,{Indexed_on(submitted_primary_diagnosis_id)}`
+`primary_diagnoses.INDEX,{indexed_on(submitted_primary_diagnosis_id)}`
 
 If your schema doesn't contain any instances of a particular indexed field, you can specify `NONE`:
 `{indexed_on(NONE)}`
+
+If your schema requires more complex mapping calculations, you can define an index function in your mapping file: it should return an array of index values.
 
 
 ## Transforming data using standard functions

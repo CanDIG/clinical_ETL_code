@@ -161,6 +161,8 @@ def boolean(data_values):
 
 def integer(data_values):
     cell = single_val(data_values)
+    if cell is None:
+        return None
     return int(cell)
 
 

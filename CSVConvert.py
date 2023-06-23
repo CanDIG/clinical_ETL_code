@@ -48,16 +48,24 @@ def map_data_to_scaffold(node, line):
     identifier = curr_id["indiv"]
     # if we're looking at an array of objects:
     if "dict" in str(type(node)) and "INDEX" in node:
-        return map_indexed_scaffold(node, line)
+        result = map_indexed_scaffold(node, line)
+        if result is not None and len(result) == 0:
+            return None
+        return result
     if "str" in str(type(node)) and node != "":
-        return eval_mapping(identifier, node, index_field, index_value)
+        result = eval_mapping(identifier, node, index_field, index_value)
+        # if result is not None and len(result) == 0:
+        #     return None
+        return result
     if "dict" in str(type(node)):
-        scaffold = {}
+        result = {}
         for key in node.keys():
             dict = map_data_to_scaffold(node[key], f"{line}.{key}")
             if dict is not None:
-                scaffold[key] = dict
-        return scaffold
+                result[key] = dict
+        if result is not None and len(result) == 0:
+            return None
+        return result
 
 
 def map_indexed_scaffold(node, line):
@@ -94,8 +102,12 @@ def map_indexed_scaffold(node, line):
     for i in index_values:
         verbose_print(f"Applying {i} to {line}")
         mappings.push_to_stack(index_field, i, identifier)
-        result.append(map_data_to_scaffold(node["NODES"], f"{line}.INDEX"))
+        sub_res = map_data_to_scaffold(node["NODES"], f"{line}.INDEX")
+        if sub_res is not None:
+            result.append(map_data_to_scaffold(node["NODES"], f"{line}.INDEX"))
         mappings.pop_from_stack()
+    if len(result) == 0:
+        return None
     return result
 
 

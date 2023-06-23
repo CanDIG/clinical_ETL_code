@@ -38,7 +38,6 @@ def parse_args():
 def map_data_to_scaffold(node, line):
     """
     Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive.
-    If x is not None, it is an index into an object that is part of an array.
     """
     mappings.CURRENT_LINE = line
     verbose_print(f"Mapping line '{mappings.CURRENT_LINE}' for {mappings.IDENTIFIER}")
@@ -69,6 +68,9 @@ def map_data_to_scaffold(node, line):
 
 
 def map_indexed_scaffold(node, line):
+    """
+    Given a node that is indexed on some array of values, populate the array with the node's values.
+    """
     curr_id = mappings.peek_at_top_of_stack()
     identifier = curr_id["indiv"]
     stack_index_value = curr_id["value"]

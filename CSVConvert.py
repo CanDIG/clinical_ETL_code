@@ -13,7 +13,6 @@ import yaml
 import argparse
 
 from mohschema import mohschema
-from generate_schema import generate_mapping_template
 
 
 def verbose_print(message):
@@ -515,7 +514,8 @@ def main(args):
     if schema is None:
         print(f"Did not find an openapi schema at {url}; please check link")
         return
-    sc, mapping_template = generate_mapping_template(schema.generate_schema_array()["DonorWithClinicalData"])
+
+    mapping_template = schema.template
 
     # read the mapping template (contains the mapping function for each
     # field)

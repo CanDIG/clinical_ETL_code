@@ -157,14 +157,16 @@ def is_null(cell):
 # Convert various responses to boolean
 def boolean(data_values):
     cell = single_val(data_values)
-    if cell is None or cell.lower() == "no" or cell.lower == "false":
+    if cell is None or cell.lower() == "nan":
+        return None
+    if cell.lower() == "no" or cell.lower == "false":
         return False
     return True
 
 
 def integer(data_values):
     cell = single_val(data_values)
-    if cell is None:
+    if cell is None or cell.lower() == "nan":
         return None
     return int(cell)
 

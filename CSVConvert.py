@@ -270,11 +270,12 @@ def ingest_raw_data(input_path, indexed):
     return raw_csv_dfs, output_file
 
 
-def process_data(raw_csv_dfs, identifier):
+def process_data(raw_csv_dfs):
     """Takes a set of raw dataframes with a common identifier and merges into a  JSON data structure."""
     final_merged = {}
     cols_index = {}
     individuals = []
+    identifier = mappings.IDENTIFIER_FIELD
 
     for page in raw_csv_dfs.keys():
         print(f"Processing sheet {page}...")
@@ -492,6 +493,8 @@ def interpolate_mapping_into_scaffold(mapped_template, scaffold_template):
         mapped_key = mapped_line.split(",")[0].strip()
         if mapped_key in scaffold_keys:
             scaffold_template[scaffold_keys.index(mapped_key)] = mapped_line
+        else:
+            print(f"WARNING: Line '{mapped_key}' not in schema")
     return scaffold_template
 
 
@@ -521,6 +524,23 @@ def main(args):
     # field)
     template_lines = read_mapping_template(manifest["mapping"])
 
+    # # read the raw data
+    print("Reading raw data")
+    raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
+    if not raw_csv_dfs:
+        print(f"No ingestable files (csv or xlsx) were found at {input_path}")
+        return
+
+    print("Indexing data")
+    mappings.INDEXED_DATA = process_data(raw_csv_dfs)
+    with open(f"{output_file}_indexed.json", 'w') as f:
+        json.dump(mappings.INDEXED_DATA, f, indent=4)
+
+    # if verbose flag is set, warn if column name is present in multiple sheets:
+    for col in mappings.INDEXED_DATA["columns"]:
+        if col != mappings.IDENTIFIER_FIELD and len(mappings.INDEXED_DATA["columns"][col]) > 1:
+            mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
+
     ## Replace the lines in the original template with any matching lines in template_lines
     if not args.test:
         interpolate_mapping_into_scaffold(template_lines, mapping_template)
@@ -531,23 +551,6 @@ def main(args):
     if mapping_scaffold is None:
         print("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
         return
-
-    # # read the raw data
-    print("Reading raw data")
-    raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
-    if not raw_csv_dfs:
-        print(f"No ingestable files (csv or xlsx) were found at {input_path}")
-        return
-
-    print("Indexing data")
-    mappings.INDEXED_DATA = process_data(raw_csv_dfs, mappings.IDENTIFIER_FIELD)
-    with open(f"{output_file}_indexed.json", 'w') as f:
-        json.dump(mappings.INDEXED_DATA, f, indent=4)
-
-    # if verbose flag is set, warn if column name is present in multiple sheets:
-    for col in mappings.INDEXED_DATA["columns"]:
-        if col != mappings.IDENTIFIER_FIELD and len(mappings.INDEXED_DATA["columns"][col]) > 1:
-            mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
 
     packets = []
     # for each identifier's row, make a packet

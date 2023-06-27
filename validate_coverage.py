@@ -66,7 +66,7 @@ def flatten_mapping(node, node_name="", node_names=None):
 
 def check_completeness(schema):
     # expected mapping
-    schema, expected_flattened = CSVConvert.generate_mapping_template(schema.generate_schema_array()["DonorWithClinicalData"])
+    expected_flattened = schema.template
     expected_scaffold = CSVConvert.create_scaffold_from_template(expected_flattened, test=True)
     expected = CSVConvert.map_data_to_scaffold(deepcopy(expected_scaffold), "DONOR")
     print(expected)

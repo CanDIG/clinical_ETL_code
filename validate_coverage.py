@@ -64,10 +64,14 @@ def flatten_mapping(node, node_name="", node_names=None):
     return None, node_names
 
 
-def check_completeness(schema):
+def check_completeness(raw_csv_dfs, schema):
+    mappings.INDEXED_DATA = CSVConvert.process_data(raw_csv_dfs)
+    mappings.IDENTIFIER = mappings.INDEXED_DATA["individuals"][0]
+    mappings.push_to_stack(None, None, mappings.IDENTIFIER)
+
     # expected mapping
     expected_flattened = schema.template
-    expected_scaffold = CSVConvert.create_scaffold_from_template(expected_flattened, test=True)
+    expected_scaffold = CSVConvert.create_scaffold_from_template(expected_flattened, test=False)
     expected = CSVConvert.map_data_to_scaffold(deepcopy(expected_scaffold), "DONOR")
     print(expected)
     return
@@ -232,16 +236,13 @@ def main(args):
         return
 
     # if --input was specified, we can check data frame completeness coverage:
-    if input_path is not None:
-        raw_csv_dfs, output_file = CSVConvert.ingest_raw_data(input_path, indexed)
-        if not raw_csv_dfs:
-            print(f"No ingestable files (csv or xlsx) were found at {input_path}")
-            return
-        mappings.INDEXED_DATA = CSVConvert.process_data(raw_csv_dfs)
-        mappings.IDENTIFIER = mappings.INDEXED_DATA["individuals"][0]
-        mappings.push_to_stack(None, None, mappings.IDENTIFIER)
-        print("Comparing input data and mapped data for completeness of coverage...")
-        check_completeness(schema)
+    # if input_path is not None:
+    #     raw_csv_dfs, output_file = CSVConvert.ingest_raw_data(input_path, indexed)
+    #     if not raw_csv_dfs:
+    #         print(f"No ingestable files (csv or xlsx) were found at {input_path}")
+    #         return
+    #     print("Comparing input data and mapped data for completeness of coverage...")
+    #     check_completeness(raw_csv_dfs, schema)
 
     # validate with jsonschema:
     print("Validating the mapped schema...")

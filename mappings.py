@@ -98,7 +98,10 @@ def single_val(data_values):
         return None
     if len(set(all_items)) > 1:
         raise MappingError(f"More than one value was found for {list(data_values.keys())[0]} in {data_values}")
-    return all_items[0]
+    result = all_items[0]
+    if result is not None and result.lower() == 'nan':
+        result = None
+    return result
 
 
 # Take a mapping with possibly multiple values from multiple sheets and return an array
@@ -185,4 +188,10 @@ def indexed_on(data_values):
     for key in data_values:
         for item in data_values[key]:
             result = result.union(data_values[key][item])
-    return list(result)
+
+    # remove any Nones or nans
+    final = []
+    for i in result:
+        if i is not None and str(i).lower() != 'nan':
+            final.append(i)
+    return final

@@ -12,7 +12,7 @@ setuptools.setup(name="candigv2-etl",
                     "dateparser~=1.1.0",
                     "openpyxl~=3.0.9",
                     "jsoncomparison~=1.1.0",
-                    "requests~=2.29",
+                    "requests>=2.26.0",
                     "jsonschema~=3.2.0"
                  ],
                  packages=["candigETL"],

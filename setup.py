@@ -15,7 +15,7 @@ setuptools.setup(name="candigv2-etl",
                     "requests>=2.26.0",
                     "jsonschema~=3.2.0"
                  ],
-                 packages=["candigETL"],
+                 packages=["candigETL.convert", "candigETL.mapping", "candigETL.schema"],
                  description="CanDIG candigETL module for transforming phenotypic CSV data into Katsu packets",
                  url="https://github.com/CanDIG/clinical_ETL_code"
                  )

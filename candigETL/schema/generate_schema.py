@@ -1,17 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from copy import deepcopy
-import importlib.util
-from importlib.metadata import files, version
-import json
-import mappings
-import os
-import pandas
-import sys
 import argparse
 from mohschema import mohschema
-import re
 
 
 def parse_args():

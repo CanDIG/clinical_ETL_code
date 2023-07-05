@@ -1,5 +1,5 @@
-import CSVConvert
-import mappings
+from candigETL.convert import CSVConvert
+from candigETL.mapping import mappings
 
 # read sheet from given data pathway
 raw_csvs, output_file = CSVConvert.ingest_raw_data("test_data/pytest_data_v2.xlsx", [])

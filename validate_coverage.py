@@ -2,10 +2,8 @@ import argparse
 import json
 import jsonschema
 import os
-import re
-from CSVConvert import load_manifest
-from copy import deepcopy
-from mohschema import mohschema
+from candigETL.convert.CSVConvert import load_manifest
+from candigETL.schema.mohschema import mohschema
 
 
 

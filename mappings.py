@@ -1,16 +1,21 @@
 import ast
 import dateparser
+import json
 
-MODULES = {}
-IDENTIFIER = {}
 VERBOSE = False
+MODULES = {}
+IDENTIFIER_FIELD = None
+IDENTIFIER = None
+INDEX_STACK = []
+INDEXED_DATA = None
+CURRENT_LINE = ""
 
 
 def warn(message):
     global VERBOSE
     global IDENTIFIER
     if VERBOSE:
-        print(f"WARNING for {IDENTIFIER}: {message}")
+        print(f"WARNING for {IDENTIFIER_FIELD}={IDENTIFIER}: {message}")
 
 
 class MappingError(Exception):
@@ -18,10 +23,39 @@ class MappingError(Exception):
         self.value = value
 
     def __str__(self):
-        global IDENTIFIER
-        if 'id' in IDENTIFIER:
-            return repr(f"Check the values for {IDENTIFIER['id']} in {IDENTIFIER}: {self.value}")
-        return repr(f"{IDENTIFIER} {self.value}")
+        return repr(f"Check the values for {IDENTIFIER} in {IDENTIFIER_FIELD}: {self.value}")
+
+
+def push_to_stack(id, value, indiv):
+    INDEX_STACK.append(
+        {
+            "id": id,
+            "value": value,
+            "indiv": indiv
+        }
+    )
+    if VERBOSE:
+        print(f"Pushed to stack: {INDEX_STACK}")
+
+
+def pop_from_stack():
+    if VERBOSE:
+        print("Popped from stack")
+    if len(INDEX_STACK) > 0:
+        return INDEX_STACK.pop()
+    else:
+        return None
+
+
+def peek_at_top_of_stack():
+    val = INDEX_STACK[-1]
+    if VERBOSE:
+        print(json.dumps(val, indent=2))
+    return {
+        "id": val["id"],
+        "value": val["value"],
+        "indiv": val["indiv"]
+    }
 
 
 # Format a date field to ISO standard
@@ -64,7 +98,10 @@ def single_val(data_values):
         return None
     if len(set(all_items)) > 1:
         raise MappingError(f"More than one value was found for {list(data_values.keys())[0]} in {data_values}")
-    return all_items[0]
+    result = all_items[0]
+    if result is not None and result.lower() == 'nan':
+        result = None
+    return result
 
 
 # Take a mapping with possibly multiple values from multiple sheets and return an array
@@ -116,6 +153,22 @@ def is_null(cell):
         return True
     return False
 
+
+# Convert various responses to boolean
+def boolean(data_values):
+    cell = single_val(data_values)
+    if cell is None or cell.lower() == "no" or cell.lower == "false":
+        return False
+    return True
+
+
+def integer(data_values):
+    cell = single_val(data_values)
+    if cell is None:
+        return None
+    return int(cell)
+
+
 # Placeholder function to make a fake ontology entry
 def ontology_placeholder(data_values):
     if "str" in str(type(data_values)):
@@ -127,3 +180,18 @@ def ontology_placeholder(data_values):
         "id": "placeholder",
         "label": single_val(data_values)
     }
+
+
+# Default indexing value for arrays
+def indexed_on(data_values):
+    result = set()
+    for key in data_values:
+        for item in data_values[key]:
+            result = result.union(data_values[key][item])
+
+    # remove any Nones or nans
+    final = []
+    for i in result:
+        if i is not None and str(i).lower() != 'nan':
+            final.append(i)
+    return final

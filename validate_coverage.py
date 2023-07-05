@@ -5,7 +5,7 @@ import os
 import re
 from CSVConvert import load_manifest
 from copy import deepcopy
-from moh_mappings import mohschema
+from mohschema import mohschema
 
 
 
@@ -50,9 +50,9 @@ def main(args):
         print(f"Did not find an openapi schema at {url}; please check link")
         return
 
-    components = schema.get_json_schema("DonorWithClinicalData")
+    components = schema.json_schema
     result = jsonschema.validate(map_json[0], components)
-    print(result)
+    print("Mapping is valid!")
     return
 
 

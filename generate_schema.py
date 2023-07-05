@@ -10,7 +10,7 @@ import os
 import pandas
 import sys
 import argparse
-from moh_mappings import mohschema
+from mohschema import mohschema
 import re
 
 
@@ -22,78 +22,18 @@ def parse_args():
     return args
 
 
-def generate_mapping_template(node, node_name="", node_names=None):
-    """Create a template for mcodepacket, for use with the --template flag."""
-    if node_names is None:
-        node_names = []
-    if node_name != "" and not node_name.endswith(".id"):
-        # check to see if the last node_name is a header for this node_name:
-        if len(node_names) > 0:
-            x = node_names.pop()
-            x_match = re.match(r"(.+?)\**,.*", x)
-            if x_match is not None:
-                if x_match.group(1) not in node_name:
-                    node_names.append(x)
-                elif x.endswith(".INDEX,"):
-                    node_names.append(x)
-            else:
-                node_names.append(x)
-        if "description" in node:
-            node_names.append(f"{node_name},\"##{node['description']}\"")
-        else:
-            node_names.append(f"{node_name},")
-    if "str" in str(type(node)):
-        return "string", node_names
-    elif "list" in str(type(node)):
-        new_node_name = ".".join((node_name, "INDEX"))
-        sc, nn = generate_mapping_template(node[0], new_node_name, node_names)
-        return [sc], nn
-    elif "number" in str(type(node)) or "integer" in str(type(node)):
-        return 0, node_names
-    elif "boolean" in str(type(node)):
-        return True, node_names
-    elif "dict" in str(type(node)):
-        scaffold = {}
-        for prop in node.keys():
-            if node_name == "":
-                new_node_name = prop
-            else:
-                new_node_name = ".".join((node_name, prop))
-            scaffold[prop], node_names = generate_mapping_template(node[prop], new_node_name, node_names)
-        return scaffold, node_names
-    else:
-        return str(type(node)), node_names
-    return None, node_names
-
 def main(args):
     url = args.url
     schema = mohschema(url)
     if schema is None:
         print("Did not find an openapi schema at {}; please check link".format(url))
         return
-    schema_array = schema.generate_schema_array()
 
     outputfile = "{}.csv".format(args.out)
-    # print(f"Outputting schema template to {outputfile}")
-    # with open(outputfile,'w') as f:
-    #     f.write("# Schema generated from {}\n".format(url))
-    #     f.write("# mohschema.fieldname,mapping_function\n")
-    #     f.writelines(schema_array)
-
 
     metadata = ""
 
-    # if schema is None:
-    #     schema = MCODE_SCHEMA
-    #     # get metadata about version of MCODE_SCHEMA used:
-    #     metadata += "## schema based on version " + version('katsu') + ",\n"
-    #     direct_url = [p for p in files('katsu') if 'direct_url.json' in str(p)]
-    #     if len(direct_url) > 0:
-    #         d = json.loads(direct_url[0].read_text())
-    #         metadata += f"## directly checked out from {d['url']}, commit {d['vcs_info']['commit_id']}\n"
-    # if schema == "candigv1":
-    #     schema = candigv1_schema
-    sc, node_names = generate_mapping_template(schema_array["DonorWithClinicalData"])
+    node_names = schema.template
 
     with open(outputfile, 'w') as f:  # write to csv file for mapping
         f.write(metadata)

@@ -92,6 +92,18 @@ Continuous integration testing for this repository is implemented through Pytest
 
 To run tests manually, enter from command line `$ pytest`
 
+## Validating the mapping
+
+You can validate the generated json mapping file against the json schema that was used as the template:
+```
+$ python validate_coverage.py [-h] [--input map.json] [--manifest MAPPING]
+
+--input: path to the map.json file created by CSVConvert
+
+--manifest: Path to a manifest file describing the mapping
+```
+If there are validation errors, the script will throw exceptions. If no exceptions are thrown, your mapping is valid, according to the Katsu schema.
+
 
 <!-- # NOTE: the following sections have not been updated for current versions.
 

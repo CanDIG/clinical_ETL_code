@@ -52,7 +52,7 @@ def main(args):
 
     components = schema.json_schema
     result = jsonschema.validate(map_json[0], components)
-    print(result)
+    print("Mapping is valid!")
     return
 
 

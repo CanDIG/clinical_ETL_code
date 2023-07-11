@@ -19,7 +19,10 @@ Most of the heavy lifting is done in the CSVConvert.py script. See sections belo
 * exports the data into a json file(s) appropriate for ingest
 
 ```
-$ python CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file] [--test] [--verbose]
+
+main.py is a wrapper for CSVConvert for command-line use.
+
+$ python main.py [-h] [--input INPUT] [--manifest manifest_file] [--test] [--verbose]
 
 --input: path to dataset to be converted to data model
 
@@ -70,7 +73,7 @@ You'll need to create a mapping template that defines which mapping functions (i
 The `generate_template.py` script will generate a template file based an openapi.yaml file. For using katsu with the current MoHCCN data model, the URL to the schema is https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml (note raw github url).
 
 ```
-$ python generate_schema.py -h
+$ python candigETL/schema/generate_schema.py -h
 usage: generate_schema.py [-h] --url URL [--out OUT]
 
 options:
@@ -85,6 +88,11 @@ For each line in the mapping template, specify any mapping required to convert y
 **Note**: If your input data aligns perfectly with the schema (the column names are exact and unambiguous, and the field data matches the format specified by the schema), you do not need to modify the entry for that field.
 
 **Note**: Do not edit, delete, or re-order the template lines, except to add mapping functions after the comma in each line.
+
+## Use as a library
+This package can be imported as a Python library (named candigv2-etl, import with
+the name candigETL) as such:
+`pip install candigv2-etl@git+https://github.com/CanDIG/clinical_ETL_code.git@main`
 
 ## Testing
 

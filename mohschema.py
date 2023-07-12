@@ -72,8 +72,9 @@ class mohschema:
         self.json_schema = deepcopy(openapi_components[self.schema_name])
         self.json_schema["$defs"] = self.defs
 
-        # create the template for the DonorWithClinicalData schema
-        _, self.template = self.generate_mapping_template(self.generate_schema_array()[self.schema_name])
+        # create the template for the schema_name schema
+        self.scaffold = self.generate_schema_scaffold(self.schema[self.schema_name])
+        _, self.template = self.generate_mapping_template(self.scaffold)
 
 
     def expand_ref(self, ref):
@@ -103,27 +104,6 @@ class mohschema:
         else:
             result = "unknown"
         return result
-
-
-    def generate_schema_array(self):
-        """
-        Generates an array of schema objects and their properties that can
-        then be export into a mapping template file.
-        """
-        schema_array = []
-        schema_objects = self.schema
-
-        # find all schemas that have submitter_donor_id in them:
-        donor_schemas = []
-        for schema in self.schema:
-            if "type" in self.schema[schema] and self.schema[schema]["type"] == "object":
-                if "submitter_donor_id" in self.schema[schema]["properties"]:
-                    donor_schemas.append(schema)
-        schema_objs = {}
-        for schema in donor_schemas: # each of these high-level schemas is an object
-            schema_objs[schema] = self.generate_schema_scaffold(self.schema[schema])
-
-        return schema_objs
 
 
     def generate_mapping_template(self, node, node_name="", node_names=None):

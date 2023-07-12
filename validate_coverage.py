@@ -246,8 +246,7 @@ def main(args):
 
     # validate with jsonschema:
     print("Validating the mapped schema...")
-    components = schema.json_schema
-    result = jsonschema.validate(map_json[0], components)
+    result = schema.validate_donor(map_json[0])
     print("Mapping is valid!")
     return
 

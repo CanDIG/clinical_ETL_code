@@ -5,6 +5,25 @@ import yaml
 import json
 import re
 from copy import deepcopy
+import jsonschema
+import dateparser
+
+
+class MoHValidationError(Exception):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(f"Validation error: {self.value}")
+
+
+def warn(message):
+    print(f"    {message}")
+    # raise MoHValidationError(message)
+
+
+def fail(message):
+    raise MoHValidationError(message)
 
 
 """
@@ -17,6 +36,7 @@ class mohschema:
     template = None
     defs = {}
     schema_name = "DonorWithClinicalData"
+
 
     def __init__(self, url, simple=False):
         """Retrieve the schema from the supplied URL, return as dictionary."""
@@ -143,3 +163,440 @@ class mohschema:
             return str(type(node)), node_names
         return None, node_names
 
+
+    def validate_donor(self, donor_json):
+        if "submitter_donor_id" in donor_json:
+            print(f"Validating schema for donor {donor_json['submitter_donor_id']}...")
+        # validate with jsonschema:
+        jsonschema.validate(donor_json, self.json_schema)
+
+        # validate against extra rules in MoH Clinical Data Model v2
+        required_fields = [
+            "submitter_donor_id",
+            "gender",
+            "sex_at_birth",
+            "is_deceased",
+            "program_id",
+            "date_of_birth",
+            "primary_site"
+        ]
+        for f in required_fields:
+            if f not in donor_json:
+                fail(f"{f} required for Donor")
+
+        for prop in donor_json:
+            match prop:
+                case "is_deceased":
+                    if donor_json["is_deceased"]:
+                        if "cause_of_death" not in donor_json:
+                            warn("cause_of_death required if is_deceased = Yes")
+                        if "date_of_death" not in donor_json:
+                            warn("date_of_death required if is_deceased = Yes")
+                case "lost_to_followup_after_clinical_event_identifier":
+                    if donor_json["is_deceased"]:
+                        warn("lost_to_followup_after_clinical_event_identifier cannot be present if is_deceased = Yes")
+                case "lost_to_followup_reason":
+                    if "lost_to_followup_after_clinical_event_identifier" not in donor_json:
+                        warn("lost_to_followup_reason should only be submitted if lost_to_followup_after_clinical_event_identifier is submitted")
+                case "date_alive_after_lost_to_followup":
+                    if "lost_to_followup_after_clinical_event_identifier" not in donor_json:
+                        warn("lost_to_followup_after_clinical_event_identifier needs to be submitted if date_alive_after_lost_to_followup is submitted")
+                case "cause_of_death":
+                    if not donor_json["is_deceased"]:
+                        warn("cause_of_death should only be submitted if is_deceased = Yes")
+                case "date_of_death":
+                    if not donor_json["is_deceased"]:
+                        warn("date_of_death should only be submitted if is_deceased = Yes")
+                    else:
+                        death = dateparser.parse(donor_json["date_of_death"]).date()
+                        birth = dateparser.parse(donor_json["date_of_birth"]).date()
+                        if birth > death:
+                            warn("date_of_death cannot be earlier than date_of_birth")
+                case "primary_diagnoses":
+                    for x in donor_json["primary_diagnoses"]:
+                        self.validate_primary_diagnosis(x)
+                case "comorbidities":
+                    for x in donor_json["comorbidities"]:
+                        self.validate_comorbidity(x)
+                case "exposures":
+                    for x in donor_json["exposures"]:
+                        self.validate_exposure(x)
+                case "biomarkers":
+                    for x in donor_json["biomarkers"]:
+                        if "test_date" not in x:
+                            warn("test_date is necessary for biomarkers not associated with nested events")
+                        else:
+                            self.validate_biomarker(x, "test_date", x["test_date"])
+                case "followups":
+                    for x in donor_json["followups"]:
+                        self.validate_followup(x)
+
+
+    def validate_primary_diagnosis(self, map_json):
+        print(f"Validating schema for primary_diagnosis {map_json['submitter_primary_diagnosis_id']}...")
+        # check to see if this primary_diagnosis is a tumour:
+        required_fields = [
+            "submitter_primary_diagnosis_id",
+            "date_of_diagnosis",
+            "cancer_type_code",
+            "basis_of_diagnosis",
+            "lymph_nodes_examined_status"
+        ]
+        for f in required_fields:
+            if f not in map_json:
+                fail(f"{f} required for primary_diagnosis")
+
+        is_tumour = False
+        # should either have a clinical staging system specified
+        # OR have a specimen with a pathological staging system specified
+        if "clinical_tumour_staging_system" in map_json:
+            is_tumour = True
+        elif "specimens" in map_json:
+            for specimen in map_json["specimens"]:
+                if "pathological_tumour_staging_system" in specimen:
+                    is_tumour = True
+
+        for prop in map_json:
+            match prop:
+                case "lymph_nodes_examined_status":
+                    if map_json["lymph_nodes_examined_status"]:
+                        if "lymph_nodes_examined_method" not in map_json:
+                            warn("lymph_nodes_examined_method required if lymph_nodes_examined_status = Yes")
+                        if "number_lymph_nodes_positive" not in map_json:
+                            warn("number_lymph_nodes_positive required if lymph_nodes_examined_status = Yes")
+                case "clinical_tumour_staging_system":
+                    self.validate_staging_system(map_json, "clinical")
+                case "specimens":
+                    for specimen in map_json["specimens"]:
+                        self.validate_specimen(specimen, "clinical_tumour_staging_system" in map_json)
+                case "treatments":
+                    for treatment in map_json["treatments"]:
+                        self.validate_treatment(treatment)
+                case "biomarkers":
+                    for biomarker in map_json["biomarkers"]:
+                        self.validate_biomarker(biomarker, "submitter_primary_diagnosis_id", map_json["submitter_primary_diagnosis_id"])
+                case "followups":
+                    for followup in map_json["followups"]:
+                        self.validate_followup(followup)
+
+
+    def validate_specimen(self, map_json, is_clinical_tumour):
+        print(f"Validating schema for specimen {map_json['submitter_specimen_id']}...")
+
+        required_fields = [
+            "submitter_specimen_id",
+            "specimen_collection_date",
+            "specimen_storage",
+            "specimen_anatomic_location"
+        ]
+        for f in required_fields:
+            if f not in map_json:
+                fail(f"{f} required for specimen")
+
+        # Presence of tumour_histological_type means we have a tumour sample
+        if "tumour_histological_type" in map_json:
+            if not is_clinical_tumour:
+                if "pathological_tumour_staging_system" not in map_json:
+                    warn("Tumour specimens without clinical_tumour_staging_system require a pathological_tumour_staging_system")
+                else:
+                    self.validate_staging_system(map_json, "pathological")
+            required_fields = [
+                "reference_pathology_confirmed_diagnosis",
+                "reference_pathology_confirmed_tumour_presence",
+                "tumour_grading_system",
+                "tumour_grade",
+                "percent_tumour_cells_range",
+                "percent_tumour_cells_measurement_method"
+            ]
+            for f in required_fields:
+                if f not in map_json:
+                    warn(f"Tumour specimens require a {f}")
+
+        for prop in map_json:
+            match prop:
+                case "sample_registrations":
+                    for sample in map_json["sample_registrations"]:
+                        self.validate_sample_registration(sample)
+                case "biomarkers":
+                    for biomarker in map_json["biomarkers"]:
+                        self.validate_biomarker(biomarker, "submitter_specimen_id", map_json["submitter_specimen_id"])
+
+
+    def validate_sample_registration(self, map_json):
+        print(f"Validating schema for sample_registration {map_json['submitter_sample_id']}...")
+
+        required_fields = [
+            "submitter_sample_id",
+            "specimen_tissue_source",
+            "specimen_type",
+            "sample_type"
+        ]
+        for f in required_fields:
+            if f not in map_json:
+                fail(f"{f} required for sample_registration")
+
+
+    def validate_biomarker(self, map_json, associated_field, associated_value):
+        print(f"Validating schema for biomarker associated with {associated_field} {associated_value}...")
+
+        for prop in map_json:
+            match prop:
+                case "hpv_pcr_status":
+                    if map_json["hpv_pcr_status"] == "Positive" and "hpv_strain" not in map_json:
+                        warn("If hpv_pcr_status is positive, hpv_strain is required")
+
+
+    def validate_followup(self, map_json):
+        print(f"Validating schema for followup {map_json['submitter_follow_up_id']}...")
+
+        required_fields = [
+            "date_of_followup",
+            "disease_status_at_followup"
+        ]
+        for f in required_fields:
+            if f not in map_json:
+                fail(f"{f} required for followup")
+
+        for prop in map_json:
+            match prop:
+                case "disease_status_at_followup":
+                    states = [
+                        "Distant progression",
+                        "Loco-regional progression",
+                        "Progression not otherwise specified",
+                        "Relapse or recurrence"
+                    ]
+                    if map_json["disease_status_at_followup"] in states:
+                        required_fields = [
+                            "relapse_type",
+                            "date_of_relapse",
+                            "method_of_progression_status"
+                        ]
+                        for field in required_fields:
+                            if field not in map_json:
+                                warn(f"{field} is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")
+                        if "anatomic_site_progression_or_recurrence" not in map_json:
+                            if "relapse_type" in map_json and map_json["relapse_type"] != "Biochemical progression":
+                                warn(f"anatomic_site_progression_or_recurrence is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")
+
+
+    def validate_treatment(self, map_json):
+        print(f"Validating schema for treatment {map_json['submitter_treatment_id']}...")
+
+        required_fields = [
+            "submitter_treatment_id",
+            "treatment_type",
+            "is_primary_treatment",
+            "treatment_start_date",
+            "treatment_end_date",
+            "treatment_setting",
+            "treatment_intent",
+            "response_to_treatment_criteria_method",
+            "response_to_treatment"
+        ]
+        for f in required_fields:
+            if f not in map_json:
+                fail(f"{f} required for treatment")
+
+        for prop in map_json:
+            match prop:
+                case "treatment_type":
+                    match map_json["treatment_type"]:
+                        case "Chemotherapy":
+                            if "chemotherapies" not in map_json:
+                                warn("treatment type Chemotherapy should have one or more chemotherapies submitted")
+                            else:
+                                for x in map_json["chemotherapies"]:
+                                    self.validate_chemotherapy(x)
+                        case "Hormonal therapy":
+                            if "hormone_therapies" not in map_json:
+                                warn("treatment type Hormonal therapy should have one or more hormone_therapies submitted")
+                            else:
+                                for x in map_json["hormone_therapies"]:
+                                    self.validate_hormone_therapy(x)
+                        case "Immunotherapy":
+                            if "immunotherapies" not in map_json:
+                                warn("treatment type Immunotherapy should have one or more immunotherapies submitted")
+                            else:
+                                for x in map_json["immunotherapies"]:
+                                    self.validate_immunotherapy(x)
+                        case "Radiation therapy":
+                            if "radiation" not in map_json:
+                                warn("treatment type Radiation therapy should have one or more radiation submitted")
+                            else:
+                                for x in map_json["radiation"]:
+                                    self.validate_radiation(x)
+                        case "Surgery":
+                            if "surgery" not in map_json:
+                                warn("treatment type Surgery should have one or more surgery submitted")
+                            else:
+                                for x in map_json["surgery"]:
+                                    self.validate_surgery(x)
+                case "followups":
+                    for followup in map_json["followups"]:
+                        self.validate_followup(followup)
+                case "biomarkers":
+                    for biomarker in map_json["biomarkers"]:
+                        self.validate_biomarker(biomarker, "submitter_treatment_id", map_json["submitter_treatment_id"])
+
+
+    def validate_chemotherapy(self, map_json):
+        print(f"Validating schema for chemotherapy...")
+
+        required_fields = [
+            "drug_reference_database",
+            "drug_name",
+            "drug_reference_identifier"
+        ]
+        for f in required_fields:
+            if f not in map_json:
+                fail(f"{f} required for chemotherapy")
+
+        for prop in map_json:
+            match prop:
+                case "prescribed_cumulative_drug_dose":
+                    if "chemotherapy_drug_dose_units" not in map_json:
+                        warn("chemotherapy_drug_dose_units required if prescribed_cumulative_drug_dose is submitted")
+                case "actual_cumulative_drug_dose":
+                    if "chemotherapy_drug_dose_units" not in map_json:
+                        warn("chemotherapy_drug_dose_units required if actual_cumulative_drug_dose is submitted")
+
+
+    def validate_hormone_therapy(self, map_json):
+        print(f"Validating schema for hormone_therapy...")
+
+        required_fields = [
+            "drug_reference_database",
+            "drug_name",
+            "drug_reference_identifier"
+        ]
+        for f in required_fields:
+            if f not in map_json:
+                fail(f"{f} required for hormone_therapy")
+
+        for prop in map_json:
+            match prop:
+                case "prescribed_cumulative_drug_dose":
+                    if "hormone_drug_dose_units" not in map_json:
+                        warn("hormone_drug_dose_units required if prescribed_cumulative_drug_dose is submitted")
+                case "actual_cumulative_drug_dose":
+                    if "hormone_drug_dose_units" not in map_json:
+                        warn("hormone_drug_dose_units required if actual_cumulative_drug_dose is submitted")
+
+
+    def validate_immunotherapy(self, map_json):
+        print(f"Validating schema for immunotherapy...")
+
+        required_fields = [
+            "drug_reference_database",
+            "drug_name",
+            "drug_reference_identifier"
+        ]
+        for f in required_fields:
+            if f not in map_json:
+                fail(f"{f} required for immunotherapy")
+
+        for prop in map_json:
+            match prop:
+                case "prescribed_cumulative_drug_dose":
+                    if "immunotherapy_drug_dose_units" not in map_json:
+                        warn("immunotherapy_drug_dose_units required if prescribed_cumulative_drug_dose is submitted")
+                case "actual_cumulative_drug_dose":
+                    if "immunotherapy_drug_dose_units" not in map_json:
+                        warn("immunotherapy_drug_dose_units required if actual_cumulative_drug_dose is submitted")
+
+
+    def validate_radiation(self, map_json):
+        print(f"Validating schema for radiation...")
+
+        required_fields = [
+            "radiation_therapy_modality",
+            "radiation_therapy_type",
+            "anatomical_site_irradiated",
+            "radiation_therapy_fractions",
+            "radiation_therapy_dosage"
+        ]
+        for f in required_fields:
+            if f not in map_json:
+                fail(f"{f} required for radiation")
+
+        for prop in map_json:
+            match prop:
+                case "radiation_boost":
+                    if map_json["radiation_boost"]:
+                        if "reference_radiation_treatment_id" not in map_json:
+                            warn("reference_radiation_treatment_id required if radiation_boost = Yes")
+
+
+    def validate_surgery(self, map_json):
+        print(f"Validating schema for surgery...")
+
+        required_fields = [
+            "surgery_type"
+        ]
+        for f in required_fields:
+            if f not in map_json:
+                fail(f"{f} required for surgery")
+
+        if "submitter_specimen_id" not in map_json:
+            if "surgery_site" not in map_json:
+                warn("surgery_site required if submitter_specimen_id not submitted")
+            if "surgery_location" not in map_json:
+                warn("surgery_location required if submitter_specimen_id not submitted")
+
+
+    def validate_comorbidity(self, map_json):
+        print(f"Validating schema for comorbidity...")
+
+        required_fields = [
+            "comorbidity_type_code"
+        ]
+        for f in required_fields:
+            if f not in map_json:
+                fail(f"{f} required for comorbidity")
+
+        for prop in map_json:
+            match prop:
+                case "laterality_of_prior_malignancy":
+                    if "prior_malignancy" not in map_json or map_json["prior_malignancy"] != "Yes":
+                        warn("laterality_of_prior_malignancy should not be submitted unless prior_malignancy = Yes")
+
+
+    def validate_exposure(self, map_json):
+        print(f"Validating schema for exposure...")
+
+        is_smoker = False
+        if "tobacco_smoking_status" not in map_json:
+            fail("tobacco_smoking_status required for exposure")
+        else:
+            if map_json["tobacco_smoking_status"] in [
+                "Current reformed smoker for <= 15 years",
+                "Current reformed smoker for > 15 years",
+                "Current reformed smoker, duration not specified",
+                "Current smoker"
+            ]:
+                is_smoker = True
+
+        for prop in map_json:
+            match prop:
+                case "tobacco_type":
+                    if not is_smoker:
+                        warn(f"tobacco_type cannot be submitted for tobacco_smoking_status = {map_json['tobacco_smoking_status']}")
+                case "pack_years_smoked":
+                    if not is_smoker:
+                        warn(f"pack_years_smoked cannot be submitted for tobacco_smoking_status = {map_json['tobacco_smoking_status']}")
+
+
+    def validate_staging_system(self, map_json, staging_type):
+        if "AJCC" in map_json[f"{staging_type}_tumour_staging_system"]:
+            required_fields = [
+                "t_category",
+                "n_category",
+                "m_category"
+            ]
+            for f in required_fields:
+                if f"{staging_type}_{f}" not in map_json:
+                    warn(f"{staging_type}_{f} is required if {staging_type}_tumour_staging_system is AJCC")
+        else:
+            if "{staging_type}_stage_group" not in map_json:
+                warn(f"{staging_type}_stage_group is required for {staging_type}_tumour_staging_system {map_json[f'{staging_type}_tumour_staging_system']}")

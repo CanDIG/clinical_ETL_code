@@ -94,6 +94,12 @@ class mohschema:
                 result = schema_obj["type"]
         elif "$ref" in schema_obj:
             result = self.expand_ref(schema_obj)
+        elif "allOf" in schema_obj:
+            result = self.expand_ref(schema_obj["allOf"][0])
+        elif "oneOf" in schema_obj:
+            result = self.expand_ref(schema_obj["oneOf"][0])
+        elif "anyOf" in schema_obj:
+            result = self.expand_ref(schema_obj["anyOf"][0])
         else:
             result = "unknown"
         return result

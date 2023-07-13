@@ -116,9 +116,9 @@ class mohschema:
                 x = node_names.pop()
                 x_match = re.match(r"(.+?)\**,.*", x)
                 if x_match is not None:
-                    if x_match.group(1) not in node_name:
+                    if x.endswith(".INDEX,"):
                         node_names.append(x)
-                    elif x.endswith(".INDEX,"):
+                    elif x_match.group(1) not in node_name:
                         node_names.append(x)
                 else:
                     node_names.append(x)

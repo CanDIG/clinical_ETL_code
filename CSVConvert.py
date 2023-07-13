@@ -230,9 +230,9 @@ def eval_mapping(identifier, node_name, index_field, index_value):
         if subfunc_match is not None:
             modulename = subfunc_match.group(1)
             method = subfunc_match.group(2)
-    else:
-        method = "single_val"
-        verbose_print(f"  Defaulting to single_val({parameters})")
+    # else:
+    #     method = "single_val"
+    #     verbose_print(f"  Defaulting to single_val({parameters})")
     verbose_print(f"  Using method {modulename}.{method}({parameters}) with {data_values}")
     try:
         if len(data_values.keys()) > 0:

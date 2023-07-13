@@ -74,7 +74,10 @@ class mohschema:
 
         # create the template for the schema_name schema
         self.scaffold = self.generate_schema_scaffold(self.schema[self.schema_name])
-        _, self.template = self.generate_mapping_template(self.scaffold)
+        _, raw_template = self.generate_mapping_template(self.scaffold)
+
+        # add default mapping functions:
+        self.template = self.add_default_mappings(raw_template)
 
 
     def expand_ref(self, ref):
@@ -146,6 +149,38 @@ class mohschema:
         else:
             return str(type(node)), node_names
         return None, node_names
+
+
+    def add_default_mappings(self, template):
+        # if line ends in INDEX, use indexed_on
+        # otherwise, single_val
+        result = []
+        while len(template) > 0:
+            # work with line w/o comma
+            x = template.pop(0)
+            x_match = re.match(r"(.+),", x)
+            if x_match is not None:
+                field = x_match.group(1)
+                field_bits = field.split(".")
+                data_value = field_bits[-1]
+                if field_bits[-1] == "INDEX":
+                    data_value = field_bits[len(field_bits)-2]
+                    # peek at the next line.
+                    # if the next line contains this line, it's probably the indexing ID
+                    next_line = template[0]
+                    if field in next_line:
+                        next_match = re.match(r"(.+),", next_line)
+                        if next_match is not None:
+                            data_value = next_match.group(1).split(".")[-1]
+                    x += f" {{indexed_on({data_value})}}"
+                elif field_bits[-1].endswith("date") or field_bits[-1].startswith("date"):
+                    x += f" {{single_date({data_value})}}"
+                elif field_bits[-1].startswith("is_") or field_bits[-1].startswith("has_"):
+                    x += f" {{boolean({data_value})}}"
+                else:
+                    x += f" {{single_val({data_value})}}"
+                result.append(x)
+        return result
 
 
     def validate_donor(self, donor_json):

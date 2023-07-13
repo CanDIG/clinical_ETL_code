@@ -114,14 +114,12 @@ class mohschema:
             # check to see if the last node_name is a header for this node_name:
             if len(node_names) > 0:
                 x = node_names.pop()
-                x_match = re.match(r"(.+?)\**,.*", x)
+                x_match = re.match(r"(.+),", x)
                 if x_match is not None:
                     if x.endswith(".INDEX,"):
                         node_names.append(x)
                     elif x_match.group(1) not in node_name:
                         node_names.append(x)
-                else:
-                    node_names.append(x)
             if "description" in node:
                 node_names.append(f"{node_name},\"##{node['description']}\"")
             else:

@@ -233,14 +233,15 @@ def eval_mapping(identifier, node_name, index_field, index_value):
     # else:
     #     method = "single_val"
     #     verbose_print(f"  Defaulting to single_val({parameters})")
-    verbose_print(f"  Using method {modulename}.{method}({parameters}) with {data_values}")
-    try:
-        if len(data_values.keys()) > 0:
-            module = mappings.MODULES[modulename]
-            return eval(f'module.{method}({data_values})')
-    except mappings.MappingError as e:
-        print(f"Error evaluating {method}")
-        raise e
+        verbose_print(f"  Using method {modulename}.{method}({parameters}) with {data_values}")
+        try:
+            if len(data_values.keys()) > 0:
+                module = mappings.MODULES[modulename]
+                return eval(f'module.{method}({data_values})')
+        except mappings.MappingError as e:
+            print(f"Error evaluating {method}")
+            raise e
+    return None
 
 
 def ingest_raw_data(input_path, indexed):

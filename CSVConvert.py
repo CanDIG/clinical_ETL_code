@@ -102,7 +102,7 @@ def map_indexed_scaffold(node, line):
     verbose_print(f"Processing over index values {index_values}")
     for i in index_values:
         verbose_print(f"Applying {i} to {line}")
-        mappings.push_to_stack(index_field, i, identifier)
+        mappings.push_to_stack(f'"{index_sheets[0]}".{index_field}', i, identifier)
         sub_res = map_data_to_scaffold(node["NODES"], f"{line}.INDEX")
         if sub_res is not None:
             result.append(map_data_to_scaffold(node["NODES"], f"{line}.INDEX"))
@@ -189,12 +189,12 @@ def populate_data_for_params(identifier, index_field, index_value, params):
                         verbose_print(f"    checking if {index_field} == {stack_index_field} and {index_value} == {stack_index_value}")
                         # if index_field is the same as stack_index_field, then index_value should equal stack's value
                         if index_field == stack_index_field and index_value == stack_index_value:
-                            verbose_print(f"    Is {index_value} in {sheet}>{identifier}>{index_field}? {mappings.INDEXED_DATA['data'][sheet][identifier][index_field]}")
-                            if index_value in mappings.INDEXED_DATA["data"][sheet][identifier][index_field]:
-                                verbose_print(f"    yes, data_values[{sheet}] = {mappings.INDEXED_DATA['data'][sheet][identifier]}")
+                            verbose_print(f"    Is {index_value} in {sheet}>{identifier}>{index_field}? {mappings.INDEXED_DATA['data'][index_sheets[0]][identifier][index_field]}")
+                            if index_value in mappings.INDEXED_DATA["data"][index_sheets[0]][identifier][index_field]:
+                                verbose_print(f"    yes, data_values[{index_sheets[0]}] = {mappings.INDEXED_DATA['data'][index_sheets[0]][identifier]}")
                                 # if indexed_data["data"][sheet][identifier][index_field] has more than one value, find the index for index_value and use just that one
                                 data_values[param][sheet] = {}
-                                i = mappings.INDEXED_DATA["data"][sheet][identifier][index_field].index(index_value)
+                                i = mappings.INDEXED_DATA["data"][index_sheets[0]][identifier][index_field].index(index_value)
                                 if len(mappings.INDEXED_DATA["data"][sheet][identifier][param]) >= i:
                                     data_values[param][sheet] = [mappings.INDEXED_DATA["data"][sheet][identifier][param][i]]
                             else:

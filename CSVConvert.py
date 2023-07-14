@@ -541,12 +541,14 @@ def main(args):
         if col != mappings.IDENTIFIER_FIELD and len(mappings.INDEXED_DATA["columns"][col]) > 1:
             mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
 
+
     ## Replace the lines in the original template with any matching lines in template_lines
-    if not args.test:
-        interpolate_mapping_into_scaffold(template_lines, mapping_template)
-        mapping_scaffold = create_scaffold_from_template(mapping_template)
-    else:
-        mapping_scaffold = create_scaffold_from_template(template_lines)
+    # if not args.test:
+    #     interpolate_mapping_into_scaffold(template_lines, mapping_template)
+    #     mapping_scaffold = create_scaffold_from_template(mapping_template)
+    # else:
+    #     mapping_scaffold = create_scaffold_from_template(template_lines)
+    mapping_scaffold = create_scaffold_from_template(template_lines)
 
     if mapping_scaffold is None:
         print("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")

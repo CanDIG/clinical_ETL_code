@@ -9,6 +9,9 @@ import jsonschema
 import dateparser
 
 
+VALIDATION_MESSAGES = []
+
+
 class MoHValidationError(Exception):
     def __init__(self, value):
         self.value = value
@@ -18,7 +21,7 @@ class MoHValidationError(Exception):
 
 
 def warn(message):
-    print(f"    {message}")
+    VALIDATION_MESSAGES.append(f"{message}")
     # raise MoHValidationError(message)
 
 
@@ -240,6 +243,8 @@ class mohschema:
 
 
     def validate_donor(self, donor_json):
+        global VALIDATION_MESSAGES
+        VALIDATION_MESSAGES = []
         if "submitter_donor_id" in donor_json:
             print(f"Validating schema for donor {donor_json['submitter_donor_id']}...")
         # validate with jsonschema:
@@ -305,7 +310,7 @@ class mohschema:
                 case "followups":
                     for x in donor_json["followups"]:
                         self.validate_followup(x)
-
+        return VALIDATION_MESSAGES
 
     def validate_primary_diagnosis(self, map_json):
         print(f"Validating schema for primary_diagnosis {map_json['submitter_primary_diagnosis_id']}...")

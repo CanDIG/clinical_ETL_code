@@ -168,7 +168,10 @@ def integer(data_values):
     cell = single_val(data_values)
     if cell is None or cell.lower() == "nan":
         return None
-    return int(cell)
+    try:
+        return int(cell)
+    except:
+        return None
 
 
 # Placeholder function to make a fake ontology entry

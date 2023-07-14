@@ -74,6 +74,7 @@ class mohschema:
 
         # create the template for the schema_name schema
         self.scaffold = self.generate_schema_scaffold(self.schema[self.schema_name])
+        # print(json.dumps(self.scaffold, indent=4))
         _, raw_template = self.generate_mapping_template(self.scaffold)
 
         # add default mapping functions:
@@ -155,28 +156,83 @@ class mohschema:
         # if line ends in INDEX, use indexed_on
         # otherwise, single_val
         result = []
-        while len(template) > 0:
+        index_stack = []
+        for i in range(0, len(template)):
             # work with line w/o comma
-            x = template.pop(0)
+            x = template[i]
+            if x.startswith("##"):
+                continue
+
             x_match = re.match(r"(.+),", x)
             if x_match is not None:
                 field = x_match.group(1)
                 field_bits = field.split(".")
                 data_value = field_bits[-1]
+
+                # adjust the size of the stack: if it's bigger than the number of INDEX in the line, trim the stack back
+                num_indices = field_bits.count("INDEX")
+                if len(index_stack) > num_indices:
+                    index_stack = index_stack[0:num_indices]
+
                 if field_bits[-1] == "INDEX":
+                    # base case: assume that the index_value is the last bit before the index
                     data_value = field_bits[len(field_bits)-2]
-                    # peek at the next line.
-                    # if the next line contains this line, it's probably the indexing ID
-                    next_line = template[0]
+
+                    # next case: data value could be the the next line's last bit:
+                    # prev: primary_site.INDEX
+                    # CURR: primary_diagnoses.INDEX
+                    # NEXT: primary_diagnoses.INDEX.submitter_primary_diagnosis_id
+                    next_line = template[i+1]
+                    next_match = re.match(r"(.+),", next_line)
+                    next_bits = next_match.group(1).split(".")
                     if field in next_line:
-                        next_match = re.match(r"(.+),", next_line)
-                        if next_match is not None:
-                            data_value = next_match.group(1).split(".")[-1]
+                        # if the next line is a nested version of field, we need to think about the stack
+                        data_value = next_bits[-1]
+
+                        # but...do we need to un-nest?
+                        # this index is NOT a nested entry of the prev one; we need to figure out how far back to un-nest.
+                        if len(index_stack) > 0:
+                            prev_line = template[i-1]
+                            if field not in prev_line:
+                                prev_match = re.match(r"(.+),", prev_line)
+                                prev_bits = prev_match.group(1).split(".")
+                                # if prev_bits does not end on INDEX, needs to be trimmed back before its last INDEX:
+                                if prev_bits[-1] != "INDEX":
+                                    while len(prev_bits) > 0:
+                                        if prev_bits[-1] != "INDEX":
+                                            prev_bits.pop()
+                                        else:
+                                            break
+                                # bounce off the last two bits from field_bits and one from the stack
+                                done = False
+                                count = 0
+                                while 1:
+                                    if len(field_bits) == 0:
+                                        count = 0
+                                        break
+                                    # if this is now the same, we're done
+                                    if (".".join(prev_bits) == ".".join(field_bits)):
+                                        break
+                                    if ".".join(prev_bits) not in ".".join(field_bits):
+                                        count += 1
+                                        break
+                                    field_bits.pop()
+                                    field_bits.pop()
+                                for i in range(0, count):
+                                    index_stack.pop()
+
+                        # this should be added to the stack, but not if the value is "INDEX"
+                        if data_value != "INDEX":
+                            index_stack.append(data_value)
+                            if len(index_stack) > 1:
+                                data_value = index_stack[-2]
                     x += f" {{indexed_on({data_value})}}"
                 elif field_bits[-1].endswith("date") or field_bits[-1].startswith("date"):
                     x += f" {{single_date({data_value})}}"
                 elif field_bits[-1].startswith("is_") or field_bits[-1].startswith("has_"):
                     x += f" {{boolean({data_value})}}"
+                elif field_bits[-1].startswith("number_") or field_bits[-1].startswith("age_") or "_per_" in field_bits[-1]:
+                    x += f" {{integer({data_value})}}"
                 else:
                     x += f" {{single_val({data_value})}}"
                 result.append(x)

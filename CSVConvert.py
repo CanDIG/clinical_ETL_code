@@ -455,6 +455,65 @@ def create_scaffold_from_template(lines, test=False):
     return props
 
 
+def scan_template_for_duplicate_mappings(template_lines):
+    field_map = {}
+    for line in template_lines:
+        line_match = re.match(r"(.+), *\{(.+)\((.+)\)\}", line)
+        if line_match is not None:
+            template_line = line_match.group(1)
+            data_values = line_match.group(3).split(",")
+            for val in data_values:
+                val = val.strip()
+                param, sheets = find_sheets_with_field(val)
+                if param is not None:
+                    if sheets is not None and len(sheets) > 1:
+                        val = param
+                    else:
+                        val = f'"{sheets[0]}".{param}'
+                    if val not in field_map:
+                        field_map[val] = []
+                    field_map[val].append(template_line)
+                # else:
+                #     print(f"WARNING: No parameter '{val}' exists")
+    # print(json.dumps(field_map, indent=4))
+    data_values = list(field_map.keys())
+    for dv in data_values:
+        indices = []
+        for i in field_map[dv]:
+            if i.endswith("INDEX"):
+                indices.append(i)
+        if len(indices) == 0:
+            field_map.pop(dv)
+        else:
+            field_map[dv] = indices
+    data_values = list(field_map.keys())
+    for dv in data_values:
+        if len(field_map[dv]) == 1:
+            field_map.pop(dv)
+    # if the last two bits in each dv are the same, this is a dup
+    data_values = list(field_map.keys())
+    for dv in data_values:
+        indexed_on = []
+        for i in field_map[dv]:
+            bits = i.split(".")
+            indexed_on.append(".".join(bits[len(bits)-2:len(bits)-1]))
+        uniques = list(set(indexed_on))
+        for u in range(0,len(uniques)):
+            count = 0
+            for i in range(0,len(indexed_on)):
+                if uniques[u] == indexed_on[i]:
+                    count += 1
+                    #indexed_on[i] = str(count)
+            if count > 1:
+                msg = f"ERROR: Key {dv} can only be used to index one line. If one of these duplicates does not have an index, use {{indexed_on(NONE)}}:\n"
+                for i in range(0,len(indexed_on)):
+                    msg += f"    {field_map[dv][i]}\n"
+                raise Exception(msg)
+
+    #print(json.dumps(field_map, indent=4))
+
+
+
 def load_manifest(manifest_file):
     """Given a manifest file's path, return the data inside it."""
     identifier = None
@@ -557,6 +616,8 @@ def main(args):
         if col != mappings.IDENTIFIER_FIELD and len(mappings.INDEXED_DATA["columns"][col]) > 1:
             mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
 
+    # warn if any template lines map the same column to multiple lines:
+    scan_template_for_duplicate_mappings(template_lines)
 
     ## Replace the lines in the original template with any matching lines in template_lines
     # if not args.test:

@@ -121,18 +121,33 @@ def find_sheets_with_field(param):
     if param is None:
         return None, None
     param = param.strip()
-    sheet_match = re.match(r"(.+?)\.(.+)", param)
+
+    sheet = None
+    # possible matches for sheet/column:
+    # ((\"|\')(.+?)\2)\.((\"|\')(.+)\5): "MOH.CCN"."treatment.id" (group 3).(group 6)
+    # ((\"|\')(.+?)\2)\.(.+): "MOH.CCN".treatment_id (group 1).(group 3)
+    # (.+?)\.((\"|\')(.+)\3): MOH_CCN.'treatment.id' (group 1).(group 3)
+    sheet_match = re.match(r"((\"|\')(.+?)\2)\.((\"|\')(.+)\5)", param)
     if sheet_match is not None:
-        # this param is a specific item on a specific sheet:
-        param = sheet_match.group(2)
-        sheet = sheet_match.group(1).replace('"', '').replace("'", "")
-        # is this param a column?
+        sheet = sheet_match.group(3)
+        param = sheet_match.group(6)
+    if sheet is None:
+        sheet_match = re.match(r"((\"|\')(.+?)\2)\.(.+)", param)
+        if sheet_match is not None:
+            sheet = sheet_match.group(3)
+            param = sheet_match.group(4).replace('"', "").replace("'", "")
+    if sheet is None:
+        sheet_match = re.match(r"(.+?)\.(.+)", param)
+        if sheet_match is not None:
+            sheet = sheet_match.group(1)
+            param = sheet_match.group(2)
+    if sheet is not None:
         if param in mappings.INDEXED_DATA["columns"]:
             if sheet in mappings.INDEXED_DATA["columns"][param]:
                 return param, [sheet]
-    else:
-        if param in mappings.INDEXED_DATA["columns"]:
-            return param, mappings.INDEXED_DATA["columns"][param]
+            return None, None
+    if param in mappings.INDEXED_DATA["columns"]:
+        return param, mappings.INDEXED_DATA["columns"][param]
     return None, None
 
 

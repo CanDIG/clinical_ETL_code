@@ -98,7 +98,7 @@ You can validate the generated json mapping file against the json schema that wa
 ```
 $ python validate_coverage.py [-h] [--input map.json] [--manifest MAPPING]
 
---input: path to the map.json file created by CSVConvert
+--json: path to the map.json file created by CSVConvert
 
 --manifest: Path to a manifest file describing the mapping
 ```

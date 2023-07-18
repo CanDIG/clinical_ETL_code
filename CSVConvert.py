@@ -102,7 +102,7 @@ def map_indexed_scaffold(node, line):
     verbose_print(f"Processing over index values {index_values}")
     for i in index_values:
         verbose_print(f"Applying {i} to {line}")
-        mappings.push_to_stack(index_field, i, identifier)
+        mappings.push_to_stack(f'"{index_sheets[0]}".{index_field}', i, identifier)
         sub_res = map_data_to_scaffold(node["NODES"], f"{line}.INDEX")
         if sub_res is not None:
             result.append(map_data_to_scaffold(node["NODES"], f"{line}.INDEX"))
@@ -121,18 +121,33 @@ def find_sheets_with_field(param):
     if param is None:
         return None, None
     param = param.strip()
-    sheet_match = re.match(r"(.+?)\.(.+)", param)
+
+    sheet = None
+    # possible matches for sheet/column:
+    # ((\"|\')(.+?)\2)\.((\"|\')(.+)\5): "MOH.CCN"."treatment.id" (group 3).(group 6)
+    # ((\"|\')(.+?)\2)\.(.+): "MOH.CCN".treatment_id (group 1).(group 3)
+    # (.+?)\.((\"|\')(.+)\3): MOH_CCN.'treatment.id' (group 1).(group 3)
+    sheet_match = re.match(r"((\"|\')(.+?)\2)\.((\"|\')(.+)\5)", param)
     if sheet_match is not None:
-        # this param is a specific item on a specific sheet:
-        param = sheet_match.group(2)
-        sheet = sheet_match.group(1).replace('"', '').replace("'", "")
-        # is this param a column?
+        sheet = sheet_match.group(3)
+        param = sheet_match.group(6)
+    if sheet is None:
+        sheet_match = re.match(r"((\"|\')(.+?)\2)\.(.+)", param)
+        if sheet_match is not None:
+            sheet = sheet_match.group(3)
+            param = sheet_match.group(4).replace('"', "").replace("'", "")
+    if sheet is None:
+        sheet_match = re.match(r"(.+?)\.(.+)", param)
+        if sheet_match is not None:
+            sheet = sheet_match.group(1)
+            param = sheet_match.group(2)
+    if sheet is not None:
         if param in mappings.INDEXED_DATA["columns"]:
             if sheet in mappings.INDEXED_DATA["columns"][param]:
                 return param, [sheet]
-    else:
-        if param in mappings.INDEXED_DATA["columns"]:
-            return param, mappings.INDEXED_DATA["columns"][param]
+            return None, None
+    if param in mappings.INDEXED_DATA["columns"]:
+        return param, mappings.INDEXED_DATA["columns"][param]
     return None, None
 
 
@@ -189,12 +204,12 @@ def populate_data_for_params(identifier, index_field, index_value, params):
                         verbose_print(f"    checking if {index_field} == {stack_index_field} and {index_value} == {stack_index_value}")
                         # if index_field is the same as stack_index_field, then index_value should equal stack's value
                         if index_field == stack_index_field and index_value == stack_index_value:
-                            verbose_print(f"    Is {index_value} in {sheet}>{identifier}>{index_field}? {mappings.INDEXED_DATA['data'][sheet][identifier][index_field]}")
-                            if index_value in mappings.INDEXED_DATA["data"][sheet][identifier][index_field]:
-                                verbose_print(f"    yes, data_values[{sheet}] = {mappings.INDEXED_DATA['data'][sheet][identifier]}")
+                            verbose_print(f"    Is {index_value} in {sheet}>{identifier}>{index_field}? {mappings.INDEXED_DATA['data'][index_sheets[0]][identifier][index_field]}")
+                            if index_value in mappings.INDEXED_DATA["data"][index_sheets[0]][identifier][index_field]:
+                                verbose_print(f"    yes, data_values[{index_sheets[0]}] = {mappings.INDEXED_DATA['data'][index_sheets[0]][identifier]}")
                                 # if indexed_data["data"][sheet][identifier][index_field] has more than one value, find the index for index_value and use just that one
                                 data_values[param][sheet] = {}
-                                i = mappings.INDEXED_DATA["data"][sheet][identifier][index_field].index(index_value)
+                                i = mappings.INDEXED_DATA["data"][index_sheets[0]][identifier][index_field].index(index_value)
                                 if len(mappings.INDEXED_DATA["data"][sheet][identifier][param]) >= i:
                                     data_values[param][sheet] = [mappings.INDEXED_DATA["data"][sheet][identifier][param][i]]
                             else:
@@ -230,17 +245,18 @@ def eval_mapping(identifier, node_name, index_field, index_value):
         if subfunc_match is not None:
             modulename = subfunc_match.group(1)
             method = subfunc_match.group(2)
-    else:
-        method = "single_val"
-        verbose_print(f"  Defaulting to single_val({parameters})")
-    verbose_print(f"  Using method {modulename}.{method}({parameters}) with {data_values}")
-    try:
-        if len(data_values.keys()) > 0:
-            module = mappings.MODULES[modulename]
-            return eval(f'module.{method}({data_values})')
-    except mappings.MappingError as e:
-        print(f"Error evaluating {method}")
-        raise e
+    # else:
+    #     method = "single_val"
+    #     verbose_print(f"  Defaulting to single_val({parameters})")
+        verbose_print(f"  Using method {modulename}.{method}({parameters}) with {data_values}")
+        try:
+            if len(data_values.keys()) > 0:
+                module = mappings.MODULES[modulename]
+                return eval(f'module.{method}({data_values})')
+        except mappings.MappingError as e:
+            print(f"Error evaluating {method}")
+            raise e
+    return None
 
 
 def ingest_raw_data(input_path, indexed):
@@ -270,11 +286,12 @@ def ingest_raw_data(input_path, indexed):
     return raw_csv_dfs, output_file
 
 
-def process_data(raw_csv_dfs, identifier):
+def process_data(raw_csv_dfs):
     """Takes a set of raw dataframes with a common identifier and merges into a  JSON data structure."""
     final_merged = {}
     cols_index = {}
     individuals = []
+    identifier = mappings.IDENTIFIER_FIELD
 
     for page in raw_csv_dfs.keys():
         print(f"Processing sheet {page}...")
@@ -438,6 +455,65 @@ def create_scaffold_from_template(lines, test=False):
     return props
 
 
+def scan_template_for_duplicate_mappings(template_lines):
+    field_map = {}
+    for line in template_lines:
+        line_match = re.match(r"(.+), *\{(.+)\((.+)\)\}", line)
+        if line_match is not None:
+            template_line = line_match.group(1)
+            data_values = line_match.group(3).split(",")
+            for val in data_values:
+                val = val.strip()
+                param, sheets = find_sheets_with_field(val)
+                if param is not None:
+                    if sheets is not None and len(sheets) > 1:
+                        val = param
+                    else:
+                        val = f'"{sheets[0]}".{param}'
+                    if val not in field_map:
+                        field_map[val] = []
+                    field_map[val].append(template_line)
+                # else:
+                #     print(f"WARNING: No parameter '{val}' exists")
+    # print(json.dumps(field_map, indent=4))
+    data_values = list(field_map.keys())
+    for dv in data_values:
+        indices = []
+        for i in field_map[dv]:
+            if i.endswith("INDEX"):
+                indices.append(i)
+        if len(indices) == 0:
+            field_map.pop(dv)
+        else:
+            field_map[dv] = indices
+    data_values = list(field_map.keys())
+    for dv in data_values:
+        if len(field_map[dv]) == 1:
+            field_map.pop(dv)
+    # if the last two bits in each dv are the same, this is a dup
+    data_values = list(field_map.keys())
+    for dv in data_values:
+        indexed_on = []
+        for i in field_map[dv]:
+            bits = i.split(".")
+            indexed_on.append(".".join(bits[len(bits)-2:len(bits)-1]))
+        uniques = list(set(indexed_on))
+        for u in range(0,len(uniques)):
+            count = 0
+            for i in range(0,len(indexed_on)):
+                if uniques[u] == indexed_on[i]:
+                    count += 1
+                    #indexed_on[i] = str(count)
+            if count > 1:
+                msg = f"ERROR: Key {dv} can only be used to index one line. If one of these duplicates does not have an index, use {{indexed_on(NONE)}}:\n"
+                for i in range(0,len(indexed_on)):
+                    msg += f"    {field_map[dv][i]}\n"
+                raise Exception(msg)
+
+    #print(json.dumps(field_map, indent=4))
+
+
+
 def load_manifest(manifest_file):
     """Given a manifest file's path, return the data inside it."""
     identifier = None
@@ -492,6 +568,8 @@ def interpolate_mapping_into_scaffold(mapped_template, scaffold_template):
         mapped_key = mapped_line.split(",")[0].strip()
         if mapped_key in scaffold_keys:
             scaffold_template[scaffold_keys.index(mapped_key)] = mapped_line
+        else:
+            print(f"WARNING: Line '{mapped_key}' not in schema")
     return scaffold_template
 
 
@@ -521,17 +599,6 @@ def main(args):
     # field)
     template_lines = read_mapping_template(manifest["mapping"])
 
-    ## Replace the lines in the original template with any matching lines in template_lines
-    if not args.test:
-        interpolate_mapping_into_scaffold(template_lines, mapping_template)
-        mapping_scaffold = create_scaffold_from_template(mapping_template)
-    else:
-        mapping_scaffold = create_scaffold_from_template(template_lines)
-
-    if mapping_scaffold is None:
-        print("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
-        return
-
     # # read the raw data
     print("Reading raw data")
     raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
@@ -540,7 +607,7 @@ def main(args):
         return
 
     print("Indexing data")
-    mappings.INDEXED_DATA = process_data(raw_csv_dfs, mappings.IDENTIFIER_FIELD)
+    mappings.INDEXED_DATA = process_data(raw_csv_dfs)
     with open(f"{output_file}_indexed.json", 'w') as f:
         json.dump(mappings.INDEXED_DATA, f, indent=4)
 
@@ -548,6 +615,21 @@ def main(args):
     for col in mappings.INDEXED_DATA["columns"]:
         if col != mappings.IDENTIFIER_FIELD and len(mappings.INDEXED_DATA["columns"][col]) > 1:
             mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
+
+    # warn if any template lines map the same column to multiple lines:
+    scan_template_for_duplicate_mappings(template_lines)
+
+    ## Replace the lines in the original template with any matching lines in template_lines
+    # if not args.test:
+    #     interpolate_mapping_into_scaffold(template_lines, mapping_template)
+    #     mapping_scaffold = create_scaffold_from_template(mapping_template)
+    # else:
+    #     mapping_scaffold = create_scaffold_from_template(template_lines)
+    mapping_scaffold = create_scaffold_from_template(template_lines)
+
+    if mapping_scaffold is None:
+        print("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
+        return
 
     packets = []
     # for each identifier's row, make a packet

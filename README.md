@@ -100,6 +100,18 @@ Continuous integration testing for this repository is implemented through Pytest
 
 To run tests manually, enter from command line `$ pytest`
 
+## Validating the mapping
+
+You can validate the generated json mapping file against the MoH data model. The validation will compare the mapping to the json schema used to generate the template, as well as other known requirements and data conditions specified in the MoH data model.
+```
+$ python validate_coverage.py [-h] [--input map.json] [--manifest MAPPING]
+
+--json: path to the map.json file created by CSVConvert
+
+--manifest: Path to a manifest file describing the mapping
+```
+Issues caused by failed requirements will throw exceptions: these must be addressed before validation can be completed. Issues caused by failed conditions in the MoH model will be listed in the output.
+
 
 <!-- # NOTE: the following sections have not been updated for current versions.
 

@@ -566,4 +566,5 @@ def interpolate_mapping_into_scaffold(mapped_template, scaffold_template):
             scaffold_template[scaffold_keys.index(mapped_key)] = mapped_line
         else:
             print(f"WARNING: Line '{mapped_key}' not in schema")
+
     return scaffold_template

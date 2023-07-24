@@ -3,7 +3,8 @@ from candigETL.mapping import mappings
 
 # read sheet from given data pathway
 raw_csvs, output_file = CSVConvert.ingest_raw_data("test_data/pytest_data_v2.xlsx", [])
-mappings.INDEXED_DATA = CSVConvert.process_data(raw_csvs, "Subject")
+mappings.IDENTIFIER_FIELD =  "Subject"
+mappings.INDEXED_DATA = CSVConvert.process_data(raw_csvs)
 mappings.push_to_stack(None, None, mappings.IDENTIFIER)
 
 def test_single_val():

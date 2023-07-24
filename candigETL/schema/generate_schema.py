@@ -2,7 +2,7 @@
 # coding: utf-8
 
 import argparse
-from mohschema import mohschema
+from candigETL.schema.mohschema import mohschema
 
 
 def parse_args():

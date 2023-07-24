@@ -3,10 +3,10 @@ import json
 import jsonschema
 import os
 import re
-import CSVConvert
-import mappings
+import candigETL.convert.CSVConvert
+import candigETL.mapping.mappings
 from copy import deepcopy
-from mohschema import mohschema
+from candigETL.schema.mohschema import mohschema
 from jsoncomparison import Compare
 
 

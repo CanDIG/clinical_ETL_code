@@ -160,6 +160,7 @@ class mohschema:
         # otherwise, single_val
         result = []
         index_stack = []
+        sheet_stack = []
         for i in range(0, len(template)):
             # work with line w/o comma
             x = template[i]
@@ -176,10 +177,12 @@ class mohschema:
                 num_indices = field_bits.count("INDEX")
                 if len(index_stack) > num_indices:
                     index_stack = index_stack[0:num_indices]
+                    sheet_stack = sheet_stack[0:num_indices]
 
                 if field_bits[-1] == "INDEX":
                     # base case: assume that the index_value is the last bit before the index
                     data_value = field_bits[len(field_bits)-2]
+                    sheet_stack.append(f"{data_value.upper()}_SHEET")
 
                     # next case: data value could be the the next line's last bit:
                     # prev: primary_site.INDEX
@@ -229,15 +232,17 @@ class mohschema:
                             index_stack.append(data_value)
                             if len(index_stack) > 1:
                                 data_value = index_stack[-2]
-                    x += f" {{indexed_on({data_value})}}"
+                    else:
+                        sheet_stack.pop()
+                    x += f" {{indexed_on({sheet_stack[-1]}.{data_value})}}"
                 elif field_bits[-1].endswith("date") or field_bits[-1].startswith("date"):
-                    x += f" {{single_date({data_value})}}"
+                    x += f" {{single_date({sheet_stack[-1]}.{data_value})}}"
                 elif field_bits[-1].startswith("is_") or field_bits[-1].startswith("has_"):
-                    x += f" {{boolean({data_value})}}"
+                    x += f" {{boolean({sheet_stack[-1]}.{data_value})}}"
                 elif field_bits[-1].startswith("number_") or field_bits[-1].startswith("age_") or "_per_" in field_bits[-1]:
-                    x += f" {{integer({data_value})}}"
+                    x += f" {{integer({sheet_stack[-1]}.{data_value})}}"
                 else:
-                    x += f" {{single_val({data_value})}}"
+                    x += f" {{single_val({sheet_stack[-1]}.{data_value})}}"
                 result.append(x)
         return result
 

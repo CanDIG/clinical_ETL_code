@@ -179,10 +179,10 @@ class mohschema:
                     index_stack = index_stack[0:num_indices]
                     sheet_stack = sheet_stack[0:num_indices]
 
-                if field_bits[-1] == "INDEX":
+                if data_value == "INDEX":
                     # base case: assume that the index_value is the last bit before the index
-                    data_value = field_bits[len(field_bits)-2]
-                    sheet_stack.append(f"{data_value.upper()}_SHEET")
+                    index_value = field_bits[len(field_bits)-2]
+                    sheet_stack.append(f"{index_value.upper()}_SHEET")
 
                     # next case: data value could be the the next line's last bit:
                     # prev: primary_site.INDEX
@@ -193,7 +193,7 @@ class mohschema:
                     next_bits = next_match.group(1).split(".")
                     if field in next_line:
                         # if the next line is a nested version of field, we need to think about the stack
-                        data_value = next_bits[-1]
+                        index_value = next_bits[-1]
 
                         # but...do we need to un-nest?
                         # this index is NOT a nested entry of the prev one; we need to figure out how far back to un-nest.
@@ -228,18 +228,18 @@ class mohschema:
                                     index_stack.pop()
 
                         # this should be added to the stack, but not if the value is "INDEX"
-                        if data_value != "INDEX":
-                            index_stack.append(data_value)
+                        if index_value != "INDEX":
+                            index_stack.append(index_value)
                             if len(index_stack) > 1:
-                                data_value = index_stack[-2]
+                                index_value = index_stack[-2]
                     else:
                         sheet_stack.pop()
-                    x += f" {{indexed_on({sheet_stack[-1]}.{data_value})}}"
-                elif field_bits[-1].endswith("date") or field_bits[-1].startswith("date"):
+                    x += f" {{indexed_on({sheet_stack[-1]}.{index_value})}}"
+                elif data_value.endswith("date") or data_value.startswith("date"):
                     x += f" {{single_date({sheet_stack[-1]}.{data_value})}}"
-                elif field_bits[-1].startswith("is_") or field_bits[-1].startswith("has_"):
+                elif data_value.startswith("is_") or data_value.startswith("has_"):
                     x += f" {{boolean({sheet_stack[-1]}.{data_value})}}"
-                elif field_bits[-1].startswith("number_") or field_bits[-1].startswith("age_") or "_per_" in field_bits[-1]:
+                elif data_value.startswith("number_") or data_value.startswith("age_") or "_per_" in data_value:
                     x += f" {{integer({sheet_stack[-1]}.{data_value})}}"
                 else:
                     x += f" {{single_val({sheet_stack[-1]}.{data_value})}}"

@@ -67,7 +67,7 @@ def parse_args():
 # def check_completeness(raw_csv_dfs, schema):
 #     mappings.INDEXED_DATA = CSVConvert.process_data(raw_csv_dfs)
 #     mappings.IDENTIFIER = mappings.INDEXED_DATA["individuals"][0]
-#     mappings.push_to_stack(None, None, mappings.IDENTIFIER)
+#     mappings._push_to_stack(None, None, mappings.IDENTIFIER)
 #
 #     # expected mapping
 #     expected_flattened = schema.template

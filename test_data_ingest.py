@@ -5,7 +5,7 @@ import mappings
 raw_csvs, output_file = CSVConvert.ingest_raw_data("test_data/pytest_data_v2.xlsx", [])
 mappings.IDENTIFIER_FIELD =  "Subject"
 mappings.INDEXED_DATA = CSVConvert.process_data(raw_csvs)
-mappings.push_to_stack(None, None, mappings.IDENTIFIER)
+mappings._push_to_stack(None, None, mappings.IDENTIFIER)
 
 def test_single_val():
     mappings.IDENTIFIER = "ABC-01-03"

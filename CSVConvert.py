@@ -40,7 +40,7 @@ def map_data_to_scaffold(node, line):
     """
     mappings.CURRENT_LINE = line
     verbose_print(f"Mapping line '{mappings.CURRENT_LINE}' for {mappings.IDENTIFIER}")
-    curr_id = mappings.peek_at_top_of_stack()
+    curr_id = mappings._peek_at_top_of_stack()
     index_field = curr_id["id"]
     index_value = curr_id["value"]
     identifier = curr_id["indiv"]
@@ -70,7 +70,7 @@ def map_indexed_scaffold(node, line):
     """
     Given a node that is indexed on some array of values, populate the array with the node's values.
     """
-    curr_id = mappings.peek_at_top_of_stack()
+    curr_id = mappings._peek_at_top_of_stack()
     identifier = curr_id["indiv"]
     stack_index_value = curr_id["value"]
     stack_index_field, stack_index_sheets = find_sheets_with_field(curr_id["id"])
@@ -102,11 +102,11 @@ def map_indexed_scaffold(node, line):
     verbose_print(f"Processing over index values {index_values}")
     for i in index_values:
         verbose_print(f"Applying {i} to {line}")
-        mappings.push_to_stack(f'"{index_sheets[0]}".{index_field}', i, identifier)
+        mappings._push_to_stack(f'"{index_sheets[0]}".{index_field}', i, identifier)
         sub_res = map_data_to_scaffold(node["NODES"], f"{line}.INDEX")
         if sub_res is not None:
             result.append(map_data_to_scaffold(node["NODES"], f"{line}.INDEX"))
-        mappings.pop_from_stack()
+        mappings._pop_from_stack()
     if len(result) == 0:
         return None
     return result
@@ -174,7 +174,7 @@ def populate_data_for_params(identifier, index_field, index_value, params):
     values for each parameter.
     If index_field is not None, create an INDEX key that lists all the possible values that could use
     """
-    curr_id = mappings.peek_at_top_of_stack()
+    curr_id = mappings._peek_at_top_of_stack()
     stack_index_field, stack_index_sheets = find_sheets_with_field(curr_id["id"])
     stack_index_value = curr_id["value"]
 
@@ -330,7 +330,7 @@ def process_data(raw_csv_dfs):
             for k in row.keys():
                 merged_dict[i][k.strip()] = [row[k]]
             while len(row_to_merge) > 0:  # there are still entries to merge
-                mappings.warn(f"Duplicate row for {merged_dict[i][identifier][0]} in {page}")
+                mappings._warn(f"Duplicate row for {merged_dict[i][identifier][0]} in {page}")
                 row = row_to_merge.pop(0)
                 for k in row.keys():
                     merged_dict[i][k.strip()].append(row[k])
@@ -614,7 +614,7 @@ def main(args):
     # if verbose flag is set, warn if column name is present in multiple sheets:
     for col in mappings.INDEXED_DATA["columns"]:
         if col != mappings.IDENTIFIER_FIELD and len(mappings.INDEXED_DATA["columns"][col]) > 1:
-            mappings.warn(f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
+            mappings._warn(f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
 
     # warn if any template lines map the same column to multiple lines:
     scan_template_for_duplicate_mappings(template_lines)
@@ -636,11 +636,11 @@ def main(args):
     for indiv in mappings.INDEXED_DATA["individuals"]:
         print(f"Creating packet for {indiv}")
         mappings.IDENTIFIER = indiv
-        mappings.push_to_stack(None, None, indiv)
+        mappings._push_to_stack(None, None, indiv)
         packets.append(map_data_to_scaffold(deepcopy(mapping_scaffold), "DONOR"))
-        if mappings.pop_from_stack() is None:
+        if mappings._pop_from_stack() is None:
             raise Exception(f"Stack popped too far!\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}")
-        if mappings.pop_from_stack() is not None:
+        if mappings._pop_from_stack() is not None:
             raise Exception(f"Stack not empty\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}\n {mappings.INDEX_STACK}")
 
     with open(f"{output_file}_indexed.json", 'w') as f:

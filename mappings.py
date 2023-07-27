@@ -26,18 +26,15 @@ def date(data_values):
     if raw_date is None:
         return None
     for date in raw_date:
-        try:
-            d = dateparser.parse(date, settings={'TIMEZONE': 'UTC'})
-            dates.append(d.date().isoformat())
-        except Exception as e:
-            raise MappingError(f"error in date({raw_date}): {type(e)} {e}")
+        dates.append(_parse_date(date).date().isoformat())
     return dates
+
 
 # Single date
 def single_date(data_values):
-    dates = date(data_values)
-    if len(dates) > 0:
-        return dates[0]
+    val = single_val(data_values)
+    if val is not None:
+        return _parse_date(val)
     return None
 
 
@@ -201,4 +198,12 @@ def _is_null(cell):
         return True
     return False
 
-
+# Convenience function to parse dates to ISO format
+def _parse_date(date_string):
+    if any(char in '0123456789' for char in date_string):
+        try:
+            d = dateparser.parse(date_string, settings={'TIMEZONE': 'UTC'})
+            return d.date().isoformat()
+        except Exception as e:
+            raise MappingError(f"error in date({date_string}): {type(e)} {e}")
+    return date_string

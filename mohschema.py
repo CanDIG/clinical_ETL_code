@@ -78,7 +78,7 @@ class mohschema:
         # create the template for the schema_name schema
         self.scaffold = self.generate_schema_scaffold(self.schema[self.schema_name])
         # print(json.dumps(self.scaffold, indent=4))
-        _, raw_template = self.generate_mapping_template(self.scaffold)
+        _, raw_template = self.generate_mapping_template(self.scaffold, node_name="DONOR.INDEX")
 
         # add default mapping functions:
         self.template = self.add_default_mappings(raw_template)

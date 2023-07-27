@@ -211,30 +211,37 @@ class mohschema:
                             if field not in prev_line:
                                 prev_match = re.match(r"(.+),", prev_line)
                                 prev_bits = prev_match.group(1).split(".")
-                                # if prev_bits does not end on INDEX, needs to be trimmed back before its last INDEX:
-                                if prev_bits[-1] != "INDEX":
-                                    while len(prev_bits) > 0:
-                                        if prev_bits[-1] != "INDEX":
-                                            prev_bits.pop()
-                                        else:
+
+                                # if the previous line has more indices than we have now, we have to trim the index_stack.
+                                if prev_bits.count("INDEX") >= num_indices:
+                                    # if prev_bits does not end on INDEX, needs to be trimmed back to its last INDEX:
+                                    if prev_bits[-1] != "INDEX":
+                                        while len(prev_bits) > 0:
+                                            if prev_bits[-1] != "INDEX":
+                                                prev_bits.pop()
+                                            elif prev_bits.count("INDEX") > num_indices:
+                                                prev_bits.pop()
+                                            else:
+                                                break
+
+                                    # we need to figure out just how far back these differ:
+                                    count = 0
+                                    while 1:
+                                        # if this is now the same, we're done
+                                        if (".".join(prev_bits) == ".".join(field_bits)):
                                             break
-                                # bounce off the last two bits from field_bits and one from the stack
-                                done = False
-                                count = 0
-                                while 1:
-                                    if len(field_bits) == 0:
-                                        count = 0
-                                        break
-                                    # if this is now the same, we're done
-                                    if (".".join(prev_bits) == ".".join(field_bits)):
-                                        break
-                                    if ".".join(prev_bits) not in ".".join(field_bits):
                                         count += 1
-                                        break
-                                    field_bits.pop()
-                                    field_bits.pop()
-                                for i in range(0, count):
-                                    index_stack.pop()
+                                        # bounce off the last two bits from field_bits and prev_bits
+                                        field_bits.pop()
+                                        field_bits.pop()
+                                        prev_bits.pop()
+                                        prev_bits.pop()
+
+                                    # pop off {count} from index_stack, but stop as soon as we have fewer than the number of indices
+                                    for i in range(0, count):
+                                        if len(index_stack) < num_indices:
+                                            break
+                                        index_stack.pop()
 
                         # this should be added to the stack, but not if the value is "INDEX"
                         if index_value != "INDEX":

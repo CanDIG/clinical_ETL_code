@@ -182,6 +182,15 @@ class mohschema:
                 if data_value == "INDEX":
                     # base case: assume that the index_value is the last bit before the index
                     index_value = field_bits[len(field_bits)-2]
+
+                    # clean up the sheet stack: are the last sheets still involved?
+                    if len(sheet_stack) > 1:
+                        while 1:
+                            last_sheet = sheet_stack.pop()
+                            if last_sheet == "DONOR_SHEET" or last_sheet.replace("_SHEET", "").lower() in field:
+                                sheet_stack.append(last_sheet)
+                                break
+
                     sheet_stack.append(f"{index_value.upper()}_SHEET")
 
                     # next case: data value could be the the next line's last bit:

@@ -11,51 +11,12 @@ INDEXED_DATA = None
 CURRENT_LINE = ""
 
 
-def warn(message):
-    global VERBOSE
-    global IDENTIFIER
-    if VERBOSE:
-        print(f"WARNING for {IDENTIFIER_FIELD}={IDENTIFIER}: {message}")
-
-
 class MappingError(Exception):
     def __init__(self, value):
         self.value = value
 
     def __str__(self):
         return repr(f"Check the values for {IDENTIFIER} in {IDENTIFIER_FIELD}: {self.value}")
-
-
-def push_to_stack(id, value, indiv):
-    INDEX_STACK.append(
-        {
-            "id": id,
-            "value": value,
-            "indiv": indiv
-        }
-    )
-    if VERBOSE:
-        print(f"Pushed to stack: {INDEX_STACK}")
-
-
-def pop_from_stack():
-    if VERBOSE:
-        print("Popped from stack")
-    if len(INDEX_STACK) > 0:
-        return INDEX_STACK.pop()
-    else:
-        return None
-
-
-def peek_at_top_of_stack():
-    val = INDEX_STACK[-1]
-    if VERBOSE:
-        print(json.dumps(val, indent=2))
-    return {
-        "id": val["id"],
-        "value": val["value"],
-        "indiv": val["indiv"]
-    }
 
 
 # Format a date field to ISO standard
@@ -65,28 +26,25 @@ def date(data_values):
     if raw_date is None:
         return None
     for date in raw_date:
-        try:
-            d = dateparser.parse(date, settings={'TIMEZONE': 'UTC'})
-            dates.append(d.date().isoformat())
-        except Exception as e:
-            raise MappingError(f"error in date({raw_date}): {type(e)} {e}")
+        dates.append(_parse_date(date).date().isoformat())
     return dates
+
 
 # Single date
 def single_date(data_values):
-    dates = date(data_values)
-    if len(dates) > 0:
-        return dates[0]
+    val = single_val(data_values)
+    if val is not None:
+        return _parse_date(val)
     return None
 
 
 # Returns a boolean based on whether or not the key in the mapping has a value
 def has_value(data_values):
     if len(data_values.keys()) == 0:
-        warn(f"no values passed in")
+        _warn(f"no values passed in")
     else:
         key = list(data_values.keys())[0]
-        if not is_null(data_values[key]):
+        if not _is_null(data_values[key]):
             return True
     return False
 
@@ -147,13 +105,6 @@ def flat_list_val(data_values):
     return all_items
 
 
-# Convenience function to convert nan to boolean
-def is_null(cell):
-    if cell == 'nan' or cell is None or cell == '':
-        return True
-    return False
-
-
 # Convert various responses to boolean
 def boolean(data_values):
     cell = single_val(data_values)
@@ -200,3 +151,59 @@ def indexed_on(data_values):
         if i is not None and str(i).lower() != 'nan':
             final.append(i)
     return final
+
+
+def _warn(message):
+    global VERBOSE
+    global IDENTIFIER
+    if VERBOSE:
+        print(f"WARNING for {IDENTIFIER_FIELD}={IDENTIFIER}: {message}")
+
+
+def _push_to_stack(id, value, indiv):
+    INDEX_STACK.append(
+        {
+            "id": id,
+            "value": value,
+            "indiv": indiv
+        }
+    )
+    if VERBOSE:
+        print(f"Pushed to stack: {INDEX_STACK}")
+
+
+def _pop_from_stack():
+    if VERBOSE:
+        print("Popped from stack")
+    if len(INDEX_STACK) > 0:
+        return INDEX_STACK.pop()
+    else:
+        return None
+
+
+def _peek_at_top_of_stack():
+    val = INDEX_STACK[-1]
+    if VERBOSE:
+        print(json.dumps(val, indent=2))
+    return {
+        "id": val["id"],
+        "value": val["value"],
+        "indiv": val["indiv"]
+    }
+
+
+# Convenience function to convert nan to boolean
+def _is_null(cell):
+    if cell == 'nan' or cell is None or cell == '':
+        return True
+    return False
+
+# Convenience function to parse dates to ISO format
+def _parse_date(date_string):
+    if any(char in '0123456789' for char in date_string):
+        try:
+            d = dateparser.parse(date_string, settings={'TIMEZONE': 'UTC'})
+            return d.date().isoformat()
+        except Exception as e:
+            raise MappingError(f"error in date({date_string}): {type(e)} {e}")
+    return date_string

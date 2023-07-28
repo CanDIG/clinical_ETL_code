@@ -2,17 +2,14 @@
 
 ## Mapping template format
 
-Each line in the mapping template represents one field in the schema. This may be a top-level field, e.g. `cause_of_death` is associated with the top-level schema (generally Patient / Donor / Individual).
+Each line in the mapping template represents one field in the schema.
+For example, `date_of_diagnosis` is part of the `primary_diagnoses` schema within a `DONOR`:
 
-`cause_of_death,`
+`DONOR.INDEX.primary_diagnoses.INDEX.date_of_diagnosis,`
 
-or a nested field - here, `date_of_diagnosis` is part of the `primary_diagnoses` schema:
+The `INDEX` after the field name indicates that there can be multiple instances. For example, this line indicates there can be one or more primary diagnoses per DONOR, each with one or more specimens:
 
-`primary_diagnoses.INDEX.date_of_diagnosis,`
-
-The `INDEX` after the field name indicates that there can be multiple instances, for example, this line indicates there can be one ore more primary diagnoses, each with one or more specimens:
-
-`primary_diagnoses.INDEX.specimens.INDEX.tumour_grade,`
+`DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.tumour_grade,`
 
 Entries that begin with `##` are informational.
 
@@ -24,38 +21,25 @@ For each field, decide:
 2. Does the data need to be transformed to align with the expectations of the schema?
     a. If so, can I use a generic mapping function, or do I need to write my own?
 
-You define mappings by adding a `{function}` after the last comma in the line. Details below!
-
-## Perfectly matching data
-
-If your input data aligns perfectly with the schema (the column names are exact and unambiguous, and the field data matches the format specified by the schema), you do not need to add a mapping function for that field.
-
-For example, if the schema defines a field called `gender` with permissible values `[Man, Woman, Non-binary]` and your input file contains a field called `gender` with only these values, you do not have to add a mapping function.
-
+The template suggests a default mapping, of the format `{mapping_function(DATA_SHEET.column_name)}`. If your data does not align with this, you may have to change this.
 
 ### Aligning field names
 
-Sometimes your raw data contains column headings that do not exactly match the schema fields. For example, if you input file uses "Birthdate" instead of "date_of_birth", add the following:
+Sometimes your raw data contains column headings that do not exactly match the schema fields. For example, if your input file uses "Birthdate" instead of "date_of_birth", you may need to change the default mapping:
 
-`date_of_birth, {single_val(Birthdate)}`
-
-If there is more than one field with the same name, you can specify the specific file / sheet using this notation (here, Birthdate is in the sheet / file called Donor):
-
-`date_of_birth, {single_val(Donor.Birthdate)}`
+`DONOR.INDEX.date_of_birth, {single_val(DONOR_SHEET.Birthdate)}`
 
 ### Specifying index fields
 
-For cases where there can be multiple instances of a schema (e.g. multiple treatments, or specimens), you _must_ specify an indexing field for that schema. In the template, this looks like a line ending in `INDEX` followed by other fields nested underneath, e.g. for `primary_diagnoses`:
+For cases where there can be multiple instances of a schema (e.g. multiple treatments, or specimens), you _must_ specify an indexing field for that schema. In the template, this looks like a line ending in `INDEX` with the `indexed_on` mapping function:
 
 ```
-primary_diagnoses.INDEX,
-primary_diagnoses.INDEX.submitter_primary_diagnosis_id,
-primary_diagnoses.INDEX.date_of_diagnosis,
+DONOR.INDEX.primary_diagnoses.INDEX, {indexed_on(PRIMARY_DIAGNOSES_SHEET.submitter_donor_id)}
+DONOR.INDEX.primary_diagnoses.INDEX.submitter_primary_diagnosis_id, {single_val(PRIMARY_DIAGNOSES_SHEET.submitter_primary_diagnosis_id)}
+DONOR.INDEX.primary_diagnoses.INDEX.date_of_diagnosis, {single_date(PRIMARY_DIAGNOSES_SHEET.date_of_diagnosis)}
 ```
 
-You need to specify the indexing field for primary diagnosis. This field needs to be unique for each primary diagnosis in your raw data. Use the `indexed_on` mapping to define the index field:
-
-`primary_diagnoses.INDEX,{indexed_on(submitted_primary_diagnosis_id)}`
+Here, `primary_diagnoses` will be added as an an array for the Donor with `submitter_donor_id`. Each entry in `primary_diagnoses` will use the values on the `PRIMARY_DIAGNOSES_SHEET` that have the same `submitter_donor_id`.
 
 If your schema doesn't contain any instances of a particular indexed field, you can specify `NONE`:
 `{indexed_on(NONE)}`
@@ -76,7 +60,7 @@ If the data cannot be transformed with one of the standard functions, you can de
 
 Following the format in the generic `mappings.py`, write your own functions in your python file for how to translate the data. To specify a custom mapping function in the template:
 
-`primary_diagnoses.INDEX.basis_of_diagnosis,{new_cohort.custom_function(field_name)}`
+`DONOR.INDEX.primary_diagnoses.INDEX.basis_of_diagnosis,{new_cohort.custom_function(DATA_SHEET.field_name)}`
 
 Examples:
 

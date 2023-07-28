@@ -37,7 +37,7 @@ def main(args):
 
     with open(outputfile, 'w') as f:  # write to csv file for mapping
         f.write(metadata)
-        f.write("## mohpacket element, description (overwrite with mapped element)\n")
+        f.write("## mohpacket element, mapping method\n")
         # f.write("## (.INDEX is an array element) (* is required) (+ denotes ontology term),\n")
         for nn in node_names:
             f.write(f"{nn}\n")

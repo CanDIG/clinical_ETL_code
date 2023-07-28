@@ -79,10 +79,9 @@ options:
   --out OUT   name of output file; csv extension will be added. Default is template
 
 ```
+Each line in the mapping template will have a suggested mapping function to map a field on an input sheet to a field in the schema. Replace the generic sheet names with your sheet names. You may need to replace suggested field names with your own field names, if they differ.
 
-For each line in the mapping template, specify any mapping required to convert your input data to the align with the schema. See the [mapping instructions](mapping_functions.md) for detailed documentation on filling out the template.
-
-**Note**: If your input data aligns perfectly with the schema (the column names are exact and unambiguous, and the field data matches the format specified by the schema), you do not need to modify the entry for that field.
+If your data do not map in the same way as the suggested mapping functions, you may need to write your own mapping functions. See the [mapping instructions](mapping_functions.md) for detailed documentation on writing your own mapping functions.
 
 **Note**: Do not edit, delete, or re-order the template lines, except to add mapping functions after the comma in each line.
 

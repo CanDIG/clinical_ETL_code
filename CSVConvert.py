@@ -38,12 +38,13 @@ def map_data_to_scaffold(node, line):
     """
     Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive.
     """
-    mappings.CURRENT_LINE = line
-    verbose_print(f"Mapping line '{mappings.CURRENT_LINE}' for {mappings.IDENTIFIER}")
-    curr_id = mappings._peek_at_top_of_stack()
-    index_field = curr_id["id"]
-    index_value = curr_id["value"]
-    identifier = curr_id["indiv"]
+    if line is not None:
+        mappings.CURRENT_LINE = line
+        verbose_print(f"Mapping line '{mappings.CURRENT_LINE}' for {mappings.IDENTIFIER}")
+        curr_id = mappings._peek_at_top_of_stack()
+        index_field = curr_id["id"]
+        index_value = curr_id["value"]
+        identifier = curr_id["indiv"]
     # if we're looking at an array of objects:
     if "dict" in str(type(node)) and "INDEX" in node:
         result = map_indexed_scaffold(node, line)
@@ -58,7 +59,10 @@ def map_data_to_scaffold(node, line):
     if "dict" in str(type(node)):
         result = {}
         for key in node.keys():
-            dict = map_data_to_scaffold(node[key], f"{line}.{key}")
+            linekey = key
+            if line is not None:
+                linekey = f"{line}.{key}"
+            dict = map_data_to_scaffold(node[key], f"{linekey}")
             if dict is not None:
                 result[key] = dict
         if result is not None and len(result) == 0:
@@ -638,7 +642,8 @@ def main(args):
         print(f"Creating packet for {indiv}")
         mappings.IDENTIFIER = indiv
         mappings._push_to_stack(None, None, indiv)
-        packets.append(map_data_to_scaffold(deepcopy(mapping_scaffold), "DONOR"))
+        packet = map_data_to_scaffold(deepcopy(mapping_scaffold), None)
+        packets.extend(packet["DONOR"])
         if mappings._pop_from_stack() is None:
             raise Exception(f"Stack popped too far!\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}")
         if mappings._pop_from_stack() is not None:

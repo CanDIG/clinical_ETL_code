@@ -83,8 +83,8 @@ def map_indexed_scaffold(node, line):
         verbose_print(f"  Mapping indexed scaffold for {index_field}")
         if index_field is None:
             return None
+        index_values = eval_mapping(identifier, node["INDEX"], index_field[0], stack_index_value)
         index_field, index_sheets = find_sheets_with_field(index_field[0])
-        index_values = eval_mapping(identifier, node["INDEX"], index_field, stack_index_value)
         if index_values is None:
             return None
         if index_field == stack_index_field:
@@ -204,7 +204,8 @@ def populate_data_for_params(identifier, index_field, index_value, params):
                         verbose_print(f"    checking if {index_field} == {stack_index_field} and {index_value} == {stack_index_value}")
                         # if index_field is the same as stack_index_field, then index_value should equal stack's value
                         if index_field == stack_index_field and index_value == stack_index_value:
-                            verbose_print(f"    Is {index_value} in {sheet}>{identifier}>{index_field}? {mappings.INDEXED_DATA['data'][index_sheets[0]][identifier][index_field]}")
+                            verbose_print(f"    Is {index_value} in {sheet}>{identifier}>{index_field}? {index_sheets[0]}")
+                            verbose_print(f"{mappings.INDEXED_DATA['data'][index_sheets[0]][identifier][index_field]}")
                             if index_value in mappings.INDEXED_DATA["data"][index_sheets[0]][identifier][index_field]:
                                 verbose_print(f"    yes, data_values[{index_sheets[0]}] = {mappings.INDEXED_DATA['data'][index_sheets[0]][identifier]}")
                                 # if indexed_data["data"][sheet][identifier][index_field] has more than one value, find the index for index_value and use just that one

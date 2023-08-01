@@ -208,7 +208,7 @@ def populate_data_for_params(identifier, index_field, index_value, params):
                         verbose_print(f"    checking if {index_field} == {stack_index_field} and {index_value} == {stack_index_value}")
                         # if index_field is the same as stack_index_field, then index_value should equal stack's value
                         if index_field == stack_index_field and index_value == stack_index_value:
-                            verbose_print(f"    Is {index_value} in {sheet}>{identifier}>{index_field}? {index_sheets[0]}")
+                            verbose_print(f"    Is {index_value} in {index_sheets[0]}>{identifier}>{index_field}? {sheet}")
                             verbose_print(f"{mappings.INDEXED_DATA['data'][index_sheets[0]][identifier][index_field]}")
                             if index_value in mappings.INDEXED_DATA["data"][index_sheets[0]][identifier][index_field]:
                                 verbose_print(f"    yes, data_values[{index_sheets[0]}] = {mappings.INDEXED_DATA['data'][index_sheets[0]][identifier]}")

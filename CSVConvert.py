@@ -216,6 +216,8 @@ def populate_data_for_params(identifier, index_field, index_value, params):
                                 data_values[param][sheet] = {}
                                 i = mappings.INDEXED_DATA["data"][index_sheets[0]][identifier][index_field].index(index_value)
                                 if len(mappings.INDEXED_DATA["data"][sheet][identifier][param]) > i:
+                                    print(f"indexed_data['data'][{sheet}][{identifier}][{param}][{i}]")
+                                    print(f"{mappings.INDEXED_DATA['data'][sheet][identifier][param][i]}")
                                     data_values[param][sheet] = [mappings.INDEXED_DATA["data"][sheet][identifier][param][i]]
                             else:
                                 data_values[param].pop(sheet)

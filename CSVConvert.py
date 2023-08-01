@@ -215,7 +215,7 @@ def populate_data_for_params(identifier, index_field, index_value, params):
                                 # if indexed_data["data"][sheet][identifier][index_field] has more than one value, find the index for index_value and use just that one
                                 data_values[param][sheet] = {}
                                 i = mappings.INDEXED_DATA["data"][index_sheets[0]][identifier][index_field].index(index_value)
-                                if len(mappings.INDEXED_DATA["data"][sheet][identifier][param]) >= i:
+                                if len(mappings.INDEXED_DATA["data"][sheet][identifier][param]) > i:
                                     data_values[param][sheet] = [mappings.INDEXED_DATA["data"][sheet][identifier][param][i]]
                             else:
                                 data_values[param].pop(sheet)

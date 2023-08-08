@@ -197,7 +197,7 @@ def parse_args():
 #                     missing.append(comment_match.group(2))
 #     print("\n".join(missing))
 
-def validate_coverage(map_json, manifest, input_path, verbose=False):
+def validate_coverage(map_json, manifest, input_path=None, verbose=False):
     if verbose:
         mappings.VERBOSE = True
 

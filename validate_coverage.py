@@ -232,7 +232,9 @@ def validate_coverage(map_json, manifest, input_path=None, verbose=False):
     #     check_completeness(raw_csv_dfs, schema)
 
     print("Validating the mapped schema...")
-    result = schema.validate_donor(map_json[0])
+    result = []
+    for donor in map_json:
+        result.extend(schema.validate_donor(donor))
     return result
 
 def main(args):

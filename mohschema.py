@@ -10,6 +10,7 @@ import dateparser
 
 
 VALIDATION_MESSAGES = []
+STACK_LOCATION = []
 
 
 class MoHValidationError(Exception):
@@ -21,11 +22,13 @@ class MoHValidationError(Exception):
 
 
 def warn(message):
+    message = ">".join(STACK_LOCATION) + ": " + message
     VALIDATION_MESSAGES.append(f"{message}")
-    # raise MoHValidationError(message)
+    raise MoHValidationError(message)
 
 
 def fail(message):
+    message = ">".join(STACK_LOCATION) + ": " + message
     raise MoHValidationError(message)
 
 
@@ -272,7 +275,8 @@ class mohschema:
         global VALIDATION_MESSAGES
         VALIDATION_MESSAGES = []
         if "submitter_donor_id" in donor_json:
-            print(f"Validating schema for donor {donor_json['submitter_donor_id']}...")
+            STACK_LOCATION.append(donor_json['submitter_donor_id'])
+            print(f"Validating schema for donor {STACK_LOCATION[-1]}...")
         # validate with jsonschema:
         jsonschema.validate(donor_json, self.json_schema)
 
@@ -336,10 +340,13 @@ class mohschema:
                 case "followups":
                     for x in donor_json["followups"]:
                         self.validate_followup(x)
+        if len(STACK_LOCATION) > 0:
+            STACK_LOCATION.pop()
         return VALIDATION_MESSAGES
 
     def validate_primary_diagnosis(self, map_json):
-        print(f"Validating schema for primary_diagnosis {map_json['submitter_primary_diagnosis_id']}...")
+        STACK_LOCATION.append(map_json['submitter_primary_diagnosis_id'])
+        print(f"Validating schema for primary_diagnosis {STACK_LOCATION[-1]}...")
         # check to see if this primary_diagnosis is a tumour:
         required_fields = [
             "submitter_primary_diagnosis_id",
@@ -384,10 +391,12 @@ class mohschema:
                 case "followups":
                     for followup in map_json["followups"]:
                         self.validate_followup(followup)
+        STACK_LOCATION.pop()
 
 
     def validate_specimen(self, map_json, is_clinical_tumour):
-        print(f"Validating schema for specimen {map_json['submitter_specimen_id']}...")
+        STACK_LOCATION.append(map_json['submitter_specimen_id'])
+        print(f"Validating schema for specimen {STACK_LOCATION[-1]}...")
 
         required_fields = [
             "submitter_specimen_id",
@@ -426,10 +435,12 @@ class mohschema:
                 case "biomarkers":
                     for biomarker in map_json["biomarkers"]:
                         self.validate_biomarker(biomarker, "submitter_specimen_id", map_json["submitter_specimen_id"])
+        STACK_LOCATION.pop()
 
 
     def validate_sample_registration(self, map_json):
-        print(f"Validating schema for sample_registration {map_json['submitter_sample_id']}...")
+        STACK_LOCATION.append(map_json['submitter_sample_id'])
+        print(f"Validating schema for sample_registration {STACK_LOCATION[-1]}...")
 
         required_fields = [
             "submitter_sample_id",
@@ -440,20 +451,24 @@ class mohschema:
         for f in required_fields:
             if f not in map_json:
                 fail(f"{f} required for sample_registration")
+        STACK_LOCATION.pop()
 
 
     def validate_biomarker(self, map_json, associated_field, associated_value):
-        print(f"Validating schema for biomarker associated with {associated_field} {associated_value}...")
+        STACK_LOCATION.append(f"{associated_field} {associated_value}")
+        print(f"Validating schema for biomarker associated with {STACK_LOCATION[-1]}...")
 
         for prop in map_json:
             match prop:
                 case "hpv_pcr_status":
                     if map_json["hpv_pcr_status"] == "Positive" and "hpv_strain" not in map_json:
                         warn("If hpv_pcr_status is positive, hpv_strain is required")
+        STACK_LOCATION.pop()
 
 
     def validate_followup(self, map_json):
-        print(f"Validating schema for followup {map_json['submitter_follow_up_id']}...")
+        STACK_LOCATION.append(map_json['submitter_follow_up_id'])
+        print(f"Validating schema for followup {STACK_LOCATION[-1]}...")
 
         required_fields = [
             "date_of_followup",
@@ -484,10 +499,12 @@ class mohschema:
                         if "anatomic_site_progression_or_recurrence" not in map_json:
                             if "relapse_type" in map_json and map_json["relapse_type"] != "Biochemical progression":
                                 warn(f"anatomic_site_progression_or_recurrence is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")
+        STACK_LOCATION.pop()
 
 
     def validate_treatment(self, map_json):
-        print(f"Validating schema for treatment {map_json['submitter_treatment_id']}...")
+        STACK_LOCATION.append(map_json['submitter_treatment_id'])
+        print(f"Validating schema for treatment {STACK_LOCATION[-1]}...")
 
         required_fields = [
             "submitter_treatment_id",
@@ -544,10 +561,12 @@ class mohschema:
                 case "biomarkers":
                     for biomarker in map_json["biomarkers"]:
                         self.validate_biomarker(biomarker, "submitter_treatment_id", map_json["submitter_treatment_id"])
+        STACK_LOCATION.pop()
 
 
     def validate_chemotherapy(self, map_json):
-        print(f"Validating schema for chemotherapy...")
+        STACK_LOCATION.append(f"chemotherapy {STACK_LOCATION[-1]}")
+        print(f"Validating schema for {STACK_LOCATION[-1]}...")
 
         required_fields = [
             "drug_reference_database",
@@ -566,10 +585,12 @@ class mohschema:
                 case "actual_cumulative_drug_dose":
                     if "chemotherapy_drug_dose_units" not in map_json:
                         warn("chemotherapy_drug_dose_units required if actual_cumulative_drug_dose is submitted")
+        STACK_LOCATION.pop()
 
 
     def validate_hormone_therapy(self, map_json):
-        print(f"Validating schema for hormone_therapy...")
+        STACK_LOCATION.append(f"hormone_therapy {STACK_LOCATION[-1]}")
+        print(f"Validating schema for {STACK_LOCATION[-1]}...")
 
         required_fields = [
             "drug_reference_database",
@@ -588,10 +609,12 @@ class mohschema:
                 case "actual_cumulative_drug_dose":
                     if "hormone_drug_dose_units" not in map_json:
                         warn("hormone_drug_dose_units required if actual_cumulative_drug_dose is submitted")
+        STACK_LOCATION.pop()
 
 
     def validate_immunotherapy(self, map_json):
-        print(f"Validating schema for immunotherapy...")
+        STACK_LOCATION.append(f"immunotherapy {STACK_LOCATION[-1]}")
+        print(f"Validating schema for {STACK_LOCATION[-1]}...")
 
         required_fields = [
             "drug_reference_database",
@@ -610,10 +633,12 @@ class mohschema:
                 case "actual_cumulative_drug_dose":
                     if "immunotherapy_drug_dose_units" not in map_json:
                         warn("immunotherapy_drug_dose_units required if actual_cumulative_drug_dose is submitted")
+        STACK_LOCATION.pop()
 
 
     def validate_radiation(self, map_json):
-        print(f"Validating schema for radiation...")
+        STACK_LOCATION.append(f"radiation {STACK_LOCATION[-1]}")
+        print(f"Validating schema for {STACK_LOCATION[-1]}...")
 
         required_fields = [
             "radiation_therapy_modality",
@@ -632,10 +657,13 @@ class mohschema:
                     if map_json["radiation_boost"]:
                         if "reference_radiation_treatment_id" not in map_json:
                             warn("reference_radiation_treatment_id required if radiation_boost = Yes")
+        STACK_LOCATION.pop()
 
 
     def validate_surgery(self, map_json):
-        print(f"Validating schema for surgery...")
+        STACK_LOCATION.append(f"surgery {STACK_LOCATION[-1]}")
+        print(f"Validating schema for {STACK_LOCATION[-1]}...")
+
 
         required_fields = [
             "surgery_type"
@@ -649,10 +677,12 @@ class mohschema:
                 warn("surgery_site required if submitter_specimen_id not submitted")
             if "surgery_location" not in map_json:
                 warn("surgery_location required if submitter_specimen_id not submitted")
+        STACK_LOCATION.pop()
 
 
     def validate_comorbidity(self, map_json):
-        print(f"Validating schema for comorbidity...")
+        STACK_LOCATION.append(f"comorbidity {STACK_LOCATION[-1]}")
+        print(f"Validating schema for {STACK_LOCATION[-1]}...")
 
         required_fields = [
             "comorbidity_type_code"
@@ -666,10 +696,12 @@ class mohschema:
                 case "laterality_of_prior_malignancy":
                     if "prior_malignancy" not in map_json or map_json["prior_malignancy"] != "Yes":
                         warn("laterality_of_prior_malignancy should not be submitted unless prior_malignancy = Yes")
+        STACK_LOCATION.pop()
 
 
     def validate_exposure(self, map_json):
-        print(f"Validating schema for exposure...")
+        STACK_LOCATION.append(f"exposure {STACK_LOCATION[-1]}")
+        print(f"Validating schema for {STACK_LOCATION[-1]}...")
 
         is_smoker = False
         if "tobacco_smoking_status" not in map_json:
@@ -691,6 +723,7 @@ class mohschema:
                 case "pack_years_smoked":
                     if not is_smoker:
                         warn(f"pack_years_smoked cannot be submitted for tobacco_smoking_status = {map_json['tobacco_smoking_status']}")
+        STACK_LOCATION.pop()
 
 
     def validate_staging_system(self, map_json, staging_type):
@@ -704,5 +737,5 @@ class mohschema:
                 if f"{staging_type}_{f}" not in map_json:
                     warn(f"{staging_type}_{f} is required if {staging_type}_tumour_staging_system is AJCC")
         else:
-            if "{staging_type}_stage_group" not in map_json:
+            if f"{staging_type}_stage_group" not in map_json:
                 warn(f"{staging_type}_stage_group is required for {staging_type}_tumour_staging_system {map_json[f'{staging_type}_tumour_staging_system']}")

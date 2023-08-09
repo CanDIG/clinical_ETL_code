@@ -162,10 +162,11 @@ def indexed_on(data_values):
 
 
 def _warn(message):
-    global VERBOSE
     global IDENTIFIER
-    if VERBOSE:
+    if IDENTIFIER is not None:
         print(f"WARNING for {IDENTIFIER_FIELD}={IDENTIFIER}: {message}")
+    else:
+        print(f"WARNING: {message}")
 
 
 def _push_to_stack(id, value, indiv):

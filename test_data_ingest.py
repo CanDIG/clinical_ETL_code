@@ -58,6 +58,7 @@ def test_csv_convert():
                                 assert f['submitter_treatment_id'] == t['submitter_treatment_id']
                                 assert f['submitter_follow_up_id'] == "FOLLOW_UP_2"
             if "followups" in packet:
+                assert len(packet['followups']) == 2
                 for f in packet['followups']:
                     assert f['submitter_follow_up_id'] in ["FOLLOW_UP_3", "FOLLOW_UP_4"]
         if packet['submitter_donor_id'] == "DONOR_2":

@@ -75,6 +75,14 @@ def list_val(data_values):
     return all_items
 
 
+# take a string and split it into an array based on a pipe delimiter:
+def pipe_delim(data_values):
+    val = single_val(data_values)
+    if val is not None:
+        return val.split('|')
+    return None
+
+
 def placeholder(data_values):
     return {"placeholder": data_values}
 

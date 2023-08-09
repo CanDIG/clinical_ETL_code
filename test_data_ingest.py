@@ -33,3 +33,23 @@ def test_list_val():
     assert test == ['IRINOTECAN', 'IRINOTECAN', 'IRINOTECAN', 'IRINOTECAN']
 
 
+def test_csv_convert():
+    input_path = "test_data/raw_data"
+    manifest_file = "test_data/manifest.yml"
+    mappings.INDEX_STACK = []
+    packets = CSVConvert.csv_convert(input_path, manifest_file, verbose=True)
+    assert packets is not None
+
+    # there are 6 donors
+    assert len(packets) == 6
+
+    for packet in packets:
+        if packet['submitter_donor_id'] == "DONOR_2":
+            # DONOR_2 has two primary diagnoses, PD_2 and PD_2_1
+            assert len(packet['primary_diagnoses']) == 2
+            for pd in packet['primary_diagnoses']:
+                if pd['submitter_primary_diagnosis_id'] == "PD_2":
+                    # all the specimens should have submitter_primary_diagnosis_id == PD_2
+                    for specimen in pd['specimens']:
+                        print(specimen)
+                        assert specimen['submitter_primary_diagnosis_id'] == "PD_2"

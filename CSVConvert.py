@@ -34,16 +34,13 @@ def parse_args():
     return args
 
 
-def map_data_to_scaffold(node, line):
+def map_data_to_scaffold(node, line, rownum):
     """
     Given a particular individual's data, and a node in the schema, return the node with mapped data. Recursive.
     """
-    mappings.CURRENT_LINE = line
-    verbose_print(f"Mapping line '{mappings.CURRENT_LINE}' for {mappings.IDENTIFIER}")
-    curr_id = mappings._peek_at_top_of_stack()
-    index_field = curr_id["id"]
-    index_value = curr_id["value"]
-    identifier = curr_id["indiv"]
+    if line is not None:
+        mappings.CURRENT_LINE = line
+        verbose_print(f"Mapping line '{mappings.CURRENT_LINE}' for {mappings.IDENTIFIER}")
     # if we're looking at an array of objects:
     if "dict" in str(type(node)) and "INDEX" in node:
         result = map_indexed_scaffold(node, line)
@@ -51,14 +48,16 @@ def map_data_to_scaffold(node, line):
             return None
         return result
     if "str" in str(type(node)) and node != "":
-        result = eval_mapping(identifier, node, index_field, index_value)
-        # if result is not None and len(result) == 0:
-        #     return None
+        result = eval_mapping(node, rownum)
+        verbose_print(f"Evaluated result is {result}")
         return result
     if "dict" in str(type(node)):
         result = {}
         for key in node.keys():
-            dict = map_data_to_scaffold(node[key], f"{line}.{key}")
+            linekey = key
+            if line is not None:
+                linekey = f"{line}.{key}"
+            dict = map_data_to_scaffold(node[key], f"{linekey}", rownum)
             if dict is not None:
                 result[key] = dict
         if result is not None and len(result) == 0:
@@ -70,11 +69,6 @@ def map_indexed_scaffold(node, line):
     """
     Given a node that is indexed on some array of values, populate the array with the node's values.
     """
-    curr_id = mappings._peek_at_top_of_stack()
-    identifier = curr_id["indiv"]
-    stack_index_value = curr_id["value"]
-    stack_index_field, stack_index_sheets = find_sheets_with_field(curr_id["id"])
-
     result = []
     index_values = None
     # process the index
@@ -83,38 +77,59 @@ def map_indexed_scaffold(node, line):
         verbose_print(f"  Mapping indexed scaffold for {index_field}")
         if index_field is None:
             return None
-        index_field, index_sheets = find_sheets_with_field(index_field[0])
-        index_values = eval_mapping(identifier, node["INDEX"], index_field, stack_index_value)
+        # evaluate INDEX, using None as rownum to indicate that we're calculating an index and not a specific row
+        index_values = eval_mapping(node["INDEX"], None)
+        verbose_print(f"  Indexing on  {index_values}")
         if index_values is None:
             return None
-        if index_field == stack_index_field:
-            if stack_index_value in index_values:
-                index_values = [stack_index_value]
-            else:
-                index_values = []
-        verbose_print(f"  INDEXED on {index_values} {index_field}")
+        index_field = index_values["field"]
+        index_sheet = index_values["sheet"]
+        index_values = index_values["values"]
     else:
         raise Exception(f"An indexed_on notation is required for {line}")
 
-    if node["NODES"] is None:
-        # there isn't any more depth to this, so just return the values
-        return index_values
-    verbose_print(f"Processing over index values {index_values}")
-    for i in index_values:
-        verbose_print(f"Applying {i} to {line}")
-        mappings._push_to_stack(f'"{index_sheets[0]}".{index_field}', i, identifier)
-        sub_res = map_data_to_scaffold(node["NODES"], f"{line}.INDEX")
-        if sub_res is not None:
-            result.append(map_data_to_scaffold(node["NODES"], f"{line}.INDEX"))
-        mappings._pop_from_stack()
+    # only process if there is data for this IDENTIFIER in the index_sheet
+    if mappings.IDENTIFIER in mappings.INDEXED_DATA['data'][index_sheet]:
+        top_frame = mappings._peek_at_top_of_stack()
+
+        # FIRST PASS: when we've passed in None for the sheet in the stack
+        if top_frame["sheet"] is None:
+            mappings.INDEX_STACK[-1]["sheet"] = index_sheet
+            mappings.INDEX_STACK[-1]["id"] = index_field
+            top_frame = mappings._peek_at_top_of_stack()
+
+        row = get_row_for_stack_top(top_frame["sheet"], top_frame["rownum"])
+        verbose_print(f"  Comparing to index_values {index_values} to top_frame {row[index_field]}")
+
+        possible_values = []
+
+        # for each value in index_sheet.index_field, is it in index_values?
+        for i in range(0, len(index_values)):
+            if index_values[i] == row[index_field]:
+                possible_values.append(index_values[i])
+            else:
+                possible_values.append(None)
+        verbose_print(f"  Possible values are {possible_values}")
+
+        if index_values is not None:
+            for i in range(0, len(possible_values)):
+                mappings._push_to_stack(index_sheet, index_field, i)
+                index_val = possible_values[i]
+                verbose_print(f"  Mapping {i}th row for {possible_values}")
+                if index_val is not None:
+                    sub_res = map_data_to_scaffold(node["NODES"], f"{line}.INDEX", i)
+                    if sub_res is not None:
+                        result.append(sub_res)
+                else:
+                    verbose_print(f"  Skipping {i}th row")
+                mappings._pop_from_stack()
     if len(result) == 0:
         return None
     return result
 
 
-def find_sheets_with_field(param):
+def parse_sheet_from_field(param):
     """
-    For a named parameter, find all of the sheets that have this parameter on them.
     If the parameter specifies a sheet, return just that sheet and the parameter's base name.
     Returns None, None if the parameter is not found.
     """
@@ -144,10 +159,12 @@ def find_sheets_with_field(param):
     if sheet is not None:
         if param in mappings.INDEXED_DATA["columns"]:
             if sheet in mappings.INDEXED_DATA["columns"][param]:
-                return param, [sheet]
+                return param, sheet
             return None, None
     if param in mappings.INDEXED_DATA["columns"]:
-        return param, mappings.INDEXED_DATA["columns"][param]
+        if len(mappings.INDEXED_DATA["columns"][param]) > 1:
+            mappings._warn(f"There are multiple sheets that contain column name {param}. Please specify the exact sheet in the mapping.")
+        return param, mappings.INDEXED_DATA["columns"][param][0]
     return None, None
 
 
@@ -165,79 +182,68 @@ def parse_mapping_function(mapping):
         # we replaced the commas back in process_mapping
         method = func_match.group(1)
         parameters = func_match.group(2).split(";")
+        parameters = list(map(lambda x: x.strip(), parameters))
     return method, parameters
 
 
-def populate_data_for_params(identifier, index_field, index_value, params):
+def get_row_for_stack_top(sheet, rownum):
+    result = {}
+    for param in mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER].keys():
+        result[param] = mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER][param][rownum]
+    verbose_print(f"get_row_for_stack_top is {result}")
+    return result
+
+
+def populate_data_for_params(params, rownum):
     """
     Given a list of params, return a dictionary of the
     values for each parameter.
-    If index_field is not None, create an INDEX key that lists all the possible values that could use
     """
-    curr_id = mappings._peek_at_top_of_stack()
-    stack_index_field, stack_index_sheets = find_sheets_with_field(curr_id["id"])
-    stack_index_value = curr_id["value"]
-
     data_values = {}
-    param_names = []
-
-    # verbose_print(f"populating with {identifier} {index_field} {index_value} {params}")
     for param in params:
-        param, sheets = find_sheets_with_field(param)
+        param, sheet = parse_sheet_from_field(param)
         if param is None:
-            return None, None
-        if sheets is None or len(sheets) == 0:
+            return None
+        if sheet is None:
             verbose_print(f"  WARNING: parameter {param} is not present in the input data")
         else:
-            verbose_print(f"  populating data for {param} in {sheets}")
-            param_names.append(param)
-            for sheet in sheets:
-                if param not in data_values:
-                    data_values[param] = {}
-                # for each of these sheets, add this identifier's contents as a key and array:
-                if identifier in mappings.INDEXED_DATA["data"][sheet]:
-                    if sheet not in data_values[param]:
-                        data_values[param][sheet] = mappings.INDEXED_DATA["data"][sheet][identifier][param]
-                    # if index_field is not None, add only the indexed data where the index_field's value is identifier
-                    if index_field is not None and index_value is not None:
-                        index_field, index_sheets = find_sheets_with_field(index_field)
-                        verbose_print(f"    checking if {index_field} == {stack_index_field} and {index_value} == {stack_index_value}")
-                        # if index_field is the same as stack_index_field, then index_value should equal stack's value
-                        if index_field == stack_index_field and index_value == stack_index_value:
-                            verbose_print(f"    Is {index_value} in {sheet}>{identifier}>{index_field}? {mappings.INDEXED_DATA['data'][index_sheets[0]][identifier][index_field]}")
-                            if index_value in mappings.INDEXED_DATA["data"][index_sheets[0]][identifier][index_field]:
-                                verbose_print(f"    yes, data_values[{index_sheets[0]}] = {mappings.INDEXED_DATA['data'][index_sheets[0]][identifier]}")
-                                # if indexed_data["data"][sheet][identifier][index_field] has more than one value, find the index for index_value and use just that one
-                                data_values[param][sheet] = {}
-                                i = mappings.INDEXED_DATA["data"][index_sheets[0]][identifier][index_field].index(index_value)
-                                if len(mappings.INDEXED_DATA["data"][sheet][identifier][param]) >= i:
-                                    data_values[param][sheet] = [mappings.INDEXED_DATA["data"][sheet][identifier][param][i]]
-                            else:
-                                data_values[param].pop(sheet)
-                else:
-                    verbose_print(f"  WARNING: {identifier} not on sheet {sheet}")
-                    data_values[param][sheet] = []
-    verbose_print(f"  populated {data_values} {param_names}")
-    return data_values, param_names
+            # there should only be one sheet
+            verbose_print(f"  populating data for {param} in {sheet}")
+            if param not in data_values:
+                data_values[param] = {}
+            # add this identifier's contents as a key and array:
+            if mappings.IDENTIFIER in mappings.INDEXED_DATA["data"][sheet]:
+                data_values[param][sheet] = deepcopy(mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER][param])
+                if rownum is not None:
+                    top_frame = mappings._peek_at_top_of_stack()
+                    row = get_row_for_stack_top(top_frame["sheet"], rownum)
+                    for i in range(0, len(data_values[param][sheet])):
+                        if row[param] is None or row[param] != data_values[param][sheet][i]:
+                            data_values[param][sheet][i] = None
+            else:
+                verbose_print(f"  WARNING: {mappings.IDENTIFIER} not on sheet {sheet}")
+                data_values[param][sheet] = []
+    if rownum is not None:
+        data_values[param][sheet] = data_values[param][sheet][rownum]
+        verbose_print(f"  populated single value {data_values}")
+    else:
+        verbose_print(f"  populated index values {data_values}")
+    return data_values
 
-def eval_mapping(identifier, node_name, index_field, index_value):
+def eval_mapping(node_name, rownum):
     """
     Given the identifier field, the data, and a particular schema node, evaluate
     the mapping using the provider method and return the final JSON for the node
     in the schema.
-    If index_value is not None, it is an index into an object that is part of an array.
     """
-    verbose_print(f"  Evaluating {identifier}: {node_name} (indexed on {index_field}, {index_value})")
+    verbose_print(f"  Evaluating {mappings.IDENTIFIER}: {node_name}")
     if "mappings" not in mappings.MODULES:
         mappings.MODULES["mappings"] = importlib.import_module("mappings")
     modulename = "mappings"
 
     method, parameters = parse_mapping_function(node_name)
-    if parameters is None:
-        # by default, map using the node name as a parameter
-        parameters = [node_name]
-    data_values, parameters = populate_data_for_params(identifier, index_field, index_value, parameters)
-    if parameters is None or (len(parameters) > 0 and parameters[0] == "NONE"):
+    data_values = populate_data_for_params(parameters, rownum)
+    if data_values is None:
         return None
     if method is not None:
         # is the function something in a dynamically-loaded module?
@@ -245,10 +251,7 @@ def eval_mapping(identifier, node_name, index_field, index_value):
         if subfunc_match is not None:
             modulename = subfunc_match.group(1)
             method = subfunc_match.group(2)
-    # else:
-    #     method = "single_val"
-    #     verbose_print(f"  Defaulting to single_val({parameters})")
-        verbose_print(f"  Using method {modulename}.{method}({parameters}) with {data_values}")
+        verbose_print(f"  Using method {modulename}.{method}({', '.join(parameters)}) with {data_values}")
         try:
             if len(data_values.keys()) > 0:
                 module = mappings.MODULES[modulename]
@@ -291,7 +294,6 @@ def process_data(raw_csv_dfs):
     final_merged = {}
     cols_index = {}
     individuals = []
-    identifier = mappings.IDENTIFIER_FIELD
 
     for page in raw_csv_dfs.keys():
         print(f"Processing sheet {page}...")
@@ -302,10 +304,10 @@ def process_data(raw_csv_dfs):
             .drop_duplicates()  # drop absolutely identical lines
 
         # Sort by identifier and then tag any dups
-        df.set_index(identifier, inplace=True)
+        df.set_index(mappings.IDENTIFIER_FIELD, inplace=True)
         df.sort_index(inplace=True)
         df.reset_index(inplace=True)
-        dups = df.duplicated(subset=[identifier], keep='first')
+        dups = df.duplicated(subset=[mappings.IDENTIFIER_FIELD], keep='first')
 
         for col in list(df.columns):
             col = col.strip()
@@ -319,35 +321,36 @@ def process_data(raw_csv_dfs):
         df_dict = df.to_dict(orient="index")
         for index in range(0, len(dups)):
             if not dups[index]:  # this is the first occurrence
-                rows_to_merge[df_dict[index][identifier]] = [df_dict[index]]
+                rows_to_merge[df_dict[index][mappings.IDENTIFIER_FIELD]] = [df_dict[index]]
             else:
-                rows_to_merge[df_dict[index][identifier]].append(df_dict[index])
+                rows_to_merge[df_dict[index][mappings.IDENTIFIER_FIELD]].append(df_dict[index])
         merged_dict = {}  # this is going to be the dict with arrays:
         for i in range(0, len(rows_to_merge)):
             merged_dict[i] = {}
             row_to_merge = rows_to_merge[list(rows_to_merge.keys())[i]]
-            row = row_to_merge.pop(0)
-            for k in row.keys():
-                merged_dict[i][k.strip()] = [row[k]]
             while len(row_to_merge) > 0:  # there are still entries to merge
-                mappings._warn(f"Duplicate row for {merged_dict[i][identifier][0]} in {page}")
                 row = row_to_merge.pop(0)
                 for k in row.keys():
-                    merged_dict[i][k.strip()].append(row[k])
-            # for the identifier key, just pick one, since they're all the same:
-            merged_dict[i][identifier] = [merged_dict[i][identifier].pop()]
+                    if k.strip() not in merged_dict[i]:
+                        merged_dict[i][k.strip()] = []
+                    val = row[k]
+                    if val == 'nan':
+                        val = None
+                    merged_dict[i][k.strip()].append(val)
+                if len(row_to_merge) > 0:
+                    mappings._warn(f"Duplicate row for {merged_dict[i][mappings.IDENTIFIER_FIELD][0]} in {page}")
 
         # Now we can clean up the dicts: index them by identifier instead of int
         indexed_merged_dict = {}
         for i in range(0, len(merged_dict.keys())):
-            indiv = merged_dict[i][identifier][0]
+            indiv = merged_dict[i][mappings.IDENTIFIER_FIELD][0]
             indexed_merged_dict[indiv] = merged_dict[i]
             if indiv not in individuals:
                 individuals.append(indiv)
         final_merged[page] = indexed_merged_dict
 
     return {
-        "identifier": identifier,
+        "identifier_field": mappings.IDENTIFIER_FIELD,
         "columns": cols_index,
         "individuals": individuals,
         "data": final_merged
@@ -458,24 +461,15 @@ def create_scaffold_from_template(lines, test=False):
 def scan_template_for_duplicate_mappings(template_lines):
     field_map = {}
     for line in template_lines:
-        line_match = re.match(r"(.+), *\{(.+)\((.+)\)\}", line)
+        line_match = re.match(r"(.+), *\{(.+)\}", line)
         if line_match is not None:
             template_line = line_match.group(1)
-            data_values = line_match.group(3).split(",")
-            for val in data_values:
-                val = val.strip()
-                param, sheets = find_sheets_with_field(val)
-                if param is not None:
-                    if sheets is not None and len(sheets) > 1:
-                        val = param
-                    else:
-                        val = f'"{sheets[0]}".{param}'
-                    if val not in field_map:
-                        field_map[val] = []
-                    field_map[val].append(template_line)
+            val = line_match.group(2).strip()
+            if val not in field_map:
+                field_map[val] = []
+            field_map[val].append(template_line)
                 # else:
                 #     print(f"WARNING: No parameter '{val}' exists")
-    # print(json.dumps(field_map, indent=4))
     data_values = list(field_map.keys())
     for dv in data_values:
         indices = []
@@ -493,22 +487,22 @@ def scan_template_for_duplicate_mappings(template_lines):
     # if the last two bits in each dv are the same, this is a dup
     data_values = list(field_map.keys())
     for dv in data_values:
-        indexed_on = []
-        for i in field_map[dv]:
-            bits = i.split(".")
-            indexed_on.append(".".join(bits[len(bits)-2:len(bits)-1]))
-        uniques = list(set(indexed_on))
-        for u in range(0,len(uniques)):
-            count = 0
-            for i in range(0,len(indexed_on)):
-                if uniques[u] == indexed_on[i]:
-                    count += 1
-                    #indexed_on[i] = str(count)
-            if count > 1:
-                msg = f"ERROR: Key {dv} can only be used to index one line. If one of these duplicates does not have an index, use {{indexed_on(NONE)}}:\n"
+        if dv != 'indexed_on(NONE)':
+            indexed_on = []
+            for i in field_map[dv]:
+                bits = i.split(".")
+                indexed_on.append(".".join(bits[len(bits)-2:len(bits)-1]))
+            uniques = list(set(indexed_on))
+            for u in range(0,len(uniques)):
+                count = 0
                 for i in range(0,len(indexed_on)):
-                    msg += f"    {field_map[dv][i]}\n"
-                raise Exception(msg)
+                    if uniques[u] == indexed_on[i]:
+                        count += 1
+                if count > 1:
+                    msg = f"ERROR: Key {dv} can only be used to index one line. If one of these duplicates does not have an index, use {{indexed_on(NONE)}}:\n"
+                    for i in range(0,len(indexed_on)):
+                        msg += f"    {field_map[dv][i]}\n"
+                    raise Exception(msg)
 
     #print(json.dumps(field_map, indent=4))
 

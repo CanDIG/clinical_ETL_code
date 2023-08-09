@@ -54,9 +54,14 @@ def single_val(data_values):
     all_items = list_val(data_values)
     if len(all_items) == 0:
         return None
-    if len(set(all_items)) > 1:
+    all_items = set(all_items)
+    if None in all_items:
+        all_items.remove(None)
+    if len(all_items) == 0:
+        return None
+    if len(all_items) > 1:
         raise MappingError(f"More than one value was found for {list(data_values.keys())[0]} in {data_values}")
-    result = all_items[0]
+    result = list(all_items)[0]
     if result is not None and result.lower() == 'nan':
         result = None
     return result
@@ -148,17 +153,19 @@ def ontology_placeholder(data_values):
 
 # Default indexing value for arrays
 def indexed_on(data_values):
-    result = set()
-    for key in data_values:
-        for item in data_values[key]:
-            result = result.union(data_values[key][item])
+    field = list(data_values.keys())[0]
+    sheet = list(data_values[field].keys())[0]
 
-    # remove any Nones or nans
-    final = []
-    for i in result:
-        if i is not None and str(i).lower() != 'nan':
-            final.append(i)
-    return final
+    possible_values = data_values[field][sheet]
+    top_frame = _peek_at_top_of_stack()
+    if top_frame['sheet'] is not None:
+        possible_values = INDEXED_DATA['data'][top_frame['sheet']][IDENTIFIER][field]
+    return {
+        "field": field,
+        "sheet": sheet,
+        "values": data_values[field][sheet]
+    }
+
 
 
 def _warn(message):
@@ -169,12 +176,12 @@ def _warn(message):
         print(f"WARNING: {message}")
 
 
-def _push_to_stack(id, value, indiv):
+def _push_to_stack(sheet, id, rownum):
     INDEX_STACK.append(
         {
+            "sheet": sheet,
             "id": id,
-            "value": value,
-            "indiv": indiv
+            "rownum": rownum
         }
     )
     if VERBOSE:
@@ -195,9 +202,9 @@ def _peek_at_top_of_stack():
     if VERBOSE:
         print(json.dumps(val, indent=2))
     return {
+        "sheet": val["sheet"],
         "id": val["id"],
-        "value": val["value"],
-        "indiv": val["indiv"]
+        "rownum": val["rownum"]
     }
 
 

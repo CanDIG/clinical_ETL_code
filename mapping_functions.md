@@ -44,7 +44,14 @@ Here, `primary_diagnoses` will be added as an an array for the Donor with `submi
 If your schema doesn't contain any instances of a particular indexed field, you can specify `NONE`:
 `{indexed_on(NONE)}`
 
-If your schema requires more complex mapping calculations, you can define an index function in your mapping file: it should return an array of index values.
+If your schema requires more complex mapping calculations, you can define an index function in your mapping file. The result of this index function should have the same shape as mappings.indexed_on:
+```
+{
+  "sheet": sheet,
+  "field": field,
+  "values": [array of calculated values to use on the sheet.field]
+}
+```
 
 
 ## Transforming data using standard functions

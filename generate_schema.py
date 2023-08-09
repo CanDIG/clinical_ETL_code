@@ -31,13 +31,13 @@ def main(args):
 
     outputfile = "{}.csv".format(args.out)
 
-    metadata = ""
+    metadata = f"## Schema generated from {url}\n## Based on repo commit sha \"{schema.katsu_sha}\"\n"
 
     node_names = schema.template
 
     with open(outputfile, 'w') as f:  # write to csv file for mapping
         f.write(metadata)
-        f.write("## mohpacket element, mapping method\n")
+        f.write("## Items are comma separated: element, mapping method\n")
         # f.write("## (.INDEX is an array element) (* is required) (+ denotes ontology term),\n")
         for nn in node_names:
             f.write(f"{nn}\n")

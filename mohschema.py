@@ -56,6 +56,11 @@ class mohschema:
             print("Error: does not seem to be an openapi schema")
             schema = None
         self.schema = schema["components"]["schemas"]
+        sha_match = re.match(r".+Based on commit \"(.+)\".*", schema["info"]["description"])
+        if sha_match is not None:
+            self.katsu_sha = sha_match.group(1)
+        else:
+            self.katsu_sha = None
 
         # save off all the component schemas into a "defs" component that can be passed into a jsonschema validation
         defs = set()

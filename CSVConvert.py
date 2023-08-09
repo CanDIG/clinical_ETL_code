@@ -646,8 +646,12 @@ def main(args):
     with open(f"{output_file}_indexed.json", 'w') as f:
         json.dump(mappings.INDEXED_DATA, f, indent=4)
 
+    result = {
+        "katsu_sha": schema.katsu_sha,
+        "donors": packets
+    }
     with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
-        json.dump(packets, f, indent=4)
+        json.dump(result, f, indent=4)
 
 
 if __name__ == '__main__':

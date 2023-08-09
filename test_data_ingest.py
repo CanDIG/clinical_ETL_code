@@ -44,6 +44,22 @@ def test_csv_convert():
     assert len(packets) == 6
 
     for packet in packets:
+        if packet['submitter_donor_id'] == "DONOR_1":
+            # test Followups: FOLLOW_UP_2 is in TR_1, FOLLOW_UP_1 is in PD_1, FOLLOW_UP_3 and FOLLOW_UP_4 are in DONOR_1
+            for pd in packet['primary_diagnoses']:
+                if "followups" in pd:
+                    for f in pd['followups']:
+                        assert f['submitter_primary_diagnosis_id'] == pd['submitter_primary_diagnosis_id']
+                        assert f['submitter_follow_up_id'] == "FOLLOW_UP_1"
+                if "treatments" in pd:
+                    for t in pd["treatments"]:
+                        if "followups" in t:
+                            for f in t['followups']:
+                                assert f['submitter_treatment_id'] == t['submitter_treatment_id']
+                                assert f['submitter_follow_up_id'] == "FOLLOW_UP_2"
+            if "followups" in packet:
+                for f in packet['followups']:
+                    assert f['submitter_follow_up_id'] in ["FOLLOW_UP_3", "FOLLOW_UP_4"]
         if packet['submitter_donor_id'] == "DONOR_2":
             # DONOR_2 has two primary diagnoses, PD_2 and PD_2_1
             assert len(packet['primary_diagnoses']) == 2

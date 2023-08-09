@@ -573,10 +573,8 @@ def interpolate_mapping_into_scaffold(mapped_template, scaffold_template):
     return scaffold_template
 
 
-def main(args):
-    input_path = args.input
-    manifest_file = args.manifest
-    mappings.VERBOSE = args.verbose
+def csv_convert(input_path, manifest_file, verbose=False):
+    mappings.VERBOSE = verbose
 
     # read manifest data
     manifest = load_manifest(manifest_file)
@@ -636,8 +634,9 @@ def main(args):
     for indiv in mappings.INDEXED_DATA["individuals"]:
         print(f"Creating packet for {indiv}")
         mappings.IDENTIFIER = indiv
-        mappings._push_to_stack(None, None, indiv)
-        packets.append(map_data_to_scaffold(deepcopy(mapping_scaffold), "DONOR"))
+        mappings._push_to_stack(None, None, 0)
+        packet = map_data_to_scaffold(deepcopy(mapping_scaffold), None, 0)
+        packets.extend(packet["DONOR"])
         if mappings._pop_from_stack() is None:
             raise Exception(f"Stack popped too far!\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}")
         if mappings._pop_from_stack() is not None:
@@ -653,6 +652,11 @@ def main(args):
     with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(result, f, indent=4)
 
+    return packets
+
 
 if __name__ == '__main__':
-    main(parse_args())
+    args = parse_args()
+    input_path = args.input
+    manifest_file = args.manifest
+    csv_convert(input_path, manifest_file, verbose=args.verbose)

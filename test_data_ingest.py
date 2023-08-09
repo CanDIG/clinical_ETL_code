@@ -65,8 +65,9 @@ def test_csv_convert():
             # DONOR_2 has two primary diagnoses, PD_2 and PD_2_1
             assert len(packet['primary_diagnoses']) == 2
             for pd in packet['primary_diagnoses']:
-                if pd['submitter_primary_diagnosis_id'] == "PD_2":
-                    # all the specimens should have submitter_primary_diagnosis_id == PD_2
+                if 'specimen' in pd:
                     for specimen in pd['specimens']:
-                        print(specimen)
-                        assert specimen['submitter_primary_diagnosis_id'] == "PD_2"
+                        assert specimen['submitter_primary_diagnosis_id'] == pd['submitter_primary_diagnosis_id']
+                        if 'sample_registrations' in specimen:
+                            for sample in specimen['sample_registrations']:
+                                assert sample["submitter_specimen_id"] == specimen['submitter_specimen_id']

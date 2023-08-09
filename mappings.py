@@ -26,7 +26,7 @@ def date(data_values):
     if raw_date is None:
         return None
     for date in raw_date:
-        dates.append(_parse_date(date).date().isoformat())
+        dates.append(_parse_date(date))
     return dates
 
 
@@ -203,7 +203,7 @@ def _parse_date(date_string):
     if any(char in '0123456789' for char in date_string):
         try:
             d = dateparser.parse(date_string, settings={'TIMEZONE': 'UTC'})
-            return d.date().isoformat()
+            return d.date().strftime("%Y-%m")
         except Exception as e:
             raise MappingError(f"error in date({date_string}): {type(e)} {e}")
     return date_string

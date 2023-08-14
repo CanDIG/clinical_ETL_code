@@ -167,6 +167,25 @@ def indexed_on(data_values):
     }
 
 
+def moh_indexed_on_donor_if_others_absent(data_values):
+    result = []
+
+    for key in data_values:
+        vals = list(data_values[key].values()).pop()
+        for i in range(0, len(vals)):
+            if len(result) <= i:
+                result.append(None)
+            if vals[i] is not None:
+                if result[i] is None:
+                    result[i] = vals[i]
+                else:
+                    result[i] = None
+    return {
+        "field": "submitter_donor_id",
+        "sheet": "Followup",
+        "values": result
+    }
+
 
 def _warn(message):
     global IDENTIFIER

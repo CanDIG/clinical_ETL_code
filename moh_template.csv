@@ -1,5 +1,6 @@
 ## Schema generated from https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml
 ## Based on repo commit sha "29fd55d173b7a01daa72fcc89187e3aabd1fb51e"
+## MoH template is manually updated to match the MoH clinical data model
 ## Items are comma separated: element, mapping method
 DONOR.INDEX, {indexed_on(DONOR_SHEET.submitter_donor_id)}
 DONOR.INDEX.submitter_donor_id, {single_val(DONOR_SHEET.submitter_donor_id)}

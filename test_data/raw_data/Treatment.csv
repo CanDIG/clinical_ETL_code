@@ -1,0 +1,9 @@
+submitter_treatment_id,submitter_donor_id, submitter_primary_diagnosis_id, treatment_type, is_primary_treatment, line_of_treatment, treatment_start_date, treatment_end_date, treatment_setting, treatment_intent, days_per_cycle, number_of_cycles, response_to_treatment_criteria_method, response_to_treatment, status_of_treatment
+TR_1,DONOR_1,PD_1,Bone marrow transplant,Yes,,2021-09,2022-09,Adjuvant,Palliative,4,2,RECIST 1.1,Complete response,Treatment completed as prescribed
+TR_2,DONOR_2,PD_2,Chemotherapy,No,,2021-12,2022-12,Advanced/Metastatic,Guidance,5,2,iRECIST,Partial response,Treatment incomplete due to technical or organizational problems
+TR_3,DONOR_3,PD_3,Hormonal therapy,Yes,,2021-01,2022-01,Neoadjuvant,Diagnostic,6,3,Cheson CLL 2012 Oncology Response Criteria,Progressive disease,Treatment incomplete because patient died
+TR_4,DONOR_4,PD_4,Immunotherapy,No,,2021-02,2022-02,Conditioning,Forensic,6,2,Response Assessment in Neuro-Oncology (RANO),Stable disease,Patient choice (stopped or interrupted treatment)
+TR_5,DONOR_5,PD_5,Radiation therapy,Yes,,2021-09,2022-09,Induction,Preventive,7,1,AML Response Criteria,Immune complete response (iCR),Physician decision (stopped or interrupted treatment)
+TR_6,DONOR_6,PD_6,Stem cell transplant,No,,2021-07,2022-07,Locally advanced,Diagnostic,5,2,Physician Assessed Response Criteria,Immune partial response (iPR),Treatment stopped due to lack of efficacy (disease progression)
+TR_7,DONOR_2,PD_2_1,Surgery,Yes,,2021-02,2022-02,Maintenance,Diagnostic,3,1,Blazer score,Progressive disease,Treatment stopped due to acute toxicity
+TR_8,DONOR_2,PD_2_1,Immunotherapy,No,,2021-03,2022-03,Locally advanced,Forensic,2,2,AML Response Criteria,Immune confirmed progressive disease (iCPD),Other

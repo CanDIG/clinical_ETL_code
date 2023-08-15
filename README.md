@@ -67,7 +67,11 @@ functions:
 
 You'll need to create a mapping template that defines which mapping functions (if any) should be used for which fields.
 
-The `generate_template.py` script will generate a template file based an openapi.yaml file. For using katsu with the current MoHCCN data model, the URL to the schema is https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml (note raw github url).
+If you're generating a mapping for the current MoH model, you can use the pre-generated `moh_template.csv` file. This file is modified from the auto-generated template to update a few fields that require specific handling.
+
+<details>
+<summary>Generating a template from a different schema</summary>
+The `generate_template.py` script will generate a template file based an openapi.yaml file.
 
 ```
 $ python generate_schema.py -h
@@ -79,6 +83,8 @@ options:
   --out OUT   name of output file; csv extension will be added. Default is template
 
 ```
+</details>
+
 Each line in the mapping template will have a suggested mapping function to map a field on an input sheet to a field in the schema. Replace the generic sheet names with your sheet names. You may need to replace suggested field names with your own field names, if they differ.
 
 If your data do not map in the same way as the suggested mapping functions, you may need to write your own mapping functions. See the [mapping instructions](mapping_functions.md) for detailed documentation on writing your own mapping functions.

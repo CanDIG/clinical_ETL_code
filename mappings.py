@@ -26,7 +26,7 @@ def date(data_values):
     if raw_date is None:
         return None
     for date in raw_date:
-        dates.append(_parse_date(date).date().isoformat())
+        dates.append(_parse_date(date))
     return dates
 
 
@@ -54,9 +54,14 @@ def single_val(data_values):
     all_items = list_val(data_values)
     if len(all_items) == 0:
         return None
-    if len(set(all_items)) > 1:
+    all_items = set(all_items)
+    if None in all_items:
+        all_items.remove(None)
+    if len(all_items) == 0:
+        return None
+    if len(all_items) > 1:
         raise MappingError(f"More than one value was found for {list(data_values.keys())[0]} in {data_values}")
-    result = all_items[0]
+    result = list(all_items)[0]
     if result is not None and result.lower() == 'nan':
         result = None
     return result
@@ -73,6 +78,14 @@ def list_val(data_values):
             else:
                 all_items.append(data_values[col][sheet])
     return all_items
+
+
+# take a string and split it into an array based on a pipe delimiter:
+def pipe_delim(data_values):
+    val = single_val(data_values)
+    if val is not None:
+        return val.split('|')
+    return None
 
 
 def placeholder(data_values):
@@ -140,32 +153,54 @@ def ontology_placeholder(data_values):
 
 # Default indexing value for arrays
 def indexed_on(data_values):
-    result = set()
-    for key in data_values:
-        for item in data_values[key]:
-            result = result.union(data_values[key][item])
+    field = list(data_values.keys())[0]
+    sheet = list(data_values[field].keys())[0]
 
-    # remove any Nones or nans
-    final = []
-    for i in result:
-        if i is not None and str(i).lower() != 'nan':
-            final.append(i)
-    return final
+    possible_values = data_values[field][sheet]
+    top_frame = _peek_at_top_of_stack()
+    if top_frame['sheet'] is not None:
+        possible_values = INDEXED_DATA['data'][top_frame['sheet']][IDENTIFIER][field]
+    return {
+        "field": field,
+        "sheet": sheet,
+        "values": data_values[field][sheet]
+    }
+
+
+def moh_indexed_on_donor_if_others_absent(data_values):
+    result = []
+
+    for key in data_values:
+        vals = list(data_values[key].values()).pop()
+        for i in range(0, len(vals)):
+            if len(result) <= i:
+                result.append(None)
+            if vals[i] is not None:
+                if result[i] is None:
+                    result[i] = vals[i]
+                else:
+                    result[i] = None
+    return {
+        "field": "submitter_donor_id",
+        "sheet": "Followup",
+        "values": result
+    }
 
 
 def _warn(message):
-    global VERBOSE
     global IDENTIFIER
-    if VERBOSE:
+    if IDENTIFIER is not None:
         print(f"WARNING for {IDENTIFIER_FIELD}={IDENTIFIER}: {message}")
+    else:
+        print(f"WARNING: {message}")
 
 
-def _push_to_stack(id, value, indiv):
+def _push_to_stack(sheet, id, rownum):
     INDEX_STACK.append(
         {
+            "sheet": sheet,
             "id": id,
-            "value": value,
-            "indiv": indiv
+            "rownum": rownum
         }
     )
     if VERBOSE:
@@ -186,9 +221,9 @@ def _peek_at_top_of_stack():
     if VERBOSE:
         print(json.dumps(val, indent=2))
     return {
+        "sheet": val["sheet"],
         "id": val["id"],
-        "value": val["value"],
-        "indiv": val["indiv"]
+        "rownum": val["rownum"]
     }
 
 
@@ -203,7 +238,7 @@ def _parse_date(date_string):
     if any(char in '0123456789' for char in date_string):
         try:
             d = dateparser.parse(date_string, settings={'TIMEZONE': 'UTC'})
-            return d.date().isoformat()
+            return d.date().strftime("%Y-%m")
         except Exception as e:
             raise MappingError(f"error in date({date_string}): {type(e)} {e}")
     return date_string

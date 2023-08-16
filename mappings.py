@@ -121,9 +121,9 @@ def flat_list_val(data_values):
 # Convert various responses to boolean
 def boolean(data_values):
     cell = single_val(data_values)
-    if cell is None or cell.lower() == "nan":
+    if cell is None or cell.lower().strip() == "nan":
         return None
-    if cell.lower() == "no" or cell.lower == "false":
+    if cell.lower().strip() == "no" or cell.lower().strip() == "false":
         return False
     return True
 

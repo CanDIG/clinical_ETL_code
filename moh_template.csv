@@ -58,9 +58,9 @@ DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.surgery.margin_types_not_inv
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.surgery.margin_types_not_assessed.INDEX, {indexed_on(SPECIMENS_SHEET.margin_types_not_assessed)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.surgery.lymphovascular_invasion, {single_val(SPECIMENS_SHEET.lymphovascular_invasion)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.surgery.perineural_invasion, {single_val(SPECIMENS_SHEET.perineural_invasion)}
-DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.surgery.tumour_length, {single_val(SPECIMENS_SHEET.tumour_length)}
-DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.surgery.tumour_width, {single_val(SPECIMENS_SHEET.tumour_width)}
-DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.surgery.greatest_dimension_tumour, {single_val(SPECIMENS_SHEET.greatest_dimension_tumour)}
+DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.surgery.tumour_length, {integer(SPECIMENS_SHEET.tumour_length)}
+DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.surgery.tumour_width, {integer(SPECIMENS_SHEET.tumour_width)}
+DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.surgery.greatest_dimension_tumour, {integer(SPECIMENS_SHEET.greatest_dimension_tumour)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.surgery.submitter_specimen_id, {single_val(SPECIMENS_SHEET.submitter_specimen_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.sample_registrations.INDEX, {indexed_on(SAMPLE_REGISTRATIONS_SHEET.submitter_specimen_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.sample_registrations.INDEX.submitter_sample_id, {single_val(SAMPLE_REGISTRATIONS_SHEET.submitter_sample_id)}
@@ -107,9 +107,9 @@ DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.immunotherapies.INDEX.actua
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.radiation_therapy_modality, {single_val(TREATMENTS_SHEET.radiation_therapy_modality)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.radiation_therapy_type, {single_val(TREATMENTS_SHEET.radiation_therapy_type)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.anatomical_site_irradiated, {single_val(TREATMENTS_SHEET.anatomical_site_irradiated)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.radiation_therapy_fractions, {single_val(TREATMENTS_SHEET.radiation_therapy_fractions)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.radiation_therapy_dosage, {single_val(TREATMENTS_SHEET.radiation_therapy_dosage)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.radiation_boost, {single_val(TREATMENTS_SHEET.radiation_boost)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.radiation_therapy_fractions, {integer(TREATMENTS_SHEET.radiation_therapy_fractions)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.radiation_therapy_dosage, {integer(TREATMENTS_SHEET.radiation_therapy_dosage)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.radiation_boost, {boolean(TREATMENTS_SHEET.radiation_boost)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.reference_radiation_treatment_id, {single_val(TREATMENTS_SHEET.reference_radiation_treatment_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.surgery_type, {single_val(TREATMENTS_SHEET.surgery_type)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.surgery_site, {single_val(TREATMENTS_SHEET.surgery_site)}

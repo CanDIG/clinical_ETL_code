@@ -77,8 +77,8 @@ DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.chemotherapies.INDEX.prescr
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.chemotherapies.INDEX.actual_cumulative_drug_dose, {integer(Chemotherapy.actual_cumulative_drug_dose)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX, {indexed_on(HormoneTherapy.submitter_treatment_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.submitter_treatment_id, {single_val(HormoneTherapy.submitter_treatment_id)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.hormone_drug_dose_units, {integer(HormoneTherapy.hormone_drug_dose_units)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.drug_reference_database, {integer(HormoneTherapy.drug_reference_database)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.hormone_drug_dose_units, {single_val(HormoneTherapy.hormone_drug_dose_units)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.drug_reference_database, {single_val(HormoneTherapy.drug_reference_database)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.drug_name, {single_val(HormoneTherapy.drug_name)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.drug_reference_identifier, {single_val(HormoneTherapy.drug_reference_identifier)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.prescribed_cumulative_drug_dose, {integer(HormoneTherapy.prescribed_cumulative_drug_dose)}

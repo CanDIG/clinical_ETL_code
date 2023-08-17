@@ -4,6 +4,9 @@
 DONOR.INDEX, {indexed_on(Donor.submitter_donor_id)}
 DONOR.INDEX.submitter_donor_id, {single_val(Donor.submitter_donor_id)}
 DONOR.INDEX.program_id, {single_val(Donor.program_id)}
+DONOR.INDEX.is_deceased, {boolean(Donor.is_deceased)}
+DONOR.INDEX.cause_of_death, {single_val(Donor.cause_of_death)}
+DONOR.INDEX.date_of_birth, {single_date(Donor.date_of_birth)}
 DONOR.INDEX.date_of_death, {single_date(Donor.date_of_death)}
 DONOR.INDEX.gender, {single_val(Donor.gender)}
 DONOR.INDEX.sex_at_birth, {single_val(Donor.sex_at_birth)}
@@ -74,8 +77,8 @@ DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.chemotherapies.INDEX.prescr
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.chemotherapies.INDEX.actual_cumulative_drug_dose, {integer(Chemotherapy.actual_cumulative_drug_dose)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX, {indexed_on(HormoneTherapy.submitter_treatment_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.submitter_treatment_id, {single_val(HormoneTherapy.submitter_treatment_id)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.hormone_drug_dose_units, {integer(HormoneTherapy.hormone_drug_dose_units)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.drug_reference_database, {integer(HormoneTherapy.drug_reference_database)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.hormone_drug_dose_units, {single_val(HormoneTherapy.hormone_drug_dose_units)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.drug_reference_database, {single_val(HormoneTherapy.drug_reference_database)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.drug_name, {single_val(HormoneTherapy.drug_name)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.drug_reference_identifier, {single_val(HormoneTherapy.drug_reference_identifier)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.hormone_therapies.INDEX.prescribed_cumulative_drug_dose, {integer(HormoneTherapy.prescribed_cumulative_drug_dose)}
@@ -94,9 +97,9 @@ DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.INDEX.submitter_t
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.INDEX.radiation_therapy_modality, {single_val(Radiation.radiation_therapy_modality)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.INDEX.radiation_therapy_type, {single_val(Radiation.radiation_therapy_type)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.INDEX.anatomical_site_irradiated, {single_val(Radiation.anatomical_site_irradiated)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.INDEX.radiation_therapy_fractions, {single_val(Radiation.radiation_therapy_fractions)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.INDEX.radiation_therapy_dosage, {single_val(Radiation.radiation_therapy_dosage)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.INDEX.radiation_boost, {single_val(Radiation.radiation_boost)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.INDEX.radiation_therapy_fractions, {integer(Radiation.radiation_therapy_fractions)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.INDEX.radiation_therapy_dosage, {integer(Radiation.radiation_therapy_dosage)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.INDEX.radiation_boost, {boolean(Radiation.radiation_boost)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiation.INDEX.reference_radiation_treatment_id, {single_val(Radiation.reference_radiation_treatment_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX, {indexed_on(Surgery.submitter_treatment_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX.submitter_treatment_id, {single_val(Surgery.submitter_treatment_id)}
@@ -110,9 +113,9 @@ DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX.margin_types_
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX.margin_types_not_assessed, {pipe_delim(Surgery.margin_types_not_assessed)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX.lymphovascular_invasion, {single_val(Surgery.lymphovascular_invasion)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX.perineural_invasion, {single_val(Surgery.perineural_invasion)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX.tumour_length, {single_val(Surgery.tumour_length)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX.tumour_width, {single_val(Surgery.tumour_width)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX.greatest_dimension_tumour, {single_val(Surgery.greatest_dimension_tumour)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX.tumour_length, {integer(Surgery.tumour_length)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX.tumour_width, {integer(Surgery.tumour_width)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX.greatest_dimension_tumour, {integer(Surgery.greatest_dimension_tumour)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgery.INDEX.submitter_specimen_id, {single_val(Surgery.submitter_specimen_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.followups.INDEX, {indexed_on(Followup.submitter_treatment_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.followups.INDEX.submitter_treatment_id, {single_val(Followup.submitter_treatment_id)}

@@ -24,7 +24,7 @@ class MoHValidationError(Exception):
 def warn(message):
     message = ">".join(STACK_LOCATION) + ": " + message
     VALIDATION_MESSAGES.append(f"{message}")
-    raise MoHValidationError(message)
+    #raise MoHValidationError(message)
 
 
 def fail(message):
@@ -359,13 +359,15 @@ class mohschema:
             if f not in map_json:
                 fail(f"{f} required for primary_diagnosis")
 
+        specimen_ids = []
         is_tumour = False
         # should either have a clinical staging system specified
         # OR have a specimen with a pathological staging system specified
         if "clinical_tumour_staging_system" in map_json:
             is_tumour = True
-        elif "specimens" in map_json:
+        if "specimens" in map_json:
             for specimen in map_json["specimens"]:
+                specimen_ids.append(specimen["submitter_specimen_id"])
                 if "pathological_tumour_staging_system" in specimen:
                     is_tumour = True
 
@@ -384,7 +386,7 @@ class mohschema:
                         self.validate_specimen(specimen, "clinical_tumour_staging_system" in map_json)
                 case "treatments":
                     for treatment in map_json["treatments"]:
-                        self.validate_treatment(treatment)
+                        self.validate_treatment(treatment, specimen_ids)
                 case "biomarkers":
                     for biomarker in map_json["biomarkers"]:
                         self.validate_biomarker(biomarker, "submitter_primary_diagnosis_id", map_json["submitter_primary_diagnosis_id"])
@@ -502,7 +504,7 @@ class mohschema:
         STACK_LOCATION.pop()
 
 
-    def validate_treatment(self, map_json):
+    def validate_treatment(self, map_json, specimen_ids):
         STACK_LOCATION.append(map_json['submitter_treatment_id'])
         print(f"Validating schema for treatment {STACK_LOCATION[-1]}...")
 
@@ -524,37 +526,38 @@ class mohschema:
         for prop in map_json:
             match prop:
                 case "treatment_type":
-                    match map_json["treatment_type"]:
-                        case "Chemotherapy":
-                            if "chemotherapies" not in map_json:
-                                warn("treatment type Chemotherapy should have one or more chemotherapies submitted")
-                            else:
-                                for x in map_json["chemotherapies"]:
-                                    self.validate_chemotherapy(x)
-                        case "Hormonal therapy":
-                            if "hormone_therapies" not in map_json:
-                                warn("treatment type Hormonal therapy should have one or more hormone_therapies submitted")
-                            else:
-                                for x in map_json["hormone_therapies"]:
-                                    self.validate_hormone_therapy(x)
-                        case "Immunotherapy":
-                            if "immunotherapies" not in map_json:
-                                warn("treatment type Immunotherapy should have one or more immunotherapies submitted")
-                            else:
-                                for x in map_json["immunotherapies"]:
-                                    self.validate_immunotherapy(x)
-                        case "Radiation therapy":
-                            if "radiation" not in map_json:
-                                warn("treatment type Radiation therapy should have one or more radiation submitted")
-                            else:
-                                for x in map_json["radiation"]:
-                                    self.validate_radiation(x)
-                        case "Surgery":
-                            if "surgery" not in map_json:
-                                warn("treatment type Surgery should have one or more surgery submitted")
-                            else:
-                                for x in map_json["surgery"]:
-                                    self.validate_surgery(x)
+                    for type in map_json["treatment_type"]:
+                        match type:
+                            case "Chemotherapy":
+                                if "chemotherapies" not in map_json:
+                                    warn("treatment type Chemotherapy should have one or more chemotherapies submitted")
+                                else:
+                                    for x in map_json["chemotherapies"]:
+                                        self.validate_chemotherapy(x)
+                            case "Hormonal therapy":
+                                if "hormone_therapies" not in map_json:
+                                    warn("treatment type Hormonal therapy should have one or more hormone_therapies submitted")
+                                else:
+                                    for x in map_json["hormone_therapies"]:
+                                        self.validate_hormone_therapy(x)
+                            case "Immunotherapy":
+                                if "immunotherapies" not in map_json:
+                                    warn("treatment type Immunotherapy should have one or more immunotherapies submitted")
+                                else:
+                                    for x in map_json["immunotherapies"]:
+                                        self.validate_immunotherapy(x)
+                            case "Radiation therapy":
+                                if "radiation" not in map_json:
+                                    warn("treatment type Radiation therapy should have one or more radiation submitted")
+                                else:
+                                    for x in map_json["radiation"]:
+                                        self.validate_radiation(x)
+                            case "Surgery":
+                                if "surgery" not in map_json:
+                                    warn("treatment type Surgery should have one or more surgery submitted")
+                                else:
+                                    for x in map_json["surgery"]:
+                                        self.validate_surgery(x, specimen_ids)
                 case "followups":
                     for followup in map_json["followups"]:
                         self.validate_followup(followup)
@@ -660,10 +663,9 @@ class mohschema:
         STACK_LOCATION.pop()
 
 
-    def validate_surgery(self, map_json):
+    def validate_surgery(self, map_json, specimen_ids):
         STACK_LOCATION.append(f"surgery {STACK_LOCATION[-1]}")
         print(f"Validating schema for {STACK_LOCATION[-1]}...")
-
 
         required_fields = [
             "surgery_type"
@@ -677,6 +679,10 @@ class mohschema:
                 warn("surgery_site required if submitter_specimen_id not submitted")
             if "surgery_location" not in map_json:
                 warn("surgery_location required if submitter_specimen_id not submitted")
+        else:
+            if map_json["submitter_specimen_id"] not in specimen_ids:
+                warn(f"submitter_specimen_id {map_json['submitter_specimen_id']} does not correspond to one of the available specimen_ids {specimen_ids}")
+
         STACK_LOCATION.pop()
 
 

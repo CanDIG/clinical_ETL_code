@@ -1,5 +1,8 @@
+import pytest
+import yaml
 import CSVConvert
 import mappings
+import mohschema
 
 # read sheet from given data pathway
 raw_csvs, output_file = CSVConvert.ingest_raw_data("test_data/pytest_data", [])
@@ -33,16 +36,30 @@ def test_list_val():
     assert test == ['IRINOTECAN', 'IRINOTECAN', 'IRINOTECAN', 'IRINOTECAN']
 
 
-def test_csv_convert():
+@pytest.fixture
+def schema():
+    manifest_file = "test_data/manifest.yml"
+    with open(manifest_file, 'r') as f:
+        manifest = yaml.safe_load(f)
+    if manifest is not None:
+        return mohschema.mohschema(manifest['schema'])
+    return None
+
+
+@pytest.fixture
+def packets():
     input_path = "test_data/raw_data"
     manifest_file = "test_data/manifest.yml"
     mappings.INDEX_STACK = []
-    packets = CSVConvert.csv_convert(input_path, manifest_file, verbose=True)
-    assert packets is not None
+    return CSVConvert.csv_convert(input_path, manifest_file, verbose=False)
 
+
+def test_csv_convert(packets):
     # there are 6 donors
     assert len(packets) == 6
 
+
+def test_donor_1(packets):
     for packet in packets:
         if packet['submitter_donor_id'] == "DONOR_1":
             # test Followups: FOLLOW_UP_2 is in TR_1, FOLLOW_UP_1 is in PD_1, FOLLOW_UP_3 and FOLLOW_UP_4 are in DONOR_1
@@ -61,6 +78,12 @@ def test_csv_convert():
                 assert len(packet['followups']) == 2
                 for f in packet['followups']:
                     assert f['submitter_follow_up_id'] in ["FOLLOW_UP_3", "FOLLOW_UP_4"]
+        else:
+            continue
+
+
+def test_donor_2(packets):
+    for packet in packets:
         if packet['submitter_donor_id'] == "DONOR_2":
             # DONOR_2 has two primary diagnoses, PD_2 and PD_2_1
             assert len(packet['primary_diagnoses']) == 2
@@ -71,3 +94,16 @@ def test_csv_convert():
                         if 'sample_registrations' in specimen:
                             for sample in specimen['sample_registrations']:
                                 assert sample["submitter_specimen_id"] == specimen['submitter_specimen_id']
+        else:
+            continue
+
+
+def test_donor_6(packets, schema):
+    for packet in packets:
+        if packet['submitter_donor_id'] == "DONOR_6":
+            for pd in packet['primary_diagnoses']:
+                schema.validate_primary_diagnosis(pd)
+                print(mohschema.VALIDATION_MESSAGES)
+                assert "submitter_specimen_id SPECIMEN_43 does not correspond to one of the available specimen_ids" in ",".join(mohschema.VALIDATION_MESSAGES)
+        else:
+            continue

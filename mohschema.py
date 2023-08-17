@@ -24,7 +24,7 @@ class MoHValidationError(Exception):
 def warn(message):
     message = ">".join(STACK_LOCATION) + ": " + message
     VALIDATION_MESSAGES.append(f"{message}")
-    raise MoHValidationError(message)
+    #raise MoHValidationError(message)
 
 
 def fail(message):

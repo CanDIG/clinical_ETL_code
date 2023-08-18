@@ -267,7 +267,7 @@ def eval_mapping(node_name, rownum):
     return None
 
 
-def ingest_raw_data(input_path, indexed):
+def ingest_raw_data(input_path):
     """Ingest the csvs or xlsx and create dataframes for processing."""
     raw_csv_dfs = {}
     output_file = "mCodePacket"
@@ -287,10 +287,6 @@ def ingest_raw_data(input_path, indexed):
             if file_match is not None:
                 df = pandas.read_csv(os.path.join(input_path, file), dtype=str)
                 raw_csv_dfs[file_match.group(1)] = df
-    if indexed is not None and len(indexed) > 0:
-        for df in indexed:
-            df = df.replace(".csv","")
-            raw_csv_dfs[df].reset_index(inplace=True)
     return raw_csv_dfs, output_file
 
 
@@ -518,7 +514,6 @@ def load_manifest(manifest_file):
     identifier = None
     schema = "mcode"
     mapping_path = None
-    indexed = None
     with open(manifest_file, 'r') as f:
         manifest = yaml.safe_load(f)
     if manifest is None:
@@ -551,13 +546,10 @@ def load_manifest(manifest_file):
                 return
     # mappings is a standard module: add it
     mappings.MODULES["mappings"] = importlib.import_module("mappings")
-    if "indexed" in manifest:
-        indexed = manifest["indexed"]
     return {
         "identifier": identifier,
         "schema": schema,
-        "mapping": mapping_path,
-        "indexed": indexed
+        "mapping": mapping_path
     }
 
 
@@ -578,7 +570,6 @@ def csv_convert(input_path, manifest_file, verbose=False):
     # read manifest data
     manifest = load_manifest(manifest_file)
     mappings.IDENTIFIER_FIELD = manifest["identifier"]
-    indexed = manifest["indexed"]
     if mappings.IDENTIFIER_FIELD is None:
         print("Need to specify what the main identifier column name as 'identifier' in the manifest file")
         return
@@ -598,7 +589,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
 
     # # read the raw data
     print("Reading raw data")
-    raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
+    raw_csv_dfs, output_file = ingest_raw_data(input_path)
     if not raw_csv_dfs:
         print(f"No ingestable files (csv or xlsx) were found at {input_path}")
         return

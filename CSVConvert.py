@@ -214,8 +214,8 @@ def populate_data_for_params(params, rownum):
             # add this identifier's contents as a key and array:
             if mappings.IDENTIFIER in mappings.INDEXED_DATA["data"][sheet]:
                 data_values[param][sheet] = deepcopy(mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER][param])
-                if rownum is not None:
-                    top_frame = mappings._peek_at_top_of_stack()
+                top_frame = mappings._peek_at_top_of_stack()
+                if rownum is not None and top_frame["sheet"] == sheet:
                     row = get_row_for_stack_top(top_frame["sheet"], rownum)
                     for i in range(0, len(data_values[param][sheet])):
                         if row[param] is None or row[param] != data_values[param][sheet][i]:

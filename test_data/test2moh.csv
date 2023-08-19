@@ -45,6 +45,7 @@ DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.percent_tumour_cells_range, 
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.percent_tumour_cells_measurement_method, {single_val(Specimen.percent_tumour_cells_measurement_method)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.specimen_processing, {single_val(Specimen.specimen_processing)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.specimen_laterality, {single_val(Specimen.specimen_laterality)}
+DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.multisheet, {placeholder(Specimen.submitter_specimen_id, Sample_Registration.submitter_specimen_id, Sample_Registration.extra)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.sample_registrations.INDEX, {mappings.indexed_on(Sample_Registration.submitter_specimen_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.sample_registrations.INDEX.submitter_specimen_id, {single_val(Sample_Registration.submitter_specimen_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.sample_registrations.INDEX.submitter_sample_id, {single_val(Sample_Registration.submitter_sample_id)}

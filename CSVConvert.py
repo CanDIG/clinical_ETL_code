@@ -553,17 +553,6 @@ def load_manifest(manifest_file):
     }
 
 
-def interpolate_mapping_into_scaffold(mapped_template, scaffold_template):
-    scaffold_keys = list(map(lambda x: x.split(",")[0].strip(), scaffold_template))
-    for mapped_line in mapped_template:
-        mapped_key = mapped_line.split(",")[0].strip()
-        if mapped_key in scaffold_keys:
-            scaffold_template[scaffold_keys.index(mapped_key)] = mapped_line
-        else:
-            print(f"WARNING: Line '{mapped_key}' not in schema")
-    return scaffold_template
-
-
 def csv_convert(input_path, manifest_file, verbose=False):
     mappings.VERBOSE = verbose
 
@@ -607,12 +596,6 @@ def csv_convert(input_path, manifest_file, verbose=False):
     # warn if any template lines map the same column to multiple lines:
     scan_template_for_duplicate_mappings(template_lines)
 
-    ## Replace the lines in the original template with any matching lines in template_lines
-    # if not args.test:
-    #     interpolate_mapping_into_scaffold(template_lines, mapping_template)
-    #     mapping_scaffold = create_scaffold_from_template(mapping_template)
-    # else:
-    #     mapping_scaffold = create_scaffold_from_template(template_lines)
     mapping_scaffold = create_scaffold_from_template(template_lines)
 
     if mapping_scaffold is None:

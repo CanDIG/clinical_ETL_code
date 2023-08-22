@@ -18,7 +18,7 @@ class ValidationError(Exception):
 
 
 """
-A class for the representation of a DonorWithClinicalData object in Katsu.
+Base class to represent a Katsu OpenAPI schema for ETL.
 """
 
 class BaseSchema:
@@ -30,16 +30,14 @@ class BaseSchema:
         self.stack_location = []
         self.defs = {}
         self.schema = {}
+        self.openapi_url = url
         self.json_schema = None
         self.template = None
         self.katsu_sha = None
         self.scaffold = None
 
         """Retrieve the schema from the supplied URL, return as dictionary."""
-        # TODO: this grabs the schema from a provided URL, which doesn't give us
-        # any information about the version. Better to check out a specific katsu
-        # version and get schema from local file? (delete repo afterwards)
-        resp = requests.get(url)
+        resp = requests.get(self.openapi_url)
 
         # rudimentary test that we have found something that looks like an openapi schema
         # would be better to formally validate
@@ -52,6 +50,10 @@ class BaseSchema:
         sha_match = re.match(r".+Based on commit \"(.+)\".*", schema["info"]["description"])
         if sha_match is not None:
             self.katsu_sha = sha_match.group(1)
+        else:
+            sha_match = re.match(r".+Based on http.*katsu\/(.+)\/chord_metadata_service.*", schema["info"]["description"])
+            if sha_match is not None:
+                self.katsu_sha = sha_match.group(1)
 
         # save off all the component schemas into a "defs" component that can be passed into a jsonschema validation
         defs = set()

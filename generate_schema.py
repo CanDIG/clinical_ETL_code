@@ -31,7 +31,9 @@ def main(args):
 
     outputfile = "{}.csv".format(args.out)
 
-    metadata = f"## Schema generated from {url}\n## Based on repo commit sha \"{schema.katsu_sha}\"\n"
+    metadata = f"## Schema generated from {url}\n"
+    if schema.katsu_sha is not None:
+        metadata += f"## Based on repo commit sha \"{schema.katsu_sha}\"\n"
 
     node_names = schema.template
 

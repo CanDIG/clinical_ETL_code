@@ -619,9 +619,11 @@ def csv_convert(input_path, manifest_file, verbose=False):
         json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     result = {
-        "katsu_sha": schema.katsu_sha,
+        "openapi_url": schema.openapi_url,
         "donors": packets
     }
+    if schema.katsu_sha is not None:
+        result["katsu_sha"] = schema.katsu_sha
     with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(result, f, indent=4)
 

@@ -10,7 +10,7 @@ import os
 import pandas
 import sys
 import argparse
-from mohschema import mohschema
+from mohschema import MoHSchema
 import re
 
 
@@ -24,7 +24,7 @@ def parse_args():
 
 def main(args):
     url = args.url
-    schema = mohschema(url)
+    schema = MoHSchema(url)
     if schema is None:
         print("Did not find an openapi schema at {}; please check link".format(url))
         return

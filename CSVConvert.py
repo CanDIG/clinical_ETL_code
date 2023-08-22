@@ -12,7 +12,7 @@ import sys
 import yaml
 import argparse
 
-from mohschema import mohschema
+from mohschema import MoHSchema
 
 
 def verbose_print(message):
@@ -576,7 +576,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
 
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold
-    schema = mohschema(manifest["schema"])
+    schema = MoHSchema(manifest["schema"])
     if schema is None:
         print(f"Did not find an openapi schema at {url}; please check link")
         return

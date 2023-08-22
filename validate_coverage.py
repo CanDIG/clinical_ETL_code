@@ -6,7 +6,7 @@ import re
 import CSVConvert
 import mappings
 from copy import deepcopy
-from mohschema import mohschema
+from mohschema import MoHSchema
 from jsoncomparison import Compare
 
 
@@ -217,7 +217,7 @@ def validate_coverage(map_json, manifest, input_path=None, verbose=False):
 
     # read the schema (from the url specified in the manifest) and generate
         # a scaffold
-    schema = mohschema(manifest["schema"])
+    schema = MoHSchema(manifest["schema"])
     if schema is None:
         print(f"Did not find an openapi schema at {manifest['schema']}; please check link")
         return

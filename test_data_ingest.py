@@ -2,7 +2,7 @@ import pytest
 import yaml
 import CSVConvert
 import mappings
-import mohschema
+from mohschema import MoHSchema
 
 # read sheet from given data pathway
 raw_csvs, output_file = CSVConvert.ingest_raw_data("test_data/pytest_data")
@@ -42,7 +42,7 @@ def schema():
     with open(manifest_file, 'r') as f:
         manifest = yaml.safe_load(f)
     if manifest is not None:
-        return mohschema.mohschema(manifest['schema'])
+        return MoHSchema(manifest['schema'])
     return None
 
 
@@ -103,8 +103,8 @@ def test_donor_6(packets, schema):
         if packet['submitter_donor_id'] == "DONOR_6":
             for pd in packet['primary_diagnoses']:
                 schema.validate_primary_diagnosis(pd)
-                print(mohschema.VALIDATION_MESSAGES)
-                assert "submitter_specimen_id SPECIMEN_43 does not correspond to one of the available specimen_ids" in ",".join(mohschema.VALIDATION_MESSAGES)
+                print(schema.validation_messages)
+                assert "submitter_specimen_id SPECIMEN_43 does not correspond to one of the available specimen_ids" in ",".join(schema.validation_messages)
         else:
             continue
 

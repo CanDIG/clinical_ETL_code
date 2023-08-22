@@ -121,4 +121,12 @@ def test_multisheet_mapping(packets):
                         assert s["multisheet"]["placeholder"]["submitter_specimen_id"]["Specimen"] == "SPECIMEN_5"
                         assert len(s["multisheet"]["placeholder"]["submitter_specimen_id"]["Sample_Registration"]) == 3
                         assert len(s["multisheet"]["placeholder"]["extra"]["Sample_Registration"]) == 3
+                    if s["submitter_specimen_id"] == "SPECIMEN_6":
+                        assert s["multisheet"]["placeholder"]["submitter_specimen_id"]["Specimen"] == "SPECIMEN_6"
+                        assert len(s["multisheet"]["placeholder"]["submitter_specimen_id"]["Sample_Registration"]) == 1
+                        assert len(s["multisheet"]["placeholder"]["extra"]["Sample_Registration"]) == 1
+                    if s["submitter_specimen_id"] == "SPECIMEN_3":
+                        assert s["multisheet"]["placeholder"]["submitter_specimen_id"]["Specimen"] == "SPECIMEN_3"
+                        assert len(s["multisheet"]["placeholder"]["submitter_specimen_id"]["Sample_Registration"]) == 0
+                        assert len(s["multisheet"]["placeholder"]["extra"]["Sample_Registration"]) == 0
 

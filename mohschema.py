@@ -38,7 +38,8 @@ class MoHSchema(BaseSchema):
         ]
         for f in required_fields:
             if f not in donor_json:
-                self.fail(f"{f} required for Donor")
+                self.warn(f"{f} required for Donor")
+                donor_json[f] = None
 
         for prop in donor_json:
             match prop:
@@ -104,7 +105,8 @@ class MoHSchema(BaseSchema):
         ]
         for f in required_fields:
             if f not in map_json:
-                self.fail(f"{f} required for primary_diagnosis")
+                self.warn(f"{f} required for primary_diagnosis")
+                map_json[f] = None
 
         specimen_ids = []
         is_tumour = False
@@ -155,7 +157,8 @@ class MoHSchema(BaseSchema):
         ]
         for f in required_fields:
             if f not in map_json:
-                self.fail(f"{f} required for specimen")
+                self.warn(f"{f} required for specimen")
+                map_json[f] = None
 
         # Presence of tumour_histological_type means we have a tumour sample
         if "tumour_histological_type" in map_json:
@@ -199,7 +202,9 @@ class MoHSchema(BaseSchema):
         ]
         for f in required_fields:
             if f not in map_json:
-                self.fail(f"{f} required for sample_registration")
+                self.warn(f"{f} required for sample_registration")
+                map_json[f] = None
+
         self.stack_location.pop()
 
 
@@ -226,7 +231,8 @@ class MoHSchema(BaseSchema):
         ]
         for f in required_fields:
             if f not in map_json:
-                self.fail(f"{f} required for followup")
+                self.warn(f"{f} required for followup")
+                map_json[f] = None
 
         for prop in map_json:
             match prop:
@@ -269,7 +275,8 @@ class MoHSchema(BaseSchema):
         ]
         for f in required_fields:
             if f not in map_json:
-                self.fail(f"{f} required for treatment")
+                self.warn(f"{f} required for treatment")
+                map_json[f] = None
 
         for prop in map_json:
             match prop:
@@ -326,7 +333,8 @@ class MoHSchema(BaseSchema):
         ]
         for f in required_fields:
             if f not in map_json:
-                self.fail(f"{f} required for chemotherapy")
+                self.warn(f"{f} required for chemotherapy")
+                map_json[f] = None
 
         for prop in map_json:
             match prop:
@@ -350,7 +358,8 @@ class MoHSchema(BaseSchema):
         ]
         for f in required_fields:
             if f not in map_json:
-                self.fail(f"{f} required for hormone_therapy")
+                self.warn(f"{f} required for hormone_therapy")
+                map_json[f] = None
 
         for prop in map_json:
             match prop:
@@ -374,7 +383,8 @@ class MoHSchema(BaseSchema):
         ]
         for f in required_fields:
             if f not in map_json:
-                self.fail(f"{f} required for immunotherapy")
+                self.warn(f"{f} required for immunotherapy")
+                map_json[f] = None
 
         for prop in map_json:
             match prop:
@@ -403,7 +413,8 @@ class MoHSchema(BaseSchema):
         ]
         for f in required_fields:
             if f not in map_json:
-                self.fail(f"{f} required for radiation")
+                self.warn(f"{f} required for radiation")
+                map_json[f] = None
 
         for prop in map_json:
             match prop:
@@ -426,7 +437,8 @@ class MoHSchema(BaseSchema):
         ]
         for f in required_fields:
             if f not in map_json:
-                self.fail(f"{f} required for surgery")
+                self.warn(f"{f} required for Surgery")
+                map_json[f] = None
 
         if "submitter_specimen_id" not in map_json:
             if "surgery_site" not in map_json:
@@ -449,7 +461,8 @@ class MoHSchema(BaseSchema):
         ]
         for f in required_fields:
             if f not in map_json:
-                self.fail(f"{f} required for comorbidity")
+                self.warn(f"{f} required for comorbidity")
+                map_json[f] = None
 
         for prop in map_json:
             match prop:

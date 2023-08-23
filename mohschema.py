@@ -64,19 +64,20 @@ class MoHSchema(BaseSchema):
                     if not donor_json["is_deceased"]:
                         self.warn("date_of_death should only be submitted if is_deceased = Yes")
                     else:
-                        death = dateparser.parse(donor_json["date_of_death"]).date()
-                        birth = dateparser.parse(donor_json["date_of_birth"]).date()
-                        if birth > death:
-                            self.warn("date_of_death cannot be earlier than date_of_birth")
+                        if donor_json["date_of_death"] is not None and donor_json["date_of_birth"] is not None:
+                            death = dateparser.parse(donor_json["date_of_death"]).date()
+                            birth = dateparser.parse(donor_json["date_of_birth"]).date()
+                            if birth > death:
+                                self.warn("date_of_death cannot be earlier than date_of_birth")
                 case "primary_diagnoses":
                     for x in donor_json["primary_diagnoses"]:
                         self.validate_primary_diagnosis(x)
                 case "comorbidities":
-                    for x in donor_json["comorbidities"]:
-                        self.validate_comorbidity(x)
+                    for x in range(0, len(donor_json["comorbidities"])):
+                        self.validate_comorbidity(donor_json["comorbidities"][x], x)
                 case "exposures":
-                    for x in donor_json["exposures"]:
-                        self.validate_exposure(x)
+                    for x in range(0, len(donor_json["exposures"])):
+                        self.validate_exposure(donor_json["exposures"][x], x)
                 case "biomarkers":
                     for x in donor_json["biomarkers"]:
                         if "test_date" not in x:
@@ -219,6 +220,7 @@ class MoHSchema(BaseSchema):
         print(f"Validating schema for followup {self.stack_location[-1]}...")
 
         required_fields = [
+            "submitter_follow_up_id",
             "date_of_followup",
             "disease_status_at_followup"
         ]
@@ -278,32 +280,32 @@ class MoHSchema(BaseSchema):
                                 if "chemotherapies" not in map_json:
                                     self.warn("treatment type Chemotherapy should have one or more chemotherapies submitted")
                                 else:
-                                    for x in map_json["chemotherapies"]:
-                                        self.validate_chemotherapy(x)
+                                    for x in range(0, len(map_json["chemotherapies"])):
+                                        self.validate_chemotherapy(map_json["chemotherapies"][x], x)
                             case "Hormonal therapy":
                                 if "hormone_therapies" not in map_json:
                                     self.warn("treatment type Hormonal therapy should have one or more hormone_therapies submitted")
                                 else:
-                                    for x in map_json["hormone_therapies"]:
-                                        self.validate_hormone_therapy(x)
+                                    for x in range(0, len(map_json["hormone_therapies"])):
+                                        self.validate_hormone_therapy(map_json["hormone_therapies"][x], x)
                             case "Immunotherapy":
                                 if "immunotherapies" not in map_json:
                                     self.warn("treatment type Immunotherapy should have one or more immunotherapies submitted")
                                 else:
-                                    for x in map_json["immunotherapies"]:
-                                        self.validate_immunotherapy(x)
+                                    for x in range(0, len(map_json["immunotherapies"])):
+                                        self.validate_immunotherapy(map_json["immunotherapies"][x], x)
                             case "Radiation therapy":
                                 if "radiation" not in map_json:
                                     self.warn("treatment type Radiation therapy should have one or more radiation submitted")
                                 else:
-                                    for x in map_json["radiation"]:
-                                        self.validate_radiation(x)
+                                    for x in range(0, len(map_json["radiation"])):
+                                        self.validate_radiation(map_json["radiation"][x], x)
                             case "Surgery":
                                 if "surgery" not in map_json:
                                     self.warn("treatment type Surgery should have one or more surgery submitted")
                                 else:
-                                    for x in map_json["surgery"]:
-                                        self.validate_surgery(x, specimen_ids)
+                                    for x in range(0, len(map_json["surgery"])):
+                                        self.validate_surgery(map_json["surgery"][x], specimen_ids, x)
                 case "followups":
                     for followup in map_json["followups"]:
                         self.validate_followup(followup)
@@ -313,9 +315,9 @@ class MoHSchema(BaseSchema):
         self.stack_location.pop()
 
 
-    def validate_chemotherapy(self, map_json):
-        self.stack_location.append(f"chemotherapy {self.stack_location[-1]}")
-        print(f"Validating schema for {self.stack_location[-1]}...")
+    def validate_chemotherapy(self, map_json, i):
+        self.stack_location.append(f"Chemotherapy")
+        print(f"Validating schema for {self.stack_location[-2]} {self.stack_location[-1]} {i}...")
 
         required_fields = [
             "drug_reference_database",
@@ -337,9 +339,9 @@ class MoHSchema(BaseSchema):
         self.stack_location.pop()
 
 
-    def validate_hormone_therapy(self, map_json):
-        self.stack_location.append(f"hormone_therapy {self.stack_location[-1]}")
-        print(f"Validating schema for {self.stack_location[-1]}...")
+    def validate_hormone_therapy(self, map_json, i):
+        self.stack_location.append(f"Hormone Therapy")
+        print(f"Validating schema for {self.stack_location[-2]} {self.stack_location[-1]} {i}...")
 
         required_fields = [
             "drug_reference_database",
@@ -361,9 +363,9 @@ class MoHSchema(BaseSchema):
         self.stack_location.pop()
 
 
-    def validate_immunotherapy(self, map_json):
-        self.stack_location.append(f"immunotherapy {self.stack_location[-1]}")
-        print(f"Validating schema for {self.stack_location[-1]}...")
+    def validate_immunotherapy(self, map_json, i):
+        self.stack_location.append(f"Immunotherapy")
+        print(f"Validating schema for {self.stack_location[-2]} {self.stack_location[-1]} {i}...")
 
         required_fields = [
             "drug_reference_database",
@@ -385,9 +387,9 @@ class MoHSchema(BaseSchema):
         self.stack_location.pop()
 
 
-    def validate_radiation(self, map_json):
-        self.stack_location.append(f"radiation {self.stack_location[-1]}")
-        print(f"Validating schema for {self.stack_location[-1]}...")
+    def validate_radiation(self, map_json, i):
+        self.stack_location.append(f"Radiation")
+        print(f"Validating schema for {self.stack_location[-2]} {self.stack_location[-1]} {i}...")
 
         required_fields = [
             "radiation_therapy_modality",
@@ -409,9 +411,9 @@ class MoHSchema(BaseSchema):
         self.stack_location.pop()
 
 
-    def validate_surgery(self, map_json, specimen_ids):
-        self.stack_location.append(f"surgery {self.stack_location[-1]}")
-        print(f"Validating schema for {self.stack_location[-1]}...")
+    def validate_surgery(self, map_json, specimen_ids, i):
+        self.stack_location.append(f"Surgery")
+        print(f"Validating schema for {self.stack_location[-2]} {self.stack_location[-1]} {i}...")
 
         required_fields = [
             "surgery_type"
@@ -432,9 +434,9 @@ class MoHSchema(BaseSchema):
         self.stack_location.pop()
 
 
-    def validate_comorbidity(self, map_json):
-        self.stack_location.append(f"comorbidity {self.stack_location[-1]}")
-        print(f"Validating schema for {self.stack_location[-1]}...")
+    def validate_comorbidity(self, map_json, i):
+        self.stack_location.append(f"Comorbidity")
+        print(f"Validating schema for {self.stack_location[-2]} {self.stack_location[-1]} {i}...")
 
         required_fields = [
             "comorbidity_type_code"
@@ -451,9 +453,9 @@ class MoHSchema(BaseSchema):
         self.stack_location.pop()
 
 
-    def validate_exposure(self, map_json):
-        self.stack_location.append(f"exposure {self.stack_location[-1]}")
-        print(f"Validating schema for {self.stack_location[-1]}...")
+    def validate_exposure(self, map_json, i):
+        self.stack_location.append(f"Exposure")
+        print(f"Validating schema for {self.stack_location[-2]} {self.stack_location[-1]} {i}...")
 
         is_smoker = False
         if "tobacco_smoking_status" not in map_json:

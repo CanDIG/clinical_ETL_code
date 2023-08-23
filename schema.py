@@ -83,12 +83,12 @@ class BaseSchema:
 
 
     def warn(self, message):
-        message = ">".join(self.stack_location) + ": " + message
+        message = " > ".join(self.stack_location) + ": " + message
         self.validation_messages.append(f"{message}")
 
 
     def fail(self, message):
-        message = ">".join(self.stack_location) + ": " + message
+        message = " > ".join(self.stack_location) + ": " + message
         raise ValidationError(message)
 
 
@@ -266,3 +266,9 @@ class BaseSchema:
                     x += f" {{single_val({sheet_stack[-1]}.{data_value})}}"
                 result.append(x)
         return result
+
+
+    def validate_donor(self, donor_json):
+        self.validation_messages = []
+        # validate with jsonschema:
+        jsonschema.validate(donor_json, self.json_schema)

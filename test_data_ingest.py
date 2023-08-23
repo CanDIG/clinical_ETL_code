@@ -107,3 +107,26 @@ def test_donor_6(packets, schema):
                 assert "submitter_specimen_id SPECIMEN_43 does not correspond to one of the available specimen_ids" in ",".join(mohschema.VALIDATION_MESSAGES)
         else:
             continue
+
+
+# test mapping that uses values from multiple sheets:
+def test_multisheet_mapping(packets):
+    for packet in packets:
+        for pd in packet["primary_diagnoses"]:
+            if "specimens" in pd:
+                for s in pd["specimens"]:
+                    assert "multisheet" in s
+                    assert "placeholder" in s["multisheet"]
+                    if s["submitter_specimen_id"] == "SPECIMEN_5":
+                        assert s["multisheet"]["placeholder"]["submitter_specimen_id"]["Specimen"] == "SPECIMEN_5"
+                        assert len(s["multisheet"]["placeholder"]["submitter_specimen_id"]["Sample_Registration"]) == 3
+                        assert len(s["multisheet"]["placeholder"]["extra"]["Sample_Registration"]) == 3
+                    if s["submitter_specimen_id"] == "SPECIMEN_6":
+                        assert s["multisheet"]["placeholder"]["submitter_specimen_id"]["Specimen"] == "SPECIMEN_6"
+                        assert len(s["multisheet"]["placeholder"]["submitter_specimen_id"]["Sample_Registration"]) == 1
+                        assert len(s["multisheet"]["placeholder"]["extra"]["Sample_Registration"]) == 1
+                    if s["submitter_specimen_id"] == "SPECIMEN_3":
+                        assert s["multisheet"]["placeholder"]["submitter_specimen_id"]["Specimen"] == "SPECIMEN_3"
+                        assert len(s["multisheet"]["placeholder"]["submitter_specimen_id"]["Sample_Registration"]) == 0
+                        assert len(s["multisheet"]["placeholder"]["extra"]["Sample_Registration"]) == 0
+

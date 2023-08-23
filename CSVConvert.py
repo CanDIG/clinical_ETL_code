@@ -214,20 +214,25 @@ def populate_data_for_params(params, rownum):
             # add this identifier's contents as a key and array:
             if mappings.IDENTIFIER in mappings.INDEXED_DATA["data"][sheet]:
                 data_values[param][sheet] = deepcopy(mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER][param])
+                top_frame = mappings._peek_at_top_of_stack()
+
+                # if rownum is None, we are calculating an index. We expect to return a bunch of relevant values.
+                # if rownum is not None, we are working with a particular indexed value: we should filter to just that value.
                 if rownum is not None:
-                    top_frame = mappings._peek_at_top_of_stack()
                     row = get_row_for_stack_top(top_frame["sheet"], rownum)
-                    for i in range(0, len(data_values[param][sheet])):
-                        if row[param] is None or row[param] != data_values[param][sheet][i]:
-                            data_values[param][sheet][i] = None
+                    if top_frame["sheet"] == sheet:
+                        for i in range(0, len(data_values[param][sheet])):
+                            if row[param] is None or row[param] != data_values[param][sheet][i]:
+                                data_values[param][sheet][i] = None
+                        data_values[param][sheet] = data_values[param][sheet][rownum]
+                        verbose_print(f"  populated single value {data_values[param][sheet]}")
+                    else:
+                        verbose_print(f"  populated non-indexed value {data_values[param][sheet]}")
+                else:
+                    verbose_print(f"  populated index value {data_values[param][sheet]}")
             else:
                 verbose_print(f"  WARNING: {mappings.IDENTIFIER} not on sheet {sheet}")
                 data_values[param][sheet] = []
-    if rownum is not None:
-        data_values[param][sheet] = data_values[param][sheet][rownum]
-        verbose_print(f"  populated single value {data_values}")
-    else:
-        verbose_print(f"  populated index values {data_values}")
     return data_values
 
 def eval_mapping(node_name, rownum):

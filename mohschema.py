@@ -391,6 +391,9 @@ class MoHSchema(BaseSchema):
         self.stack_location.append(f"Radiation")
         print(f"Validating schema for {self.stack_location[-2]} {self.stack_location[-1]} {i}...")
 
+        if i > 0:
+            self.warn("Only one radiation is allowed per treatment")
+
         required_fields = [
             "radiation_therapy_modality",
             "radiation_therapy_type",
@@ -414,6 +417,9 @@ class MoHSchema(BaseSchema):
     def validate_surgery(self, map_json, specimen_ids, i):
         self.stack_location.append(f"Surgery")
         print(f"Validating schema for {self.stack_location[-2]} {self.stack_location[-1]} {i}...")
+
+        if i > 0:
+            self.warn("Only one surgery is allowed per treatment")
 
         required_fields = [
             "surgery_type"

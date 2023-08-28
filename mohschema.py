@@ -19,12 +19,11 @@ class MoHSchema(BaseSchema):
 
 
     def validate_donor(self, donor_json):
-        self.validation_messages = []
+        BaseSchema.validate_donor(self, donor_json)
+
         if "submitter_donor_id" in donor_json:
             self.stack_location.append(donor_json['submitter_donor_id'])
             print(f"Validating schema for donor {self.stack_location[-1]}...")
-        # validate with jsonschema:
-        jsonschema.validate(donor_json, self.json_schema)
 
         # validate against extra rules in MoH Clinical Data Model v2
         required_fields = [
@@ -90,7 +89,7 @@ class MoHSchema(BaseSchema):
                         self.validate_followup(x)
         if len(self.stack_location) > 0:
             self.stack_location.pop()
-        return self.validation_messages
+
 
     def validate_primary_diagnosis(self, map_json):
         self.stack_location.append(map_json['submitter_primary_diagnosis_id'])

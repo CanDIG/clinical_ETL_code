@@ -26,7 +26,9 @@ class BaseSchema:
 
 
     def __init__(self, url, simple=False):
-        self.validation_messages = []
+        self.validation_results = {
+            "messages": []
+        }
         self.stack_location = []
         self.defs = {}
         self.schema = {}
@@ -84,7 +86,7 @@ class BaseSchema:
 
     def warn(self, message):
         message = " > ".join(self.stack_location) + ": " + message
-        self.validation_messages.append(f"{message}")
+        self.validation_results["messages"].append(f"{message}")
 
 
     def fail(self, message):
@@ -269,6 +271,6 @@ class BaseSchema:
 
 
     def validate_donor(self, donor_json):
-        self.validation_messages = []
+        self.validation_results["messages"] = []
         # validate with jsonschema:
         jsonschema.validate(donor_json, self.json_schema)

@@ -219,7 +219,8 @@ def validate_coverage(map_json, input_path=None, verbose=False):
     print("Validating the mapped schema...")
     result = []
     for donor in map_json["donors"]:
-        result.extend(schema.validate_donor(donor))
+        schema.validate_donor(donor)
+        result.extend(schema.validation_results["messages"])
     return result
 
 def main(args):
@@ -236,6 +237,7 @@ def main(args):
     if len(result) == 0:
         print("Mapping is valid!")
     else:
+        print("\n\nValidation failures:")
         for line in result:
             print(line)
 

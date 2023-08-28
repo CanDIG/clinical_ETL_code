@@ -254,6 +254,10 @@ class MoHSchema(BaseSchema):
                         if "anatomic_site_progression_or_recurrence" not in map_json:
                             if "relapse_type" in map_json and map_json["relapse_type"] != "Biochemical progression":
                                 self.warn(f"anatomic_site_progression_or_recurrence is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")
+                case "biomarkers":
+                    for biomarker in map_json["biomarkers"]:
+                        self.validate_biomarker(biomarker, "submitter_follow_up_id", map_json["submitter_follow_up_id"])
+
         self.stack_location.pop()
 
 

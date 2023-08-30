@@ -4,5 +4,5 @@ DONOR_5,PD_5,SPECIMEN_2,Binet staging system,,,,In situ,2020-01-07,Not Applicabl
 DONOR_6,PD_6,SPECIMEN_3,Rai staging system,,,,Stage IIIA,2020-03-02,Frozen in vapour phase,,C43.9,,,,,,,Cryopreservation of live cells in liquid nitrogen,,,,,,,,,,,,,,,
 DONOR_2,PD_2_1,SPECIMEN_4,Durie-Salmon staging system,,,,Stage IIIB,2021-02-23,RNA later frozen,8620/9,C67.6,No,No,Four-tier grading system,G3,20-50%,Image analysis,Cryopreservation in dry ice (dead tissue),Left,,,,,,,,,,,,,,
 DONOR_2,PD_2,SPECIMEN_5,Durie-Salmon staging system,,,,Stage IIS,2020-12-07,Frozen in -70 freezer,,C15.9,,,,,,,Formalin fixed & paraffin embedded,,,,,,,,,,,,,,,
-DONOR_5,PD_5,SPECIMEN_6,Durie-Salmon staging system,,,,Stage IIBES,2021-04-20,Cut slide,8124/9,C15.9,Not done,Not done,IASLC grading system,G3,51-100%,Pathology estimate by percent nuclei,Formalin fixed - buffered,,,,,,,,,,,,,,,
+DONOR_5,PD_5,SPECIMEN_6,Durie-Salmon staging system,,,,Stage IIBES,2021-04-20,Cut slide,8124/9,C15.9,,Not done,IASLC grading system,G3,51-100%,Pathology estimate by percent nuclei,Formalin fixed - buffered,,,,,,,,,,,,,,,
 DONOR_2,PD_2_1,SPECIMEN_7,Durie-Salmon staging system,,,,Stage IIIB,2021-02-23,RNA later frozen,,C43.9,,,,,,,Cryopreservation - other,,,,,,,,,,,,,,,

@@ -217,11 +217,9 @@ def validate_coverage(map_json, input_path=None, verbose=False):
     #     check_completeness(raw_csv_dfs, schema)
 
     print("Validating the mapped schema...")
-    result = []
-    for donor in map_json["donors"]:
-        schema.validate_donor(donor)
-        result.extend(schema.validation_results["messages"])
-    return result
+    schema.validate_ingest_map(map_json)
+    # print(json.dumps(schema.validation_results, indent=4))
+    return schema.validation_results
 
 def main(args):
     if args.json is not None and os.path.isfile(args.json):
@@ -234,12 +232,14 @@ def main(args):
     input_path = args.input
     verbose = True if args.verbose else False
     result = validate_coverage(map_json, input_path, verbose)
-    if len(result) == 0:
+    if len(result["messages"]) == 0:
         print("Mapping is valid!")
     else:
         print("\n\nValidation failures:")
-        for line in result:
+        for line in result["messages"]:
             print(line)
+
+    print(json.dumps(result, indent=4))
 
 if __name__ == '__main__':
     main(parse_args())

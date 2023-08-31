@@ -22,7 +22,29 @@ Base class to represent a Katsu OpenAPI schema for ETL.
 """
 
 class BaseSchema:
+    # The component name in the OpenAPI specification
     schema_name = None
+
+    # schema for validation beyond jsonschema checks. Each schema that is described in the model gets an entry.
+    validation_schema = {
+        "example": {             # There should be a method `validate_example` implemented to validate conditionals
+            "id": "example_id",  # The id used to disambiguate instances of the schema. If None, an array index is used
+            "name": "Example",   # The proper name for the schema
+            "required_fields": [ # Any fields specified as required in the model (but not absolutely necessary for jsonschema)
+                "example_id",
+                "attribute_1"
+            ],
+            "nested_schemas": [  # Any schema instances that may be nested within instances of this schema.
+                "example_2"      # Nested instances will be validated as part of the validation of the parent.
+            ]
+        },
+        "example_2": {
+            "id": None,
+            "name": "Example 2",
+            "required_fields": [],
+            "nested_schemas": []
+        }
+    }
 
 
     def __init__(self, url, simple=False):
@@ -30,7 +52,6 @@ class BaseSchema:
             "messages": []
         }
         self.stack_location = []
-        self.defs = {}
         self.schema = {}
         self.openapi_url = url
         self.json_schema = None
@@ -58,22 +79,23 @@ class BaseSchema:
                 self.katsu_sha = sha_match.group(1)
 
         # save off all the component schemas into a "defs" component that can be passed into a jsonschema validation
-        defs = set()
+        defs_set = set()
         schema_text = resp.text.split("\n")
         for i in range(0, len(schema_text)):
             ref_match = re.match(r"(.*\$ref:) *(.+)$", schema_text[i])
             if ref_match is not None:
                 schema_text[i] = schema_text[i].replace("#/components/schemas/", "#/$defs/")
-                defs.add(ref_match.group(2).strip('\"').strip("\'").replace("#/components/schemas/", ""))
+                defs_set.add(ref_match.group(2).strip('\"').strip("\'").replace("#/components/schemas/", ""))
 
         openapi_components = yaml.safe_load("\n".join(schema_text))["components"]["schemas"]
 
         # populate defs for jsonschema
-        for d in defs:
-            self.defs[d] = openapi_components[d]
+        defs = {}
+        for d in defs_set:
+            defs[d] = openapi_components[d]
 
         self.json_schema = deepcopy(openapi_components[self.schema_name])
-        self.json_schema["$defs"] = self.defs
+        self.json_schema["$defs"] = defs
 
         # create the template for the schema_name schema
         self.scaffold = self.generate_schema_scaffold(self.schema[self.schema_name])
@@ -270,7 +292,45 @@ class BaseSchema:
         return result
 
 
-    def validate_donor(self, donor_json):
+    def validate_ingest_map(self, map_json):
         self.validation_results["messages"] = []
-        # validate with jsonschema:
-        jsonschema.validate(donor_json, self.json_schema)
+        self.validation_results["required_but_missing"] = {}
+        self.validation_results["schemas_used"] = []
+
+        for key in self.validation_schema.keys():
+            self.validation_schema[key]["extra_args"] = {
+                "index": 0
+            }
+        first_key = list(self.validation_schema.keys())[0]
+        for x in range(0, len(map_json[first_key])):
+            jsonschema.validate(map_json[first_key][x], self.json_schema)
+            self.validate_schema(first_key, map_json[first_key][x])
+
+
+    def validate_schema(self, schema_name, map_json):
+        id = f"{self.validation_schema[schema_name]['name']} {self.validation_schema[schema_name]['extra_args']['index']}"
+        if self.validation_schema[schema_name]["id"] is not None:
+            id = map_json[self.validation_schema[schema_name]["id"]]
+        required_fields = self.validation_schema[schema_name]["required_fields"]
+        nested_schemas = self.validation_schema[schema_name]["nested_schemas"]
+        self.stack_location.append(str(id))
+
+        print(f"Validating schema {schema_name} for {self.stack_location[-1]}")
+        if schema_name not in self.validation_results["required_but_missing"]:
+            self.validation_results["required_but_missing"][schema_name] = []
+        for f in required_fields:
+            if f not in map_json:
+                self.warn(f"{f} required for {schema_name}")
+                self.validation_results["required_but_missing"][schema_name].append(f)
+                map_json[f] = None
+
+        eval(f"self.validate_{schema_name}({map_json})")
+
+        for ns in nested_schemas:
+            if ns in map_json:
+                for x in range(0, len(map_json[ns])):
+                    self.validation_schema[ns]["extra_args"]["index"] = x
+                    if ns not in self.validation_results["schemas_used"]:
+                        self.validation_results["schemas_used"].append(ns)
+                    self.validate_schema(ns, map_json[ns][x])
+        self.stack_location.pop()

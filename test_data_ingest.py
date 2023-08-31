@@ -98,15 +98,10 @@ def test_donor_2(packets):
             continue
 
 
-def test_donor_6(packets, schema):
-    for packet in packets:
-        if packet['submitter_donor_id'] == "DONOR_6":
-            for pd in packet['primary_diagnoses']:
-                schema.validate_primary_diagnosis(pd)
-                print(schema.validation_messages)
-                assert "submitter_specimen_id SPECIMEN_43 does not correspond to one of the available specimen_ids" in ",".join(schema.validation_messages)
-        else:
-            continue
+def test_validation(packets, schema):
+    schema.validate_ingest_map({"donors": packets})
+    print(schema.validation_results["messages"])
+    assert len(schema.validation_results["messages"]) == 8
 
 
 # test mapping that uses values from multiple sheets:

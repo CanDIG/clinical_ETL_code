@@ -8,4 +8,4 @@ TR_6,DONOR_6,PD_6,Stem cell transplant,No,,2021-07,2022-07,Locally advanced,Diag
 TR_7,DONOR_2,PD_2_1,Surgery,Yes,,2021-02,2022-02,Maintenance,Diagnostic,3,1,Blazer score,Progressive disease,Treatment stopped due to acute toxicity
 TR_8,DONOR_2,PD_2_1,Immunotherapy,No,,2021-03,2022-03,Locally advanced,Forensic,2,2,AML Response Criteria,Immune confirmed progressive disease (iCPD),Other
 TR_9,DONOR_6,PD_6,Surgery,No,,2021-02,2022-02,Maintenance,Diagnostic,,,Blazer score,Progressive disease,
-TR_10,DONOR_5,PD_5,Immunotherapy,No,,2021-02,2022-02,Conditioning,Forensic,6,2,Response Assessment in Neuro-Oncology (RANO),Stable disease,Patient choice (stopped or interrupted treatment)
+TR_10,DONOR_5,PD_5,Immunotherapy,No,,2021-02,2022-02,Conditioning,Forensic,6,2,Response Assessment in Neuro-Oncology (RANO),,

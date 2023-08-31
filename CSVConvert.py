@@ -627,6 +627,17 @@ def csv_convert(input_path, manifest_file, verbose=False):
     with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(result, f, indent=4)
 
+    # add validation data:
+    schema.validate_ingest_map(result)
+    result["validation_errors"] = schema.validation_failures
+    result["statistics"] = schema.statistics
+    with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
+        json.dump(result, f, indent=4)
+
+    if len(result["validation_errors"]) > 0:
+        print("\n\nWARNING: Your data is not valid for the MoHCCN data model! The following errors were found:")
+        print("\n".join(result["validation_errors"]))
+
     return packets
 
 

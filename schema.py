@@ -48,9 +48,8 @@ class BaseSchema:
 
 
     def __init__(self, url, simple=False):
-        self.validation_results = {
-            "messages": []
-        }
+        self.validation_failures = []
+        self.statistics = {}
         self.stack_location = []
         self.schema = {}
         self.openapi_url = url
@@ -108,7 +107,7 @@ class BaseSchema:
 
     def warn(self, message):
         message = " > ".join(self.stack_location) + ": " + message
-        self.validation_results["messages"].append(f"{message}")
+        self.validation_failures.append(f"{message}")
 
 
     def fail(self, message):
@@ -293,9 +292,9 @@ class BaseSchema:
 
 
     def validate_ingest_map(self, map_json):
-        self.validation_results["messages"] = []
-        self.validation_results["required_but_missing"] = {}
-        self.validation_results["schemas_used"] = []
+        self.statistics["required_but_missing"] = {}
+        self.statistics["schemas_used"] = []
+        self.statistics["cases_missing_data"] = []
 
         for key in self.validation_schema.keys():
             self.validation_schema[key]["extra_args"] = {
@@ -306,6 +305,12 @@ class BaseSchema:
             jsonschema.validate(map_json[first_key][x], self.json_schema)
             self.validate_schema(first_key, map_json[first_key][x])
 
+        self.statistics["schemas_not_used"] = list(set(self.validation_schema.keys()) - set(self.statistics["schemas_used"]))
+        self.statistics["summary_cases"] = {
+            "complete_cases": len(self.validation_schema.keys()) - len(self.statistics["cases_missing_data"]),
+            "total_cases": len(self.validation_schema.keys())
+        }
+
 
     def validate_schema(self, schema_name, map_json):
         id = f"{self.validation_schema[schema_name]['name']} {self.validation_schema[schema_name]['extra_args']['index']}"
@@ -314,20 +319,26 @@ class BaseSchema:
         required_fields = self.validation_schema[schema_name]["required_fields"]
         nested_schemas = self.validation_schema[schema_name]["nested_schemas"]
         self.stack_location.append(str(id))
+        case = self.stack_location[0]
 
-        print(f"Validating schema {schema_name} for {self.stack_location[-1]}")
-        if schema_name not in self.validation_results["required_but_missing"]:
-            self.validation_results["required_but_missing"][schema_name] = {}
+        # print(f"Validating schema {schema_name} for {self.stack_location[-1]}")
+        if schema_name not in self.statistics["required_but_missing"]:
+            self.statistics["required_but_missing"][schema_name] = {}
+        if schema_name not in self.statistics["schemas_used"]:
+            self.statistics["schemas_used"].append(schema_name)
+
         for f in required_fields:
-            if f not in self.validation_results["required_but_missing"][schema_name]:
-                self.validation_results["required_but_missing"][schema_name][f] = {
+            if f not in self.statistics["required_but_missing"][schema_name]:
+                self.statistics["required_but_missing"][schema_name][f] = {
                     "total": 0,
                     "missing": 0
                 }
-            self.validation_results["required_but_missing"][schema_name][f]["total"] += 1
+            self.statistics["required_but_missing"][schema_name][f]["total"] += 1
             if f not in map_json:
                 self.warn(f"{f} required for {schema_name}")
-                self.validation_results["required_but_missing"][schema_name][f]["missing"] += 1
+                self.statistics["required_but_missing"][schema_name][f]["missing"] += 1
+                if case not in self.statistics["cases_missing_data"]:
+                    self.statistics["cases_missing_data"].append(case)
                 map_json[f] = None
 
         eval(f"self.validate_{schema_name}({map_json})")
@@ -336,7 +347,5 @@ class BaseSchema:
             if ns in map_json:
                 for x in range(0, len(map_json[ns])):
                     self.validation_schema[ns]["extra_args"]["index"] = x
-                    if ns not in self.validation_results["schemas_used"]:
-                        self.validation_results["schemas_used"].append(ns)
                     self.validate_schema(ns, map_json[ns][x])
         self.stack_location.pop()

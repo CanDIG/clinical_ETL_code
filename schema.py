@@ -317,11 +317,17 @@ class BaseSchema:
 
         print(f"Validating schema {schema_name} for {self.stack_location[-1]}")
         if schema_name not in self.validation_results["required_but_missing"]:
-            self.validation_results["required_but_missing"][schema_name] = []
+            self.validation_results["required_but_missing"][schema_name] = {}
         for f in required_fields:
+            if f not in self.validation_results["required_but_missing"][schema_name]:
+                self.validation_results["required_but_missing"][schema_name][f] = {
+                    "total": 0,
+                    "missing": 0
+                }
+            self.validation_results["required_but_missing"][schema_name][f]["total"] += 1
             if f not in map_json:
                 self.warn(f"{f} required for {schema_name}")
-                self.validation_results["required_but_missing"][schema_name].append(f)
+                self.validation_results["required_but_missing"][schema_name][f]["missing"] += 1
                 map_json[f] = None
 
         eval(f"self.validate_{schema_name}({map_json})")

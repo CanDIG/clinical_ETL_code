@@ -100,8 +100,8 @@ def test_donor_2(packets):
 
 def test_validation(packets, schema):
     schema.validate_ingest_map({"donors": packets})
-    print(schema.validation_results["messages"])
-    assert len(schema.validation_results["messages"]) == 8
+    print(schema.validation_failures)
+    assert len(schema.validation_failures) == 8
 
 
 # test mapping that uses values from multiple sheets:

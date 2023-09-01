@@ -347,5 +347,8 @@ class BaseSchema:
             if ns in map_json:
                 for x in range(0, len(map_json[ns])):
                     self.validation_schema[ns]["extra_args"]["index"] = x
-                    self.validate_schema(ns, map_json[ns][x])
+                    if "list" in str(type(map_json[ns])):
+                        self.validate_schema(ns, map_json[ns][x])
+                    else:
+                        self.validate_schema(ns, map_json[ns])
         self.stack_location.pop()

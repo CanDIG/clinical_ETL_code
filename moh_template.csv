@@ -120,7 +120,7 @@ DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.followups.INDEX.disease_sta
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.followups.INDEX.relapse_type, {single_val(FOLLOWUPS_SHEET.relapse_type)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.followups.INDEX.date_of_relapse, {single_date(FOLLOWUPS_SHEET.date_of_relapse)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.followups.INDEX.method_of_progression_status.INDEX, {indexed_on(FOLLOWUPS_SHEET.method_of_progression_status)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.followups.INDEX.anatomic_site_progression_or_recurrence.INDEX, {indexed_on(FOLLOWUPS_SHEET.anatomic_site_progression_or_recurrence)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.followups.INDEX.anatomic_site_progression_or_recurrence, {pipe_delim(FOLLOWUPS_SHEET.anatomic_site_progression_or_recurrence)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.followups.INDEX.recurrence_tumour_staging_system, {single_val(FOLLOWUPS_SHEET.recurrence_tumour_staging_system)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.followups.INDEX.recurrence_t_category, {single_val(FOLLOWUPS_SHEET.recurrence_t_category)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.followups.INDEX.recurrence_n_category, {single_val(FOLLOWUPS_SHEET.recurrence_n_category)}
@@ -133,7 +133,7 @@ DONOR.INDEX.primary_diagnoses.INDEX.followups.INDEX.disease_status_at_followup, 
 DONOR.INDEX.primary_diagnoses.INDEX.followups.INDEX.relapse_type, {single_val(FOLLOWUPS_SHEET.relapse_type)}
 DONOR.INDEX.primary_diagnoses.INDEX.followups.INDEX.date_of_relapse, {single_date(FOLLOWUPS_SHEET.date_of_relapse)}
 DONOR.INDEX.primary_diagnoses.INDEX.followups.INDEX.method_of_progression_status.INDEX, {indexed_on(FOLLOWUPS_SHEET.method_of_progression_status)}
-DONOR.INDEX.primary_diagnoses.INDEX.followups.INDEX.anatomic_site_progression_or_recurrence.INDEX, {indexed_on(FOLLOWUPS_SHEET.anatomic_site_progression_or_recurrence)}
+DONOR.INDEX.primary_diagnoses.INDEX.followups.INDEX.anatomic_site_progression_or_recurrence, {pipe_delim(FOLLOWUPS_SHEET.anatomic_site_progression_or_recurrence)}
 DONOR.INDEX.primary_diagnoses.INDEX.followups.INDEX.recurrence_tumour_staging_system, {single_val(FOLLOWUPS_SHEET.recurrence_tumour_staging_system)}
 DONOR.INDEX.primary_diagnoses.INDEX.followups.INDEX.recurrence_t_category, {single_val(FOLLOWUPS_SHEET.recurrence_t_category)}
 DONOR.INDEX.primary_diagnoses.INDEX.followups.INDEX.recurrence_n_category, {single_val(FOLLOWUPS_SHEET.recurrence_n_category)}

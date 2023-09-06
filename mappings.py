@@ -156,10 +156,6 @@ def indexed_on(data_values):
     field = list(data_values.keys())[0]
     sheet = list(data_values[field].keys())[0]
 
-    possible_values = data_values[field][sheet]
-    top_frame = _peek_at_top_of_stack()
-    if top_frame['sheet'] is not None:
-        possible_values = INDEXED_DATA['data'][top_frame['sheet']][IDENTIFIER][field]
     return {
         "field": field,
         "sheet": sheet,

@@ -90,6 +90,9 @@ def map_indexed_scaffold(node, line):
 
     # only process if there is data for this IDENTIFIER in the index_sheet
     if mappings.IDENTIFIER in mappings.INDEXED_DATA['data'][index_sheet]:
+        if index_values is not None:
+        #     # add this new indexed value into the indexed_data table
+            mappings.INDEXED_DATA['data'][index_sheet][mappings.IDENTIFIER][index_field] = index_values
         top_frame = mappings._peek_at_top_of_stack()
 
         # FIRST PASS: when we've passed in None for the sheet in the stack

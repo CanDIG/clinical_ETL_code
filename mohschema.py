@@ -93,8 +93,8 @@ class MoHSchema(BaseSchema):
                 "chemotherapies",
                 "hormone_therapies",
                 "immunotherapies",
-                "radiation",
-                "surgery",
+                "radiations",
+                "surgeries",
                 "followups",
                 "biomarkers"
             ]
@@ -129,7 +129,7 @@ class MoHSchema(BaseSchema):
             ],
             "nested_schemas": []
         },
-        "radiation": {
+        "radiations": {
             "id": None,
             "name": "Radiation",
             "required_fields": [
@@ -141,7 +141,7 @@ class MoHSchema(BaseSchema):
             ],
             "nested_schemas": []
         },
-        "surgery": {
+        "surgeries": {
             "id": None,
             "name": "Surgery",
             "required_fields": [
@@ -152,12 +152,7 @@ class MoHSchema(BaseSchema):
         "biomarkers": {
             "id": None,
             "name": "Biomarker",
-            "required_fields": [
-                "submitter_sample_id",
-                "specimen_tissue_source",
-                "specimen_type",
-                "sample_type"
-            ],
+            "required_fields": [],
             "nested_schemas": []
         },
         "followups": {
@@ -369,8 +364,8 @@ class MoHSchema(BaseSchema):
                         self.warn("immunotherapy_drug_dose_units required if actual_cumulative_drug_dose is submitted")
 
 
-    def validate_radiation(self, map_json):
-        index = self.validation_schema["radiation"]["extra_args"]["index"]
+    def validate_radiations(self, map_json):
+        index = self.validation_schema["radiations"]["extra_args"]["index"]
         if index > 0:
             self.warn("Only one radiation is allowed per treatment")
 
@@ -382,9 +377,9 @@ class MoHSchema(BaseSchema):
                             self.warn("reference_radiation_treatment_id required if radiation_boost = Yes")
 
 
-    def validate_surgery(self, map_json):
+    def validate_surgeries(self, map_json):
         specimen_ids = self.validation_schema["primary_diagnoses"]["extra_args"]["specimen_ids"]
-        index = self.validation_schema["surgery"]["extra_args"]["index"]
+        index = self.validation_schema["surgeries"]["extra_args"]["index"]
         if index > 0:
             self.warn("Only one surgery is allowed per treatment")
 

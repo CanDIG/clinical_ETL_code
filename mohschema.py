@@ -329,10 +329,10 @@ class MoHSchema(BaseSchema):
                                 if "immunotherapies" not in map_json:
                                     self.warn("treatment type Immunotherapy should have one or more immunotherapies submitted")
                             case "Radiation therapy":
-                                if "radiation" not in map_json:
+                                if "radiations" not in map_json:
                                     self.warn("treatment type Radiation therapy should have one or more radiation submitted")
                             case "Surgery":
-                                if "surgery" not in map_json:
+                                if "surgeries" not in map_json:
                                     self.warn("treatment type Surgery should have one or more surgery submitted")
 
 

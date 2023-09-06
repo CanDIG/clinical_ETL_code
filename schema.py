@@ -327,6 +327,7 @@ class BaseSchema:
         if schema_name not in self.statistics["schemas_used"]:
             self.statistics["schemas_used"].append(schema_name)
 
+        remove_these = []
         for f in required_fields:
             if f not in self.statistics["required_but_missing"][schema_name]:
                 self.statistics["required_but_missing"][schema_name][f] = {
@@ -340,8 +341,11 @@ class BaseSchema:
                 if case not in self.statistics["cases_missing_data"]:
                     self.statistics["cases_missing_data"].append(case)
                 map_json[f] = None
+                remove_these.append(f)
 
         eval(f"self.validate_{schema_name}({map_json})")
+        for f in remove_these:
+            map_json.pop(f)
 
         for ns in nested_schemas:
             if ns in map_json:

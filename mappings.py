@@ -138,6 +138,26 @@ def integer(data_values):
         return None
 
 
+def float(data_values):
+    cell = single_val(data_values)
+    if cell is None or cell.lower() == "nan":
+        return None
+    try:
+        return float(cell)
+    except:
+        return None
+
+
+def double(data_values):
+    cell = single_val(data_values)
+    if cell is None or cell.lower() == "nan":
+        return None
+    try:
+        return float(cell)
+    except:
+        return None
+
+
 # Placeholder function to make a fake ontology entry
 def ontology_placeholder(data_values):
     if "str" in str(type(data_values)):

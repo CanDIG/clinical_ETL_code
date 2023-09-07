@@ -4,3 +4,4 @@ __pycache__/*
 *.xls
 .DS_Store
 *.pyc
+.venv/

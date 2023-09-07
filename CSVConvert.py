@@ -12,7 +12,7 @@ import sys
 import yaml
 import argparse
 
-from mohschema import mohschema
+from mohschema import MoHSchema
 
 
 def verbose_print(message):
@@ -90,6 +90,9 @@ def map_indexed_scaffold(node, line):
 
     # only process if there is data for this IDENTIFIER in the index_sheet
     if mappings.IDENTIFIER in mappings.INDEXED_DATA['data'][index_sheet]:
+        if index_values is not None:
+        #     # add this new indexed value into the indexed_data table
+            mappings.INDEXED_DATA['data'][index_sheet][mappings.IDENTIFIER][index_field] = index_values
         top_frame = mappings._peek_at_top_of_stack()
 
         # FIRST PASS: when we've passed in None for the sheet in the stack
@@ -267,7 +270,7 @@ def eval_mapping(node_name, rownum):
     return None
 
 
-def ingest_raw_data(input_path, indexed):
+def ingest_raw_data(input_path):
     """Ingest the csvs or xlsx and create dataframes for processing."""
     raw_csv_dfs = {}
     output_file = "mCodePacket"
@@ -287,10 +290,6 @@ def ingest_raw_data(input_path, indexed):
             if file_match is not None:
                 df = pandas.read_csv(os.path.join(input_path, file), dtype=str)
                 raw_csv_dfs[file_match.group(1)] = df
-    if indexed is not None and len(indexed) > 0:
-        for df in indexed:
-            df = df.replace(".csv","")
-            raw_csv_dfs[df].reset_index(inplace=True)
     return raw_csv_dfs, output_file
 
 
@@ -518,7 +517,6 @@ def load_manifest(manifest_file):
     identifier = None
     schema = "mcode"
     mapping_path = None
-    indexed = None
     with open(manifest_file, 'r') as f:
         manifest = yaml.safe_load(f)
     if manifest is None:
@@ -551,25 +549,11 @@ def load_manifest(manifest_file):
                 return
     # mappings is a standard module: add it
     mappings.MODULES["mappings"] = importlib.import_module("mappings")
-    if "indexed" in manifest:
-        indexed = manifest["indexed"]
     return {
         "identifier": identifier,
         "schema": schema,
-        "mapping": mapping_path,
-        "indexed": indexed
+        "mapping": mapping_path
     }
-
-
-def interpolate_mapping_into_scaffold(mapped_template, scaffold_template):
-    scaffold_keys = list(map(lambda x: x.split(",")[0].strip(), scaffold_template))
-    for mapped_line in mapped_template:
-        mapped_key = mapped_line.split(",")[0].strip()
-        if mapped_key in scaffold_keys:
-            scaffold_template[scaffold_keys.index(mapped_key)] = mapped_line
-        else:
-            print(f"WARNING: Line '{mapped_key}' not in schema")
-    return scaffold_template
 
 
 def csv_convert(input_path, manifest_file, verbose=False):
@@ -578,14 +562,13 @@ def csv_convert(input_path, manifest_file, verbose=False):
     # read manifest data
     manifest = load_manifest(manifest_file)
     mappings.IDENTIFIER_FIELD = manifest["identifier"]
-    indexed = manifest["indexed"]
     if mappings.IDENTIFIER_FIELD is None:
         print("Need to specify what the main identifier column name as 'identifier' in the manifest file")
         return
 
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold
-    schema = mohschema(manifest["schema"])
+    schema = MoHSchema(manifest["schema"])
     if schema is None:
         print(f"Did not find an openapi schema at {url}; please check link")
         return
@@ -598,7 +581,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
 
     # # read the raw data
     print("Reading raw data")
-    raw_csv_dfs, output_file = ingest_raw_data(input_path, indexed)
+    raw_csv_dfs, output_file = ingest_raw_data(input_path)
     if not raw_csv_dfs:
         print(f"No ingestable files (csv or xlsx) were found at {input_path}")
         return
@@ -616,12 +599,6 @@ def csv_convert(input_path, manifest_file, verbose=False):
     # warn if any template lines map the same column to multiple lines:
     scan_template_for_duplicate_mappings(template_lines)
 
-    ## Replace the lines in the original template with any matching lines in template_lines
-    # if not args.test:
-    #     interpolate_mapping_into_scaffold(template_lines, mapping_template)
-    #     mapping_scaffold = create_scaffold_from_template(mapping_template)
-    # else:
-    #     mapping_scaffold = create_scaffold_from_template(template_lines)
     mapping_scaffold = create_scaffold_from_template(template_lines)
 
     if mapping_scaffold is None:
@@ -645,11 +622,24 @@ def csv_convert(input_path, manifest_file, verbose=False):
         json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     result = {
-        "katsu_sha": schema.katsu_sha,
+        "openapi_url": schema.openapi_url,
         "donors": packets
     }
+    if schema.katsu_sha is not None:
+        result["katsu_sha"] = schema.katsu_sha
     with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(result, f, indent=4)
+
+    # add validation data:
+    schema.validate_ingest_map(result)
+    result["validation_errors"] = schema.validation_failures
+    result["statistics"] = schema.statistics
+    with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
+        json.dump(result, f, indent=4)
+
+    if len(result["validation_errors"]) > 0:
+        print("\n\nWARNING: Your data is not valid for the MoHCCN data model! The following errors were found:")
+        print("\n".join(result["validation_errors"]))
 
     return packets
 

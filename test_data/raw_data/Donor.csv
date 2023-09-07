@@ -3,5 +3,5 @@ DONOR_1,TEST_1,,,,Yes,Died of cancer,6 Jan 1954,5/2020,Man,Male,Esophagus
 DONOR_2,TEST_1,,,,Yes,Died of other reasons,12 Feb 1982,6/20/2020,Woman,Female,Eye and adnexa
 DONOR_3,TEST_1,PD_3,Lost contact,6/2022,No,,7/12/1945,,Non-binary,Other,Floor of mouth
 DONOR_4,TEST_1,,,,Yes,Unknown,6/1984,4/12/2020,Man,Male,Gallbladder
-DONOR_5,TEST_2,PD_5,Unknown,6/2022,No,,2/1984,,Woman,Female,Gum
+DONOR_5,TEST_2,PD_5,Unknown,6/2022,Yes,,2/1984,,Woman,Female,Gum
 DONOR_6,TEST_2,PD_6,Withdrew from study,6/2022,No,,9/1974,,Non-binary,Other,"Heart, mediastinum, and pleura"

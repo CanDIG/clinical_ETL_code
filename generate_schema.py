@@ -10,7 +10,7 @@ import os
 import pandas
 import sys
 import argparse
-from mohschema import mohschema
+from mohschema import MoHSchema
 import re
 
 
@@ -24,14 +24,16 @@ def parse_args():
 
 def main(args):
     url = args.url
-    schema = mohschema(url)
+    schema = MoHSchema(url)
     if schema is None:
         print("Did not find an openapi schema at {}; please check link".format(url))
         return
 
     outputfile = "{}.csv".format(args.out)
 
-    metadata = f"## Schema generated from {url}\n## Based on repo commit sha \"{schema.katsu_sha}\"\n"
+    metadata = f"## Schema generated from {url}\n"
+    if schema.katsu_sha is not None:
+        metadata += f"## Based on repo commit sha \"{schema.katsu_sha}\"\n"
 
     node_names = schema.template
 

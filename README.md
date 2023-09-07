@@ -32,6 +32,46 @@ $ python CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file] [--test] 
 
 The output packets (`INPUT_map.json` and `INPUT_indexed.json`) will be in the parent of the `INPUT` directory / file.
 
+Validation will automatically be run after the conversion is complete. Any validation errors will be reported both on the command line and as part of the `INPUT_map.json` file.
+
+## Format of the output file
+
+```
+{
+    "openapi_url": "https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml",
+    "katsu_sha": < git sha of the katsu version used for the schema >,
+    "donors": < An array of JSON objects, each one representing a DonorWithClinicalData in katsu >,
+    "validation_errors": [
+        < any validation errors, e.g. >
+        "DONOR_5: cause_of_death required if is_deceased = Yes"
+    ],
+    "statistics": {
+        "required_but_missing": {
+            < for each schema in the model, a list of required fields and how many cases are missing this value (out of the total number of occurrences) >
+            "donors": {
+              "submitter_donor_id": {
+                  "total": 6,
+                  "missing": 0
+              }
+        },
+        "schemas_used": [
+            "donors"
+        ],
+        "cases_missing_data": [
+            "DONOR_5"
+        ],
+        "schemas_not_used": [
+            "exposures",
+            "biomarkers"
+        ],
+        "summary_cases": {
+            "complete_cases": 13,
+            "total_cases": 14
+        }
+    }
+}
+```
+
 ## Input file format
 
 The input for CSVConvert is either a single xlsx file, a single csv, or a directory of csvs. If providing a spreadsheet, there can be multiple sheets (usually one for each sub-schema).
@@ -107,7 +147,7 @@ $ python validate_coverage.py [-h] [--input map.json] [--manifest MAPPING]
 
 --manifest: Path to a manifest file describing the mapping
 ```
-Issues caused by failed requirements will throw exceptions: these must be addressed before validation can be completed. Issues caused by failed conditions in the MoH model will be listed in the output.
+Issues caused by invalid jsonschema requirements will throw exceptions: these must be addressed before validation can be completed. Issues caused by failed conditions in the MoH model will be listed in the output.
 
 
 <!-- # NOTE: the following sections have not been updated for current versions.

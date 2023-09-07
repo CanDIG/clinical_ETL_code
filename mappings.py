@@ -185,6 +185,8 @@ def indexed_on(data_values):
 
 def moh_indexed_on_donor_if_others_absent(data_values):
     result = []
+    field = list(data_values.keys())[0]
+    sheet = list(data_values[field].keys())[0]
 
     for key in data_values:
         vals = list(data_values[key].values()).pop()
@@ -197,8 +199,8 @@ def moh_indexed_on_donor_if_others_absent(data_values):
                 else:
                     result[i] = None
     return {
-        "field": "submitter_donor_id",
-        "sheet": "Followup",
+        "field": field,
+        "sheet": sheet,
         "values": result
     }
 

@@ -612,7 +612,8 @@ def csv_convert(input_path, manifest_file, verbose=False):
         mappings.IDENTIFIER = indiv
         mappings._push_to_stack(None, None, 0)
         packet = map_data_to_scaffold(deepcopy(mapping_scaffold), None, 0)
-        packets.extend(packet["DONOR"])
+        if packet is not None:
+            packets.extend(packet["DONOR"])
         if mappings._pop_from_stack() is None:
             raise Exception(f"Stack popped too far!\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}")
         if mappings._pop_from_stack() is not None:

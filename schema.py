@@ -307,8 +307,8 @@ class BaseSchema:
 
         self.statistics["schemas_not_used"] = list(set(self.validation_schema.keys()) - set(self.statistics["schemas_used"]))
         self.statistics["summary_cases"] = {
-            "complete_cases": len(self.validation_schema.keys()) - len(self.statistics["cases_missing_data"]),
-            "total_cases": len(self.validation_schema.keys())
+            "complete_cases": len(map_json["donors"]) - len(self.statistics["cases_missing_data"]),
+            "total_cases": len(map_json["donors"])
         }
 
 

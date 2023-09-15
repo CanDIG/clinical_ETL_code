@@ -6,7 +6,7 @@ Specifically, this code was designed to convert clinical data for the MOHCCN pro
 
 ## Set-up & Installation
 Prerequisites:
-- [Python 3.6+](https://www.python.org/)
+- [Python 3.10+](https://www.python.org/)
 - [pip](https://github.com/pypa/pip/)
 
 

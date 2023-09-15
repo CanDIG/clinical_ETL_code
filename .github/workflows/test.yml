@@ -22,3 +22,11 @@ jobs:
       - name: Test with pytest
         run: |
           pytest
+      - name: Compare moh_template.csv
+        shell: bash {0}
+        run: |
+          python generate_schema.py
+          diff template.csv moh_template.csv > curr_diff.txt
+          bytes=$(head -5 curr_diff.txt | wc -c)
+          dd if=curr_diff.txt bs="$bytes" skip=1 conv=notrunc of=curr_diff.txt
+          diff curr_diff.txt test_data/moh_diffs.txt

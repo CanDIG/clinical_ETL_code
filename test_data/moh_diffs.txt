@@ -62,15 +62,11 @@
 < DONOR.INDEX.exposures.INDEX.pack_years_smoked, {single_val(EXPOSURES_SHEET.pack_years_smoked)}
 ---
 > DONOR.INDEX.exposures.INDEX.pack_years_smoked, {float(EXPOSURES_SHEET.pack_years_smoked)}
-159,163c160
+159c160
 < DONOR.INDEX.biomarkers.INDEX.hpv_strain.INDEX, {indexed_on(BIOMARKERS_SHEET.hpv_strain)}
-< DONOR.INDEX.biomarkers.INDEX.submitter_specimen_id, {single_val(BIOMARKERS_SHEET.submitter_specimen_id)}
-< DONOR.INDEX.biomarkers.INDEX.submitter_primary_diagnosis_id, {single_val(BIOMARKERS_SHEET.submitter_primary_diagnosis_id)}
-< DONOR.INDEX.biomarkers.INDEX.submitter_treatment_id, {single_val(BIOMARKERS_SHEET.submitter_treatment_id)}
-< DONOR.INDEX.biomarkers.INDEX.submitter_follow_up_id, {single_val(BIOMARKERS_SHEET.submitter_follow_up_id)}
 ---
 > DONOR.INDEX.biomarkers.INDEX.hpv_strain, {pipe_delim(BIOMARKERS_SHEET.hpv_strain)}
-165,170c162,167
+165,170c166,171
 < DONOR.INDEX.biomarkers.INDEX.psa_level, {single_val(BIOMARKERS_SHEET.psa_level)}
 < DONOR.INDEX.biomarkers.INDEX.ca125, {single_val(BIOMARKERS_SHEET.ca125)}
 < DONOR.INDEX.biomarkers.INDEX.cea, {single_val(BIOMARKERS_SHEET.cea)}
@@ -84,7 +80,7 @@
 > DONOR.INDEX.biomarkers.INDEX.er_percent_positive, {float(BIOMARKERS_SHEET.er_percent_positive)}
 > DONOR.INDEX.biomarkers.INDEX.pr_percent_positive, {float(BIOMARKERS_SHEET.pr_percent_positive)}
 > DONOR.INDEX.followups.INDEX, {moh_indexed_on_donor_if_others_absent(FOLLOWUPS_SHEET.submitter_donor_id, FOLLOWUPS_SHEET.submitter_primary_diagnosis_id, FOLLOWUPS_SHEET.submitter_treatment_id)}
-176,177c173,174
+176,177c177,178
 < DONOR.INDEX.followups.INDEX.method_of_progression_status.INDEX, {indexed_on(FOLLOWUPS_SHEET.method_of_progression_status)}
 < DONOR.INDEX.followups.INDEX.anatomic_site_progression_or_recurrence.INDEX, {indexed_on(FOLLOWUPS_SHEET.anatomic_site_progression_or_recurrence)}
 ---

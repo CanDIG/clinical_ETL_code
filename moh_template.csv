@@ -158,6 +158,10 @@ DONOR.INDEX.biomarkers.INDEX.her2_ish_status, {single_val(BIOMARKERS_SHEET.her2_
 DONOR.INDEX.biomarkers.INDEX.hpv_ihc_status, {single_val(BIOMARKERS_SHEET.hpv_ihc_status)}
 DONOR.INDEX.biomarkers.INDEX.hpv_pcr_status, {single_val(BIOMARKERS_SHEET.hpv_pcr_status)}
 DONOR.INDEX.biomarkers.INDEX.hpv_strain, {pipe_delim(BIOMARKERS_SHEET.hpv_strain)}
+DONOR.INDEX.biomarkers.INDEX.submitter_specimen_id, {single_val(BIOMARKERS_SHEET.submitter_specimen_id)}
+DONOR.INDEX.biomarkers.INDEX.submitter_primary_diagnosis_id, {single_val(BIOMARKERS_SHEET.submitter_primary_diagnosis_id)}
+DONOR.INDEX.biomarkers.INDEX.submitter_treatment_id, {single_val(BIOMARKERS_SHEET.submitter_treatment_id)}
+DONOR.INDEX.biomarkers.INDEX.submitter_follow_up_id, {single_val(BIOMARKERS_SHEET.submitter_follow_up_id)}
 DONOR.INDEX.biomarkers.INDEX.test_date, {single_date(BIOMARKERS_SHEET.test_date)}
 DONOR.INDEX.biomarkers.INDEX.psa_level, {integer(BIOMARKERS_SHEET.psa_level)}
 DONOR.INDEX.biomarkers.INDEX.ca125, {integer(BIOMARKERS_SHEET.ca125)}

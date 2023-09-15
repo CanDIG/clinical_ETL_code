@@ -23,6 +23,7 @@ jobs:
         run: |
           pytest
       - name: Compare moh_template.csv
+        shell: bash {0}
         run: |
           python generate_schema.py
           diff template.csv moh_template.csv > curr_diff.txt

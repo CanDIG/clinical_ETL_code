@@ -32,10 +32,12 @@
 ---
 > DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.immunotherapies.INDEX.prescribed_cumulative_drug_dose, {integer(IMMUNOTHERAPIES_SHEET.prescribed_cumulative_drug_dose)}
 > DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.immunotherapies.INDEX.actual_cumulative_drug_dose, {integer(IMMUNOTHERAPIES_SHEET.actual_cumulative_drug_dose)}
-97,98c98,99
+96,98c97,99
+< DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_fractions, {single_val(RADIATIONS_SHEET.radiation_therapy_fractions)}
 < DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_dosage, {single_val(RADIATIONS_SHEET.radiation_therapy_dosage)}
 < DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_boost, {single_val(RADIATIONS_SHEET.radiation_boost)}
 ---
+> DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_fractions, {integer(RADIATIONS_SHEET.radiation_therapy_fractions)}
 > DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_dosage, {integer(RADIATIONS_SHEET.radiation_therapy_dosage)}
 > DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_boost, {boolean(RADIATIONS_SHEET.radiation_boost)}
 112,114c113,115

@@ -94,7 +94,7 @@ DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX, {indexed_
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_modality, {single_val(RADIATIONS_SHEET.radiation_therapy_modality)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_type, {single_val(RADIATIONS_SHEET.radiation_therapy_type)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.anatomical_site_irradiated, {single_val(RADIATIONS_SHEET.anatomical_site_irradiated)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_fractions, {single_val(RADIATIONS_SHEET.radiation_therapy_fractions)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_fractions, {integer(RADIATIONS_SHEET.radiation_therapy_fractions)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_dosage, {integer(RADIATIONS_SHEET.radiation_therapy_dosage)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_boost, {boolean(RADIATIONS_SHEET.radiation_boost)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.reference_radiation_treatment_id, {single_val(RADIATIONS_SHEET.reference_radiation_treatment_id)}

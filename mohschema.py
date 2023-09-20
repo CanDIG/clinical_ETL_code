@@ -312,23 +312,24 @@ class MoHSchema(BaseSchema):
         for prop in map_json:
             match prop:
                 case "treatment_type":
-                    for type in map_json["treatment_type"]:
-                        match type:
-                            case "Chemotherapy":
-                                if "chemotherapies" not in map_json:
-                                    self.warn("treatment type Chemotherapy should have one or more chemotherapies submitted")
-                            case "Hormonal therapy":
-                                if "hormone_therapies" not in map_json:
-                                    self.warn("treatment type Hormonal therapy should have one or more hormone_therapies submitted")
-                            case "Immunotherapy":
-                                if "immunotherapies" not in map_json:
-                                    self.warn("treatment type Immunotherapy should have one or more immunotherapies submitted")
-                            case "Radiation therapy":
-                                if "radiations" not in map_json:
-                                    self.warn("treatment type Radiation therapy should have one or more radiation submitted")
-                            case "Surgery":
-                                if "surgeries" not in map_json:
-                                    self.warn("treatment type Surgery should have one or more surgery submitted")
+                    if map_json["treatment_type"] is not None:
+                        for type in map_json["treatment_type"]:
+                            match type:
+                                case "Chemotherapy":
+                                    if "chemotherapies" not in map_json:
+                                        self.warn("treatment type Chemotherapy should have one or more chemotherapies submitted")
+                                case "Hormonal therapy":
+                                    if "hormone_therapies" not in map_json:
+                                        self.warn("treatment type Hormonal therapy should have one or more hormone_therapies submitted")
+                                case "Immunotherapy":
+                                    if "immunotherapies" not in map_json:
+                                        self.warn("treatment type Immunotherapy should have one or more immunotherapies submitted")
+                                case "Radiation therapy":
+                                    if "radiations" not in map_json:
+                                        self.warn("treatment type Radiation therapy should have one or more radiation submitted")
+                                case "Surgery":
+                                    if "surgeries" not in map_json:
+                                        self.warn("treatment type Surgery should have one or more surgery submitted")
 
 
     def validate_chemotherapies(self, map_json):

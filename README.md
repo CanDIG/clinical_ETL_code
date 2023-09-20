@@ -110,8 +110,15 @@ You'll need to create a mapping template that defines which mapping functions (i
 If you're generating a mapping for the current MoH model, you can use the pre-generated `moh_template.csv` file. This file is modified from the auto-generated template to update a few fields that require specific handling.
 
 <details>
+<summary>Updating the moh_template.csv file</summary>
+If the MoH model changes in katsu, the GitHub Action check "Compare moh_template.csv" will fail.
+
+Run the `update_moh_template.sh` script to see what's changed in `test_data/moh_diffs.txt`. Update `moh_template.csv` to reconcile any differences, then re-run `update_moh_template.sh`. Commit any changes in both `moh_template.csv` and `test_data/moh_diffs.txt`.
+</details>
+
+<details>
 <summary>Generating a template from a different schema</summary>
-The `generate_template.py` script will generate a template file based an openapi.yaml file.
+The `generate_schema.py` script will generate a template file based an openapi.yaml file.
 
 ```
 $ python generate_schema.py -h

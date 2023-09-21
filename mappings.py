@@ -67,6 +67,10 @@ def single_val(data_values):
     return result
 
 
+def single_map(mapping, field):
+    """Parse the contents for the specified field from the template."""
+    return single_val({field: mapping[field]})
+
 # Take a mapping with possibly multiple values from multiple sheets and return an array
 def list_val(data_values):
     all_items = []

@@ -67,10 +67,6 @@ def single_val(data_values):
     return result
 
 
-def single_map(mapping, field):
-    """Parse the contents for the specified field from the template."""
-    return single_val({field: mapping[field]})
-
 # Take a mapping with possibly multiple values from multiple sheets and return an array
 def list_val(data_values):
     all_items = []
@@ -254,6 +250,12 @@ def _is_null(cell):
     if cell == 'nan' or cell is None or cell == '':
         return True
     return False
+
+
+def _single_map(mapping, field):
+    """Parse the contents for the specified field from the template."""
+    return single_val({field: mapping[field]})
+
 
 # Convenience function to parse dates to ISO format
 def _parse_date(date_string):

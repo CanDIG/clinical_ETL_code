@@ -59,7 +59,7 @@ def map_data_to_scaffold(node, line, rownum):
                 linekey = f"{line}.{key}"
             dict = map_data_to_scaffold(node[key], f"{linekey}", rownum)
             if dict is not None:
-                print(dict, key)
+                print(dict, key, rownum)
                 result[key] = dict
         if result is not None and len(result) == 0:
             return None

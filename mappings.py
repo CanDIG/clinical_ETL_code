@@ -13,14 +13,12 @@ OUTPUT_FILE = ""
 
 
 class MappingError(Exception):
-    with open(f"{OUTPUT_FILE}_indexed.json", 'w') as f:
-        print("HOWDY")
-        json.dump(INDEXED_DATA, f, indent=4)
-
     def __init__(self, value):
         self.value = value
 
     def __str__(self):
+        with open(f"{OUTPUT_FILE}_indexed.json", 'w') as f:
+            json.dump(INDEXED_DATA, f, indent=4)
         return repr(f"Check the values for {IDENTIFIER} in {IDENTIFIER_FIELD}: {self.value}")
 
 

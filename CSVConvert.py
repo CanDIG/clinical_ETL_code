@@ -62,10 +62,10 @@ def map_data_to_scaffold(node, line, rownum):
                 if "CALCULATED" not in mappings.INDEXED_DATA["data"]:
                     mappings.INDEXED_DATA["data"]["CALCULATED"] = {}
                 if mappings.IDENTIFIER not in mappings.INDEXED_DATA["data"]["CALCULATED"]:
-                    mappings.INDEXED_DATA["data"]["CALCULATED"] = {}
-                if key not in mappings.INDEXED_DATA["data"]["CALCULATED"]:
-                    mappings.INDEXED_DATA["data"]["CALCULATED"][key] = []
-                mappings.INDEXED_DATA["data"]["CALCULATED"][key].append(dict)
+                    mappings.INDEXED_DATA["data"]["CALCULATED"][mappings.IDENTIFIER] = {}
+                if key not in mappings.INDEXED_DATA["data"]["CALCULATED"][mappings.IDENTIFIER]:
+                    mappings.INDEXED_DATA["data"]["CALCULATED"][mappings.IDENTIFIER][key] = []
+                mappings.INDEXED_DATA["data"]["CALCULATED"][mappings.IDENTIFIER][key].append(dict)
                 print(f"HELLO {dict}, {key}, {rownum}")
                 result[key] = dict
         if result is not None and len(result) == 0:

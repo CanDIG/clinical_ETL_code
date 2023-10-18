@@ -581,14 +581,14 @@ def csv_convert(input_path, manifest_file, verbose=False):
 
     # # read the raw data
     print("Reading raw data")
-    raw_csv_dfs, output_file = ingest_raw_data(input_path)
+    raw_csv_dfs, mappings.OUTPUT_FILE = ingest_raw_data(input_path)
     if not raw_csv_dfs:
         print(f"No ingestable files (csv or xlsx) were found at {input_path}")
         return
 
     print("Indexing data")
     mappings.INDEXED_DATA = process_data(raw_csv_dfs)
-    with open(f"{output_file}_indexed.json", 'w') as f:
+    with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
         json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     # if verbose flag is set, warn if column name is present in multiple sheets:

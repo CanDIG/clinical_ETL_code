@@ -13,8 +13,8 @@ OUTPUT_FILE = ""
 
 
 class MappingError(Exception):
-    with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
-        json.dump(mappings.INDEXED_DATA, f, indent=4)
+    with open(f"{OUTPUT_FILE}_indexed.json", 'w') as f:
+        json.dump(INDEXED_DATA, f, indent=4)
 
     def __init__(self, value):
         self.value = value

@@ -122,6 +122,14 @@ def flat_list_val(data_values):
     return all_items
 
 
+# concatenate several data values
+def concat_vals(data_values):
+    result = []
+    for x in data_values:
+        result.extend(data_values[x].values())
+    return "_".join(result)
+
+
 # Convert various responses to boolean
 def boolean(data_values):
     cell = single_val(data_values)

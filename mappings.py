@@ -14,6 +14,7 @@ OUTPUT_FILE = ""
 
 class MappingError(Exception):
     with open(f"{OUTPUT_FILE}_indexed.json", 'w') as f:
+        print("HOWDY")
         json.dump(INDEXED_DATA, f, indent=4)
 
     def __init__(self, value):

@@ -619,7 +619,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
         if mappings._pop_from_stack() is not None:
             raise Exception(f"Stack not empty\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}\n {mappings.INDEX_STACK}")
 
-    with open(f"{output_file}_indexed.json", 'w') as f:
+    with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
         json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     result = {
@@ -628,14 +628,14 @@ def csv_convert(input_path, manifest_file, verbose=False):
     }
     if schema.katsu_sha is not None:
         result["katsu_sha"] = schema.katsu_sha
-    with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
+    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(result, f, indent=4)
 
     # add validation data:
     schema.validate_ingest_map(result)
     result["validation_errors"] = schema.validation_failures
     result["statistics"] = schema.statistics
-    with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
+    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(result, f, indent=4)
 
     if len(result["validation_errors"]) > 0:

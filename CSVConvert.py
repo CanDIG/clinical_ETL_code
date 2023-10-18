@@ -49,7 +49,7 @@ def map_data_to_scaffold(node, line, rownum):
         return result
     if "str" in str(type(node)) and node != "":
         result = eval_mapping(node, rownum)
-        verbose_print(f"Evaluated result is {result}")
+        verbose_print(f"Evaluated result is {result}, {node}, {rownum}")
         return result
     if "dict" in str(type(node)):
         result = {}

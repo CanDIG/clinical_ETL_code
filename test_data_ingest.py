@@ -5,7 +5,7 @@ import mappings
 from mohschema import MoHSchema
 
 # read sheet from given data pathway
-raw_csvs, output_file = CSVConvert.ingest_raw_data("test_data/pytest_data")
+raw_csvs, mappings.OUTPUT_FILE = CSVConvert.ingest_raw_data("test_data/pytest_data")
 mappings.IDENTIFIER_FIELD =  "Subject"
 mappings.INDEXED_DATA = CSVConvert.process_data(raw_csvs)
 mappings._push_to_stack(None, None, mappings.IDENTIFIER)

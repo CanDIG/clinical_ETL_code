@@ -101,7 +101,7 @@ def test_donor_2(packets):
 def test_validation(packets, schema):
     schema.validate_ingest_map({"donors": packets})
     print(schema.validation_failures)
-    assert len(schema.validation_failures) == 8
+    assert len(schema.validation_failures) == 9
     # should be the following 9 failures:
     # DONOR_5: cause_of_death required if is_deceased = Yes
     # DONOR_5: date_of_death required if is_deceased = Yes
@@ -111,6 +111,7 @@ def test_validation(packets, schema):
     # DONOR_5 > PD_5 > TR_5 > Radiation 1: reference_radiation_treatment_id required if radiation_boost = Yes
     # DONOR_5 > PD_5 > TR_10: treatment type Immunotherapy should have one or more immunotherapies submitted
     # DONOR_6 > PD_6 > TR_9 > Surgery 0: submitter_specimen_id SPECIMEN_43 does not correspond to one of the available specimen_ids ['SPECIMEN_3']
+    # Duplicated IDs: in schema followups, FOLLOW_UP_4 occurs 2 times
 
 
 

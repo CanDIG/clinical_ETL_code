@@ -316,19 +316,19 @@ class MoHSchema(BaseSchema):
                         for type in map_json["treatment_type"]:
                             match type:
                                 case "Chemotherapy":
-                                    if "chemotherapies" not in map_json:
+                                    if "chemotherapies" not in map_json or len(map_json["chemotherapies"]) == 0:
                                         self.warn("treatment type Chemotherapy should have one or more chemotherapies submitted")
                                 case "Hormonal therapy":
-                                    if "hormone_therapies" not in map_json:
+                                    if "hormone_therapies" not in map_json or len(map_json["hormone_therapies"]) == 0:
                                         self.warn("treatment type Hormonal therapy should have one or more hormone_therapies submitted")
                                 case "Immunotherapy":
-                                    if "immunotherapies" not in map_json:
+                                    if "immunotherapies" not in map_json or len(map_json["immunotherapies"]) == 0:
                                         self.warn("treatment type Immunotherapy should have one or more immunotherapies submitted")
                                 case "Radiation therapy":
-                                    if "radiations" not in map_json:
+                                    if "radiations" not in map_json or len(map_json["radiations"]) == 0:
                                         self.warn("treatment type Radiation therapy should have one or more radiation submitted")
                                 case "Surgery":
-                                    if "surgeries" not in map_json:
+                                    if "surgeries" not in map_json or len(map_json["surgeries"]) == 0:
                                         self.warn("treatment type Surgery should have one or more surgery submitted")
 
 

@@ -300,10 +300,10 @@ class BaseSchema:
             self.validation_schema[key]["extra_args"] = {
                 "index": 0
             }
-        first_key = list(self.validation_schema.keys())[0]
-        for x in range(0, len(map_json[first_key])):
-            jsonschema.validate(map_json[first_key][x], self.json_schema)
-            self.validate_schema(first_key, map_json[first_key][x])
+        root_schema = list(self.validation_schema.keys())[0]
+        for x in range(0, len(map_json[root_schema])):
+            jsonschema.validate(map_json[root_schema][x], self.json_schema)
+            self.validate_schema(root_schema, map_json[root_schema][x])
 
         self.statistics["schemas_not_used"] = list(set(self.validation_schema.keys()) - set(self.statistics["schemas_used"]))
         self.statistics["summary_cases"] = {

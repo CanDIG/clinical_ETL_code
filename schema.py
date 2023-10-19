@@ -336,7 +336,7 @@ class BaseSchema:
                 }
             self.statistics["required_but_missing"][schema_name][f]["total"] += 1
             if f not in map_json:
-                self.warn(f"{f} required for {schema_name}")
+                # self.warn(f"{f} required for {schema_name}")
                 self.statistics["required_but_missing"][schema_name][f]["missing"] += 1
                 if case not in self.statistics["cases_missing_data"]:
                     self.statistics["cases_missing_data"].append(case)

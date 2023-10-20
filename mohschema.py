@@ -194,29 +194,34 @@ class MoHSchema(BaseSchema):
                         if "date_of_death" not in map_json:
                             self.warn("date_of_death required if is_deceased = Yes")
                 case "lost_to_followup_after_clinical_event_identifier":
-                    if map_json["is_deceased"]:
-                        self.warn("lost_to_followup_after_clinical_event_identifier cannot be present if is_deceased = Yes")
+                    if map_json["lost_to_followup_after_clinical_event_identifier"] is not None:
+                        if map_json["is_deceased"]:
+                            self.warn("lost_to_followup_after_clinical_event_identifier cannot be present if is_deceased = Yes")
                 case "lost_to_followup_reason":
-                    if "lost_to_followup_after_clinical_event_identifier" not in map_json:
-                        self.warn("lost_to_followup_reason should only be submitted if lost_to_followup_after_clinical_event_identifier is submitted")
+                    if map_json["lost_to_followup_reason"] is not None:
+                        if "lost_to_followup_after_clinical_event_identifier" not in map_json:
+                            self.warn("lost_to_followup_reason should only be submitted if lost_to_followup_after_clinical_event_identifier is submitted")
                 case "date_alive_after_lost_to_followup":
-                    if "lost_to_followup_after_clinical_event_identifier" not in map_json:
-                        self.warn("lost_to_followup_after_clinical_event_identifier needs to be submitted if date_alive_after_lost_to_followup is submitted")
+                    if map_json["date_alive_after_lost_to_followup"] is not None:
+                        if "lost_to_followup_after_clinical_event_identifier" not in map_json:
+                            self.warn("lost_to_followup_after_clinical_event_identifier needs to be submitted if date_alive_after_lost_to_followup is submitted")
                 case "cause_of_death":
-                    if not map_json["is_deceased"]:
-                        self.warn("cause_of_death should only be submitted if is_deceased = Yes")
+                    if map_json["cause_of_death"] is not None:
+                        if not map_json["is_deceased"]:
+                            self.warn("cause_of_death should only be submitted if is_deceased = Yes")
                 case "date_of_death":
-                    if not map_json["is_deceased"]:
-                        self.warn("date_of_death should only be submitted if is_deceased = Yes")
-                    else:
-                        if map_json["date_of_death"] is not None and map_json["date_of_birth"] is not None:
-                            death = dateparser.parse(map_json["date_of_death"]).date()
-                            birth = dateparser.parse(map_json["date_of_birth"]).date()
-                            if birth > death:
-                                self.warn("date_of_death cannot be earlier than date_of_birth")
+                    if map_json["date_of_death"] is not None:
+                        if not map_json["is_deceased"]:
+                            self.warn("date_of_death should only be submitted if is_deceased = Yes")
+                        else:
+                            if map_json["date_of_birth"] is not None:
+                                death = dateparser.parse(map_json["date_of_death"]).date()
+                                birth = dateparser.parse(map_json["date_of_birth"]).date()
+                                if birth > death:
+                                    self.warn("date_of_death cannot be earlier than date_of_birth")
                 case "biomarkers":
                     for x in map_json["biomarkers"]:
-                        if "test_date" not in x:
+                        if "test_date" not in x or x["test_date"] is None:
                             self.warn("test_date is necessary for biomarkers not associated with nested events")
 
 
@@ -226,12 +231,12 @@ class MoHSchema(BaseSchema):
         is_tumour = False
         # should either have a clinical staging system specified
         # OR have a specimen with a pathological staging system specified
-        if "clinical_tumour_staging_system" in map_json:
+        if "clinical_tumour_staging_system" in map_json and map_json["clinical_tumour_staging_system"] is not None:
             is_tumour = True
         if "specimens" in map_json:
             for specimen in map_json["specimens"]:
                 specimen_ids.append(specimen["submitter_specimen_id"])
-                if "pathological_tumour_staging_system" in specimen:
+                if "pathological_tumour_staging_system" in specimen and specimen["pathological_tumour_staging_system"] is not None:
                     is_tumour = True
 
         self.validation_schema["primary_diagnoses"]["extra_args"]["specimen_ids"] = specimen_ids
@@ -241,9 +246,9 @@ class MoHSchema(BaseSchema):
             match prop:
                 case "lymph_nodes_examined_status":
                     if map_json["lymph_nodes_examined_status"]:
-                        if "lymph_nodes_examined_method" not in map_json:
+                        if "lymph_nodes_examined_method" not in map_json or map_json["lymph_nodes_examined_method"] is None:
                             self.warn("lymph_nodes_examined_method required if lymph_nodes_examined_status = Yes")
-                        if "number_lymph_nodes_positive" not in map_json:
+                        if "number_lymph_nodes_positive" not in map_json or map_json["number_lymph_nodes_positive"] is None:
                             self.warn("number_lymph_nodes_positive required if lymph_nodes_examined_status = Yes")
                 case "clinical_tumour_staging_system":
                     self.validate_staging_system(map_json, "clinical")
@@ -254,7 +259,7 @@ class MoHSchema(BaseSchema):
         # Presence of tumour_histological_type means we have a tumour sample
         if "tumour_histological_type" in map_json:
             if not is_clinical_tumour:
-                if "pathological_tumour_staging_system" not in map_json:
+                if "pathological_tumour_staging_system" not in map_json or map_json["pathological_tumour_staging_system"] is None:
                     self.warn("Tumour specimens without clinical_tumour_staging_system require a pathological_tumour_staging_system")
                 else:
                     self.validate_staging_system(map_json, "pathological")
@@ -333,36 +338,24 @@ class MoHSchema(BaseSchema):
 
 
     def validate_chemotherapies(self, map_json):
-        for prop in map_json:
-            match prop:
-                case "prescribed_cumulative_drug_dose":
-                    if "chemotherapy_drug_dose_units" not in map_json:
-                        self.warn("chemotherapy_drug_dose_units required if prescribed_cumulative_drug_dose is submitted")
-                case "actual_cumulative_drug_dose":
-                    if "chemotherapy_drug_dose_units" not in map_json:
-                        self.warn("chemotherapy_drug_dose_units required if actual_cumulative_drug_dose is submitted")
+        if "chemotherapy_drug_dose_units" not in map_json or map_json["chemotherapy_drug_dose_units"] is None:
+            for x in ["prescribed_cumulative_drug_dose", "actual_cumulative_drug_dose"]:
+                if x in map_json and map_json[x] is not None:
+                    self.warn(f"chemotherapy_drug_dose_units required if {x} is submitted")
 
 
     def validate_hormone_therapies(self, map_json):
-        for prop in map_json:
-            match prop:
-                case "prescribed_cumulative_drug_dose":
-                    if "hormone_drug_dose_units" not in map_json:
-                        self.warn("hormone_drug_dose_units required if prescribed_cumulative_drug_dose is submitted")
-                case "actual_cumulative_drug_dose":
-                    if "hormone_drug_dose_units" not in map_json:
-                        self.warn("hormone_drug_dose_units required if actual_cumulative_drug_dose is submitted")
+        if "hormone_drug_dose_units" not in map_json or map_json["hormone_drug_dose_units"] is None:
+            for x in ["prescribed_cumulative_drug_dose", "actual_cumulative_drug_dose"]:
+                if x in map_json and map_json[x] is not None:
+                    self.warn(f"hormone_drug_dose_units required if {x} is submitted")
 
 
     def validate_immunotherapies(self, map_json):
-        for prop in map_json:
-            match prop:
-                case "prescribed_cumulative_drug_dose":
-                    if "immunotherapy_drug_dose_units" not in map_json:
-                        self.warn("immunotherapy_drug_dose_units required if prescribed_cumulative_drug_dose is submitted")
-                case "actual_cumulative_drug_dose":
-                    if "immunotherapy_drug_dose_units" not in map_json:
-                        self.warn("immunotherapy_drug_dose_units required if actual_cumulative_drug_dose is submitted")
+        if "immunotherapy_drug_dose_units" not in map_json or map_json["immunotherapy_drug_dose_units"] is None:
+            for x in ["prescribed_cumulative_drug_dose", "actual_cumulative_drug_dose"]:
+                if x in map_json and map_json[x] is not None:
+                    self.warn(f"immunotherapy_drug_dose_units required if {x} is submitted")
 
 
     def validate_radiations(self, map_json):
@@ -374,7 +367,7 @@ class MoHSchema(BaseSchema):
             match prop:
                 case "radiation_boost":
                     if map_json["radiation_boost"]:
-                        if "reference_radiation_treatment_id" not in map_json:
+                        if "reference_radiation_treatment_id" not in map_json or map_json["reference_radiation_treatment_id"] is None:
                             self.warn("reference_radiation_treatment_id required if radiation_boost = Yes")
 
 
@@ -385,9 +378,9 @@ class MoHSchema(BaseSchema):
             self.warn("Only one surgery is allowed per treatment")
 
         if "submitter_specimen_id" not in map_json:
-            if "surgery_site" not in map_json:
+            if "surgery_site" not in map_json or map_json["surgery_site"] is None:
                 self.warn("surgery_site required if submitter_specimen_id not submitted")
-            if "surgery_location" not in map_json:
+            if "surgery_location" not in map_json or map_json["surgery_location"] is None:
                 self.warn("surgery_location required if submitter_specimen_id not submitted")
         else:
             if map_json["submitter_specimen_id"] not in specimen_ids:
@@ -404,7 +397,7 @@ class MoHSchema(BaseSchema):
 
     def validate_exposures(self, map_json):
         is_smoker = False
-        if "tobacco_smoking_status" not in map_json:
+        if "tobacco_smoking_status" not in map_json or map_json["tobacco_smoking_status"] is None:
             self.fail("tobacco_smoking_status required for exposure")
         else:
             if map_json["tobacco_smoking_status"] in [
@@ -433,8 +426,8 @@ class MoHSchema(BaseSchema):
                 "m_category"
             ]
             for f in required_fields:
-                if f"{staging_type}_{f}" not in map_json:
+                if f"{staging_type}_{f}" not in map_json or map_json[f"{staging_type}_{f}"] is None:
                     self.warn(f"{staging_type}_{f} is required if {staging_type}_tumour_staging_system is AJCC")
         else:
-            if f"{staging_type}_stage_group" not in map_json:
+            if f"{staging_type}_stage_group" not in map_json or map_json[f"{staging_type}_stage_group"] is None:
                 self.warn(f"{staging_type}_stage_group is required for {staging_type}_tumour_staging_system {map_json[f'{staging_type}_tumour_staging_system']}")

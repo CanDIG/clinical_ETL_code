@@ -322,7 +322,7 @@ class BaseSchema:
             if most_common[0][1] > 1:
                 for x in most_common:
                     if x[1] > 1:
-                        self.warn(f"Duplicated IDs: in schema {schema}, {x[0]} occurs {x[1]} times")
+                        self.fail(f"Duplicated IDs: in schema {schema}, {x[0]} occurs {x[1]} times")
         self.statistics["schemas_not_used"] = list(set(self.validation_schema.keys()) - set(self.statistics["schemas_used"]))
         self.statistics["summary_cases"] = {
             "complete_cases": len(map_json["donors"]) - len(self.statistics["cases_missing_data"]),

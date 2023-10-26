@@ -4,5 +4,5 @@ pyYAML>=5.4.1
 dateparser~=1.1.0
 openpyxl~=3.0.9
 requests~=2.29
-jsonschema~=3.2.0
+jsonschema~=4.19.1
 jsoncomparison~=1.1.0

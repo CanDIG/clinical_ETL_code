@@ -236,11 +236,15 @@ def main(args):
     input_path = args.input
     verbose = True if args.verbose else False
     result = validate_coverage(map_json, input_path, verbose)
-    if len(result) == 0:
+    if len(result["warnings"]) > 0:
+        print("Mapping has missing data:")
+        for line in result["warnings"]:
+            print(line)
+    if len(result["errors"]) == 0:
         print("Mapping is valid!")
     else:
         print("\n\nValidation failures:")
-        for line in result:
+        for line in result["errors"]:
             print(line)
 
 if __name__ == '__main__':

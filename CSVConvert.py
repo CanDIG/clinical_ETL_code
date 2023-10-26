@@ -650,6 +650,9 @@ def csv_convert(input_path, manifest_file, verbose=False):
     with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(result, f, indent=4)
 
+    if len(result["validation_warnings"]) > 0:
+        print("\n\nWARNING: Your data is missing required data for the MoHCCN data model! The following problems were found:")
+        print("\n".join(result["validation_warnings"]))
     if len(result["validation_errors"]) > 0:
         print("\n\nWARNING: Your data is not valid for the MoHCCN data model! The following errors were found:")
         print("\n".join(result["validation_errors"]))

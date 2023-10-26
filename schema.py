@@ -364,7 +364,7 @@ class BaseSchema:
                     if len(error.path) > 0:
                         location.append(error.path.popleft())
                 message = f"{' > '.join(location)}: {error.message}"
-                self.warn(message)
+                self.fail(message)
 
 
     def validate_schema(self, schema_name, map_json):

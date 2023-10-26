@@ -101,8 +101,8 @@ def test_donor_2(packets):
 
 def test_validation(packets, schema):
     schema.validate_ingest_map({"donors": packets})
-    print(schema.validation_failures)
-    assert len(schema.validation_failures) == 9
+    print(schema.validation_warnings)
+    assert len(schema.validation_warnings) == 9
     # should be the following 9 failures:
     # DONOR_5: cause_of_death required if is_deceased = Yes
     # DONOR_5: date_of_death required if is_deceased = Yes

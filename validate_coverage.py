@@ -219,7 +219,7 @@ def validate_coverage(map_json, input_path=None, verbose=False):
     print("Validating the mapped schema...")
     schema.validate_ingest_map(map_json)
     # print(json.dumps(schema.validation_results, indent=4))
-    return schema.validation_failures
+    return schema.validation_warnings
 
 def main(args):
     if args.json is not None and os.path.isfile(args.json):

@@ -49,7 +49,7 @@ class BaseSchema:
 
 
     def __init__(self, url, simple=False):
-        self.validation_failures = []
+        self.validation_warnings = []
         self.statistics = {}
         self.identifiers = {}
         self.stack_location = []
@@ -114,7 +114,7 @@ class BaseSchema:
         else:
             prefix += ": "
         message = prefix + message
-        self.validation_failures.append(f"{message}")
+        self.validation_warnings.append(f"{message}")
 
 
     def fail(self, message):

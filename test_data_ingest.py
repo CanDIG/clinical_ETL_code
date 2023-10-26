@@ -102,15 +102,19 @@ def test_donor_2(packets):
 def test_validation(packets, schema):
     schema.validate_ingest_map({"donors": packets})
     print(schema.validation_warnings)
-    assert len(schema.validation_warnings) == 9
-    # should be the following 9 failures:
+    assert len(schema.validation_warnings) == 6
+    # should be the following 6 warnings:
     # DONOR_5: cause_of_death required if is_deceased = Yes
     # DONOR_5: date_of_death required if is_deceased = Yes
     # DONOR_5 > PD_5: clinical_stage_group is required for clinical_tumour_staging_system Revised International staging system (RISS)
     # DONOR_5 > PD_5 > SPECIMEN_6: Tumour specimens require a reference_pathology_confirmed_diagnosis
-    # DONOR_5 > PD_5 > TR_5 > Radiation 1: Only one radiation is allowed per treatment
     # DONOR_5 > PD_5 > TR_5 > Radiation 1: reference_radiation_treatment_id required if radiation_boost = Yes
     # DONOR_5 > PD_5 > TR_10: treatment type Immunotherapy should have one or more immunotherapies submitted
+
+    print(schema.validation_errors)
+    assert len(schema.validation_errors) == 3
+    # should be the following 3 errors:
+    # DONOR_5 > PD_5 > TR_5 > Radiation 1: Only one radiation is allowed per treatment
     # DONOR_6 > PD_6 > TR_9 > Surgery 0: submitter_specimen_id SPECIMEN_43 does not correspond to one of the available specimen_ids ['SPECIMEN_3']
     # Duplicated IDs: in schema followups, FOLLOW_UP_4 occurs 2 times
 

@@ -50,6 +50,7 @@ class BaseSchema:
 
     def __init__(self, url, simple=False):
         self.validation_warnings = []
+        self.validation_errors = []
         self.statistics = {}
         self.identifiers = {}
         self.stack_location = []
@@ -124,7 +125,7 @@ class BaseSchema:
         else:
             prefix += ": "
         message = prefix + message
-        raise ValidationError(message)
+        self.validation_errors.append(f"{message}")
 
 
     def expand_ref(self, ref):

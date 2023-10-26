@@ -204,7 +204,7 @@ class MoHSchema(BaseSchema):
                 case "date_alive_after_lost_to_followup":
                     if map_json["date_alive_after_lost_to_followup"] is not None:
                         if "lost_to_followup_after_clinical_event_identifier" not in map_json:
-                            self.warn("lost_to_followup_after_clinical_event_identifier needs to be submitted if date_alive_after_lost_to_followup is submitted")
+                            self.warn("lost_to_followup_after_clinical_event_identifier is required if date_alive_after_lost_to_followup is submitted")
                 case "cause_of_death":
                     if map_json["cause_of_death"] is not None:
                         if not map_json["is_deceased"]:
@@ -222,7 +222,7 @@ class MoHSchema(BaseSchema):
                 case "biomarkers":
                     for x in map_json["biomarkers"]:
                         if "test_date" not in x or x["test_date"] is None:
-                            self.warn("test_date is necessary for biomarkers not associated with nested events")
+                            self.warn("test_date is required for biomarkers not associated with nested events")
 
 
     def validate_primary_diagnoses(self, map_json):

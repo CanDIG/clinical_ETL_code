@@ -331,7 +331,7 @@ class BaseSchema:
 
     def validate_schema(self, schema_name, map_json):
         id = f"{self.validation_schema[schema_name]['name']} {self.validation_schema[schema_name]['extra_args']['index']}"
-        if self.validation_schema[schema_name]["id"] is not None:
+        if self.validation_schema[schema_name]["id"] is not None and self.validation_schema[schema_name]["id"] in map_json:
             id = map_json[self.validation_schema[schema_name]["id"]]
             if schema_name not in self.identifiers:
                 self.identifiers[schema_name] = Counter()

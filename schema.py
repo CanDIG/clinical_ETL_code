@@ -49,7 +49,8 @@ class BaseSchema:
 
 
     def __init__(self, url, simple=False):
-        self.validation_failures = []
+        self.validation_warnings = []
+        self.validation_errors = []
         self.statistics = {}
         self.identifiers = {}
         self.stack_location = []
@@ -114,7 +115,7 @@ class BaseSchema:
         else:
             prefix += ": "
         message = prefix + message
-        self.validation_failures.append(f"{message}")
+        self.validation_warnings.append(f"{message}")
 
 
     def fail(self, message):
@@ -124,7 +125,7 @@ class BaseSchema:
         else:
             prefix += ": "
         message = prefix + message
-        raise ValidationError(message)
+        self.validation_errors.append(f"{message}")
 
 
     def expand_ref(self, ref):
@@ -314,19 +315,56 @@ class BaseSchema:
             }
         root_schema = list(self.validation_schema.keys())[0]
         for x in range(0, len(map_json[root_schema])):
-            jsonschema.validate(map_json[root_schema][x], self.json_schema)
+            self.validate_jsonschema(map_json[root_schema][x], x)
             self.validate_schema(root_schema, map_json[root_schema][x])
         for schema in self.identifiers:
             most_common = self.identifiers[schema].most_common()
             if most_common[0][1] > 1:
                 for x in most_common:
                     if x[1] > 1:
-                        self.warn(f"Duplicated IDs: in schema {schema}, {x[0]} occurs {x[1]} times")
+                        self.fail(f"Duplicated IDs: in schema {schema}, {x[0]} occurs {x[1]} times")
         self.statistics["schemas_not_used"] = list(set(self.validation_schema.keys()) - set(self.statistics["schemas_used"]))
         self.statistics["summary_cases"] = {
             "complete_cases": len(map_json["donors"]) - len(self.statistics["cases_missing_data"]),
             "total_cases": len(map_json["donors"])
         }
+
+
+    def validate_jsonschema(self, map_json, index):
+        for error in jsonschema.Draft202012Validator(self.json_schema).iter_errors(map_json):
+            id_field = self.validation_schema[list(self.validation_schema.keys())[0]]["id"]
+
+            # is this error a None where it's nullable?
+            if error.instance is None and 'nullable' in error.schema and error.schema['nullable'] == True:
+                pass # this was too hard to write as a negative statement, so the error is in the else
+            else:
+                location = [f"Donor {index}"]
+                if id_field in map_json:
+                    location = [map_json[id_field]]
+                    curr_map = map_json
+                    while len(error.path) > 1:
+                        node = error.path.popleft()
+                        if "str" in str(type(node)):
+                            curr_map = curr_map[node]
+                            idx = error.path.popleft()
+                            if "str" in str(type(idx)):
+                                error.path.appendleft(idx)
+                                continue
+                            # is there an id for this?
+                            curr_map = curr_map[idx]
+                            if node in self.validation_schema:
+                                sch = self.validation_schema[node]
+                                if "id" in sch and sch["id"] is not None and sch["id"] in curr_map:
+                                    id_field = curr_map[sch["id"]]
+                                else:
+                                    id_field = f"{node}[{idx}]"
+                            else:
+                                id_field = node
+                            location.append(f"{id_field}")
+                    if len(error.path) > 0:
+                        location.append(error.path.popleft())
+                message = f"{' > '.join(location)}: {error.message}"
+                self.fail(message)
 
 
     def validate_schema(self, schema_name, map_json):

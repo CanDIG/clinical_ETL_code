@@ -196,33 +196,33 @@ class MoHSchema(BaseSchema):
                 case "lost_to_followup_after_clinical_event_identifier":
                     if map_json["lost_to_followup_after_clinical_event_identifier"] is not None:
                         if map_json["is_deceased"]:
-                            self.warn("lost_to_followup_after_clinical_event_identifier cannot be present if is_deceased = Yes")
+                            self.fail("lost_to_followup_after_clinical_event_identifier cannot be present if is_deceased = Yes")
                 case "lost_to_followup_reason":
                     if map_json["lost_to_followup_reason"] is not None:
                         if "lost_to_followup_after_clinical_event_identifier" not in map_json:
-                            self.warn("lost_to_followup_reason should only be submitted if lost_to_followup_after_clinical_event_identifier is submitted")
+                            self.fail("lost_to_followup_reason should only be submitted if lost_to_followup_after_clinical_event_identifier is submitted")
                 case "date_alive_after_lost_to_followup":
                     if map_json["date_alive_after_lost_to_followup"] is not None:
                         if "lost_to_followup_after_clinical_event_identifier" not in map_json:
-                            self.warn("lost_to_followup_after_clinical_event_identifier needs to be submitted if date_alive_after_lost_to_followup is submitted")
+                            self.warn("lost_to_followup_after_clinical_event_identifier is required if date_alive_after_lost_to_followup is submitted")
                 case "cause_of_death":
                     if map_json["cause_of_death"] is not None:
                         if not map_json["is_deceased"]:
-                            self.warn("cause_of_death should only be submitted if is_deceased = Yes")
+                            self.fail("cause_of_death should only be submitted if is_deceased = Yes")
                 case "date_of_death":
                     if map_json["date_of_death"] is not None:
                         if not map_json["is_deceased"]:
-                            self.warn("date_of_death should only be submitted if is_deceased = Yes")
+                            self.fail("date_of_death should only be submitted if is_deceased = Yes")
                         else:
                             if map_json["date_of_birth"] is not None:
                                 death = dateparser.parse(map_json["date_of_death"]).date()
                                 birth = dateparser.parse(map_json["date_of_birth"]).date()
                                 if birth > death:
-                                    self.warn("date_of_death cannot be earlier than date_of_birth")
+                                    self.fail("date_of_death cannot be earlier than date_of_birth")
                 case "biomarkers":
                     for x in map_json["biomarkers"]:
                         if "test_date" not in x or x["test_date"] is None:
-                            self.warn("test_date is necessary for biomarkers not associated with nested events")
+                            self.warn("test_date is required for biomarkers not associated with nested events")
 
 
     def validate_primary_diagnoses(self, map_json):
@@ -361,7 +361,7 @@ class MoHSchema(BaseSchema):
     def validate_radiations(self, map_json):
         index = self.validation_schema["radiations"]["extra_args"]["index"]
         if index > 0:
-            self.warn("Only one radiation is allowed per treatment")
+            self.fail("Only one radiation is allowed per treatment")
 
         for prop in map_json:
             match prop:
@@ -375,7 +375,7 @@ class MoHSchema(BaseSchema):
         specimen_ids = self.validation_schema["primary_diagnoses"]["extra_args"]["specimen_ids"]
         index = self.validation_schema["surgeries"]["extra_args"]["index"]
         if index > 0:
-            self.warn("Only one surgery is allowed per treatment")
+            self.fail("Only one surgery is allowed per treatment")
 
         if "submitter_specimen_id" not in map_json:
             if "surgery_site" not in map_json or map_json["surgery_site"] is None:
@@ -384,7 +384,7 @@ class MoHSchema(BaseSchema):
                 self.warn("surgery_location required if submitter_specimen_id not submitted")
         else:
             if map_json["submitter_specimen_id"] not in specimen_ids:
-                self.warn(f"submitter_specimen_id {map_json['submitter_specimen_id']} does not correspond to one of the available specimen_ids {specimen_ids}")
+                self.fail(f"submitter_specimen_id {map_json['submitter_specimen_id']} does not correspond to one of the available specimen_ids {specimen_ids}")
 
 
     def validate_comorbidities(self, map_json):
@@ -392,13 +392,13 @@ class MoHSchema(BaseSchema):
             match prop:
                 case "laterality_of_prior_malignancy":
                     if "prior_malignancy" not in map_json or map_json["prior_malignancy"] != "Yes":
-                        self.warn("laterality_of_prior_malignancy should not be submitted unless prior_malignancy = Yes")
+                        self.fail("laterality_of_prior_malignancy should not be submitted unless prior_malignancy = Yes")
 
 
     def validate_exposures(self, map_json):
         is_smoker = False
         if "tobacco_smoking_status" not in map_json or map_json["tobacco_smoking_status"] is None:
-            self.fail("tobacco_smoking_status required for exposure")
+            self.warn("tobacco_smoking_status required for exposure")
         else:
             if map_json["tobacco_smoking_status"] in [
                 "Current reformed smoker for <= 15 years",
@@ -408,14 +408,14 @@ class MoHSchema(BaseSchema):
             ]:
                 is_smoker = True
 
-        for prop in map_json:
-            match prop:
-                case "tobacco_type":
-                    if not is_smoker:
-                        self.warn(f"tobacco_type cannot be submitted for tobacco_smoking_status = {map_json['tobacco_smoking_status']}")
-                case "pack_years_smoked":
-                    if not is_smoker:
-                        self.warn(f"pack_years_smoked cannot be submitted for tobacco_smoking_status = {map_json['tobacco_smoking_status']}")
+            for prop in map_json:
+                match prop:
+                    case "tobacco_type":
+                        if not is_smoker:
+                            self.fail(f"tobacco_type cannot be submitted for tobacco_smoking_status = {map_json['tobacco_smoking_status']}")
+                    case "pack_years_smoked":
+                        if not is_smoker:
+                            self.fail(f"pack_years_smoked cannot be submitted for tobacco_smoking_status = {map_json['tobacco_smoking_status']}")
 
 
     def validate_staging_system(self, map_json, staging_type):

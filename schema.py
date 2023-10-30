@@ -7,6 +7,7 @@ import re
 from copy import deepcopy
 import jsonschema
 import dateparser
+from collections import Counter
 
 
 class ValidationError(Exception):
@@ -50,6 +51,7 @@ class BaseSchema:
     def __init__(self, url, simple=False):
         self.validation_failures = []
         self.statistics = {}
+        self.identifiers = {}
         self.stack_location = []
         self.schema = {}
         self.openapi_url = url
@@ -106,12 +108,22 @@ class BaseSchema:
 
 
     def warn(self, message):
-        message = " > ".join(self.stack_location) + ": " + message
+        prefix = " > ".join(self.stack_location)
+        if prefix.strip() == "":
+            prefix = ""
+        else:
+            prefix += ": "
+        message = prefix + message
         self.validation_failures.append(f"{message}")
 
 
     def fail(self, message):
-        message = " > ".join(self.stack_location) + ": " + message
+        prefix = " > ".join(self.stack_location)
+        if prefix.strip() == "":
+            prefix = ""
+        else:
+            prefix += ": "
+        message = prefix + message
         raise ValidationError(message)
 
 
@@ -300,11 +312,16 @@ class BaseSchema:
             self.validation_schema[key]["extra_args"] = {
                 "index": 0
             }
-        first_key = list(self.validation_schema.keys())[0]
-        for x in range(0, len(map_json[first_key])):
-            jsonschema.validate(map_json[first_key][x], self.json_schema)
-            self.validate_schema(first_key, map_json[first_key][x])
-
+        root_schema = list(self.validation_schema.keys())[0]
+        for x in range(0, len(map_json[root_schema])):
+            jsonschema.validate(map_json[root_schema][x], self.json_schema)
+            self.validate_schema(root_schema, map_json[root_schema][x])
+        for schema in self.identifiers:
+            most_common = self.identifiers[schema].most_common()
+            if most_common[0][1] > 1:
+                for x in most_common:
+                    if x[1] > 1:
+                        self.warn(f"Duplicated IDs: in schema {schema}, {x[0]} occurs {x[1]} times")
         self.statistics["schemas_not_used"] = list(set(self.validation_schema.keys()) - set(self.statistics["schemas_used"]))
         self.statistics["summary_cases"] = {
             "complete_cases": len(map_json["donors"]) - len(self.statistics["cases_missing_data"]),
@@ -314,8 +331,11 @@ class BaseSchema:
 
     def validate_schema(self, schema_name, map_json):
         id = f"{self.validation_schema[schema_name]['name']} {self.validation_schema[schema_name]['extra_args']['index']}"
-        if self.validation_schema[schema_name]["id"] is not None:
+        if self.validation_schema[schema_name]["id"] is not None and self.validation_schema[schema_name]["id"] in map_json:
             id = map_json[self.validation_schema[schema_name]["id"]]
+            if schema_name not in self.identifiers:
+                self.identifiers[schema_name] = Counter()
+            self.identifiers[schema_name].update([id])
         required_fields = self.validation_schema[schema_name]["required_fields"]
         nested_schemas = self.validation_schema[schema_name]["nested_schemas"]
         self.stack_location.append(str(id))

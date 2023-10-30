@@ -2,10 +2,11 @@ import pytest
 import yaml
 import CSVConvert
 import mappings
+import json
 from mohschema import MoHSchema
 
 # read sheet from given data pathway
-raw_csvs, output_file = CSVConvert.ingest_raw_data("test_data/pytest_data")
+raw_csvs, mappings.OUTPUT_FILE = CSVConvert.ingest_raw_data("test_data/pytest_data")
 mappings.IDENTIFIER_FIELD =  "Subject"
 mappings.INDEXED_DATA = CSVConvert.process_data(raw_csvs)
 mappings._push_to_stack(None, None, mappings.IDENTIFIER)
@@ -111,7 +112,12 @@ def test_validation(packets, schema):
     # DONOR_5 > PD_5 > TR_5 > Radiation 1: reference_radiation_treatment_id required if radiation_boost = Yes
     # DONOR_5 > PD_5 > TR_10: treatment type Immunotherapy should have one or more immunotherapies submitted
     # DONOR_6 > PD_6 > TR_9 > Surgery 0: submitter_specimen_id SPECIMEN_43 does not correspond to one of the available specimen_ids ['SPECIMEN_3']
+    # Duplicated IDs: in schema followups, FOLLOW_UP_4 occurs 2 times
 
+    # there should be an item named DUPLICATE_ID in both followup and sample_registration
+    print(json.dumps(schema.identifiers, indent=2))
+    assert schema.identifiers["followups"]["DUPLICATE_ID"] == 1
+    assert schema.identifiers["primary_diagnoses"]["DUPLICATE_ID"] == 1
 
 
 # test mapping that uses values from multiple sheets:

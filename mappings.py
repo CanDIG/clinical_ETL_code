@@ -9,6 +9,7 @@ IDENTIFIER = None
 INDEX_STACK = []
 INDEXED_DATA = None
 CURRENT_LINE = ""
+OUTPUT_FILE = ""
 
 
 class MappingError(Exception):
@@ -16,6 +17,8 @@ class MappingError(Exception):
         self.value = value
 
     def __str__(self):
+        with open(f"{OUTPUT_FILE}_indexed.json", 'w') as f:
+            json.dump(INDEXED_DATA, f, indent=4)
         return repr(f"Check the values for {IDENTIFIER} in {IDENTIFIER_FIELD}: {self.value}")
 
 
@@ -116,6 +119,14 @@ def flat_list_val(data_values):
         except Exception:
             all_items.extend(map(lambda x: x.strip(), item.split(",")))
     return all_items
+
+
+# concatenate several data values
+def concat_vals(data_values):
+    result = []
+    for x in data_values:
+        result.extend(data_values[x].values())
+    return "_".join(result)
 
 
 # Convert various responses to boolean

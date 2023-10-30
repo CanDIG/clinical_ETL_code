@@ -3,3 +3,5 @@ FOLLOW_UP_1,DONOR_1,PD_1,,2022-08,Loco-regional progression,Distant recurrence/m
 FOLLOW_UP_2,DONOR_1,,TR_1,2022-08,Loco-regional progression,Biochemical progression,2022-05,Imaging (procedure)|Laboratory data interpretation (procedure),C05,Lugano staging system,T1d,N1mi,M1a(0),Stage IVBS,
 FOLLOW_UP_3,DONOR_1,,,2022-08,Loco-regional progression,Distant recurrence/metastasis,2022-01,Imaging (procedure)|Laboratory data interpretation (procedure),C06,SEER staging system,T2(m),N2c,M1b(1),Stage IIBES,
 FOLLOW_UP_4,DONOR_1,,,2022-08,Loco-regional progression,Biochemical progression,2022-05,Imaging (procedure)|Laboratory data interpretation (procedure),C05,Lugano staging system,T1d,N1mi,M1a(0),Stage IVBS,
+FOLLOW_UP_4,DONOR_6,,,2022-07,Loco-regional progression,Biochemical progression,2022-05,Imaging (procedure)|Laboratory data interpretation (procedure),C05,Lugano staging system,T1d,N1mi,M1a(0),Stage IVBS,
+DUPLICATE_ID,DONOR_4,,,2022-08,Loco-regional progression,Biochemical progression,2022-05,Imaging (procedure)|Laboratory data interpretation (procedure),C05,Lugano staging system,T1d,N1mi,M1a(0),Stage IVBS,

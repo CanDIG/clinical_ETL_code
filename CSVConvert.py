@@ -49,7 +49,7 @@ def map_data_to_scaffold(node, line, rownum):
         return result
     if "str" in str(type(node)) and node != "":
         result = eval_mapping(node, rownum)
-        verbose_print(f"Evaluated result is {result}")
+        verbose_print(f"Evaluated result is {result}, {node}, {rownum}")
         return result
     if "dict" in str(type(node)):
         result = {}
@@ -59,6 +59,17 @@ def map_data_to_scaffold(node, line, rownum):
                 linekey = f"{line}.{key}"
             dict = map_data_to_scaffold(node[key], f"{linekey}", rownum)
             if dict is not None:
+                if "CALCULATED" not in mappings.INDEXED_DATA["data"]:
+                    mappings.INDEXED_DATA["data"]["CALCULATED"] = {}
+                if mappings.IDENTIFIER not in mappings.INDEXED_DATA["data"]["CALCULATED"]:
+                    mappings.INDEXED_DATA["data"]["CALCULATED"][mappings.IDENTIFIER] = {}
+                if key not in mappings.INDEXED_DATA["data"]["CALCULATED"][mappings.IDENTIFIER]:
+                    mappings.INDEXED_DATA["data"]["CALCULATED"][mappings.IDENTIFIER][key] = []
+                mappings.INDEXED_DATA["data"]["CALCULATED"][mappings.IDENTIFIER][key].append(dict)
+                if key not in mappings.INDEXED_DATA["columns"]:
+                    mappings.INDEXED_DATA["columns"][key] = []
+                if "CALCULATED" not in mappings.INDEXED_DATA["columns"][key]:
+                    mappings.INDEXED_DATA["columns"][key].append("CALCULATED")
                 result[key] = dict
         if result is not None and len(result) == 0:
             return None
@@ -193,7 +204,7 @@ def get_row_for_stack_top(sheet, rownum):
     result = {}
     for param in mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER].keys():
         result[param] = mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER][param][rownum]
-    verbose_print(f"get_row_for_stack_top is {result}")
+    verbose_print(f"get_row_for_stack_top {sheet} is {result}")
     return result
 
 
@@ -581,14 +592,14 @@ def csv_convert(input_path, manifest_file, verbose=False):
 
     # # read the raw data
     print("Reading raw data")
-    raw_csv_dfs, output_file = ingest_raw_data(input_path)
+    raw_csv_dfs, mappings.OUTPUT_FILE = ingest_raw_data(input_path)
     if not raw_csv_dfs:
         print(f"No ingestable files (csv or xlsx) were found at {input_path}")
         return
 
     print("Indexing data")
     mappings.INDEXED_DATA = process_data(raw_csv_dfs)
-    with open(f"{output_file}_indexed.json", 'w') as f:
+    with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
         json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     # if verbose flag is set, warn if column name is present in multiple sheets:
@@ -619,7 +630,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
         if mappings._pop_from_stack() is not None:
             raise Exception(f"Stack not empty\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}\n {mappings.INDEX_STACK}")
 
-    with open(f"{output_file}_indexed.json", 'w') as f:
+    with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
         json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     result = {
@@ -628,14 +639,14 @@ def csv_convert(input_path, manifest_file, verbose=False):
     }
     if schema.katsu_sha is not None:
         result["katsu_sha"] = schema.katsu_sha
-    with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
+    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(result, f, indent=4)
 
     # add validation data:
     schema.validate_ingest_map(result)
     result["validation_errors"] = schema.validation_failures
     result["statistics"] = schema.statistics
-    with open(f"{output_file}_map.json", 'w') as f:    # write to json file for ingestion
+    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:    # write to json file for ingestion
         json.dump(result, f, indent=4)
 
     if len(result["validation_errors"]) > 0:

@@ -240,7 +240,5 @@ def main(args):
         for line in result:
             print(line)
 
-    print(json.dumps(result, indent=4))
-
 if __name__ == '__main__':
     main(parse_args())

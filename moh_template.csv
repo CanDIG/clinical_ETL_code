@@ -104,9 +104,9 @@ DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.surgery_sit
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.surgery_location, {single_val(SURGERIES_SHEET.surgery_location)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.tumour_focality, {single_val(SURGERIES_SHEET.tumour_focality)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.residual_tumour_classification, {single_val(SURGERIES_SHEET.residual_tumour_classification)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_involved.INDEX, {indexed_on(SURGERIES_SHEET.margin_types_involved)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_not_involved.INDEX, {indexed_on(SURGERIES_SHEET.margin_types_not_involved)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_not_assessed.INDEX, {indexed_on(SURGERIES_SHEET.margin_types_not_assessed)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_involved.INDEX, {pipe_delim(SURGERIES_SHEET.margin_types_involved)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_not_involved.INDEX, {pipe_delim(SURGERIES_SHEET.margin_types_not_involved)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_not_assessed.INDEX, {pipe_delim(SURGERIES_SHEET.margin_types_not_assessed)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.lymphovascular_invasion, {single_val(SURGERIES_SHEET.lymphovascular_invasion)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.perineural_invasion, {single_val(SURGERIES_SHEET.perineural_invasion)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.submitter_specimen_id, {single_val(SURGERIES_SHEET.submitter_specimen_id)}

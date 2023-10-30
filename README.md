@@ -32,7 +32,7 @@ $ python CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file] [--test] 
 
 The output packets (`INPUT_map.json` and `INPUT_indexed.json`) will be in the parent of the `INPUT` directory / file.
 
-Validation will automatically be run after the conversion is complete. Any validation errors will be reported both on the command line and as part of the `INPUT_map.json` file.
+Validation will automatically be run after the conversion is complete. Any validation errors or warnings will be reported both on the command line and as part of the `INPUT_map.json` file.
 
 ## Format of the output file
 
@@ -41,9 +41,13 @@ Validation will automatically be run after the conversion is complete. Any valid
     "openapi_url": "https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml",
     "katsu_sha": < git sha of the katsu version used for the schema >,
     "donors": < An array of JSON objects, each one representing a DonorWithClinicalData in katsu >,
+    "validation_warnings": [
+        < any validation warnings, e.g. >
+        "DONOR_5: cause_of_death required if is_deceased = Yes"
+    ],
     "validation_errors": [
         < any validation errors, e.g. >
-        "DONOR_5: cause_of_death required if is_deceased = Yes"
+        "DONOR_5 > PD_5 > TR_5 > Radiation 1: Only one radiation is allowed per treatment"
     ],
     "statistics": {
         "required_but_missing": {
@@ -154,7 +158,7 @@ $ python validate_coverage.py [-h] [--input map.json] [--manifest MAPPING]
 
 --manifest: Path to a manifest file describing the mapping
 ```
-Issues caused by invalid jsonschema requirements will throw exceptions: these must be addressed before validation can be completed. Issues caused by failed conditions in the MoH model will be listed in the output.
+The output will report errors and warnings separately. Jsonschema validation failures and other data mismatches will be listed as errors, while fields that are conditionally required as part of the MoH model but are missing will be reported as warnings.
 
 
 <!-- # NOTE: the following sections have not been updated for current versions.

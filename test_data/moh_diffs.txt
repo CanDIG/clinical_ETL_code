@@ -96,11 +96,5 @@
 ---
 > DONOR.INDEX.followups.INDEX.method_of_progression_status, {pipe_delim(FOLLOWUPS_SHEET.method_of_progression_status)}
 > DONOR.INDEX.followups.INDEX.anatomic_site_progression_or_recurrence, {pipe_delim(FOLLOWUPS_SHEET.anatomic_site_progression_or_recurrence)}
-182a184
-> test
-\ No newline at end of file
-FOLLOWUPS_SHEET.method_of_progression_status)}
+.method_of_progression_status, {pipe_delim(FOLLOWUPS_SHEET.method_of_progression_status)}
 > DONOR.INDEX.followups.INDEX.anatomic_site_progression_or_recurrence, {pipe_delim(FOLLOWUPS_SHEET.anatomic_site_progression_or_recurrence)}
-182a184
-> test
-\ No newline at end of file

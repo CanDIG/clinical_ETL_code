@@ -30,6 +30,6 @@ jobs:
           bytes=$(head -5 curr_diff.txt | wc -c)
           dd if=curr_diff.txt bs="$bytes" skip=1 conv=notrunc of=curr_diff.txt
           diff curr_diff.txt test_data/moh_diffs.txt
-      - name: Explain moh_template.csv failure
-        if: ${{ failure() }}
-        run: echo See https://github.com/CanDIG/clinical_ETL_code#mapping-template for information
+          if [[ $? == 1 ]]; then echo MoH template checking needs to be updated! See https://github.com/CanDIG/clinical_ETL_code#mapping-template for information.
+          exit 1
+          fi

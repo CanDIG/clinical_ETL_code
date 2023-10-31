@@ -40,6 +40,14 @@
 > DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_fractions, {integer(RADIATIONS_SHEET.radiation_therapy_fractions)}
 > DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_dosage, {integer(RADIATIONS_SHEET.radiation_therapy_dosage)}
 > DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_boost, {boolean(RADIATIONS_SHEET.radiation_boost)}
+106,108c107,109
+< DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_involved.INDEX, {indexed_on(SURGERIES_SHEET.margin_types_involved)}
+< DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_not_involved.INDEX, {indexed_on(SURGERIES_SHEET.margin_types_not_involved)}
+< DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_not_assessed.INDEX, {indexed_on(SURGERIES_SHEET.margin_types_not_assessed)}
+---
+> DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_involved.INDEX, {pipe_delim(SURGERIES_SHEET.margin_types_involved)}
+> DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_not_involved.INDEX, {pipe_delim(SURGERIES_SHEET.margin_types_not_involved)}
+> DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_not_assessed.INDEX, {pipe_delim(SURGERIES_SHEET.margin_types_not_assessed)}
 112,114c113,115
 < DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.tumour_length, {single_val(SURGERIES_SHEET.tumour_length)}
 < DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.tumour_width, {single_val(SURGERIES_SHEET.tumour_width)}

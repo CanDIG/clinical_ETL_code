@@ -114,8 +114,15 @@ You'll need to create a mapping template that defines which mapping functions (i
 If you're generating a mapping for the current MoH model, you can use the pre-generated `moh_template.csv` file. This file is modified from the auto-generated template to update a few fields that require specific handling.
 
 <details>
-<summary>Updating the moh_template.csv file</summary>
-If the MoH model changes in katsu, the GitHub Action check "Compare moh_template.csv" will fail.
+<summary>"Compare moh_template.csv" fails</summary>
+
+### You changed the `moh_template.csv` file:
+
+To fix this, you'll need to update the diffs file. Run `bash update_moh_template.sh` and commit the changes that are generated for `test_data/moh_diffs.txt`.
+
+### You did not change the `moh_template.csv` file:
+
+There have probably been MoH model changes in katsu.
 
 Run the `update_moh_template.sh` script to see what's changed in `test_data/moh_diffs.txt`. Update `moh_template.csv` to reconcile any differences, then re-run `update_moh_template.sh`. Commit any changes in both `moh_template.csv` and `test_data/moh_diffs.txt`.
 </details>

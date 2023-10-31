@@ -3,10 +3,12 @@ import yaml
 import CSVConvert
 import mappings
 import json
+import os
 from mohschema import MoHSchema
 
 # read sheet from given data pathway
-raw_csvs, mappings.OUTPUT_FILE = CSVConvert.ingest_raw_data("test_data/pytest_data")
+REPO_DIR = os.path.abspath(f"{os.path.dirname(os.path.realpath(__file__))}")
+raw_csvs, mappings.OUTPUT_FILE = CSVConvert.ingest_raw_data(f"{REPO_DIR}/test_data/pytest_data")
 mappings.IDENTIFIER_FIELD =  "Subject"
 mappings.INDEXED_DATA = CSVConvert.process_data(raw_csvs)
 mappings._push_to_stack(None, None, mappings.IDENTIFIER)
@@ -39,7 +41,7 @@ def test_list_val():
 
 @pytest.fixture
 def schema():
-    manifest_file = "test_data/manifest.yml"
+    manifest_file = f"{REPO_DIR}/test_data/manifest.yml"
     with open(manifest_file, 'r') as f:
         manifest = yaml.safe_load(f)
     if manifest is not None:
@@ -49,8 +51,8 @@ def schema():
 
 @pytest.fixture
 def packets():
-    input_path = "test_data/raw_data"
-    manifest_file = "test_data/manifest.yml"
+    input_path = f"{REPO_DIR}/test_data/raw_data"
+    manifest_file = f"{REPO_DIR}/test_data/manifest.yml"
     mappings.INDEX_STACK = []
     return CSVConvert.csv_convert(input_path, manifest_file, verbose=False)
 

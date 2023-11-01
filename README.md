@@ -13,7 +13,7 @@ Prerequisites:
 ## Running from the command line
 
 Most of the heavy lifting is done in the CSVConvert.py script. See sections below for setting up the inputs. This script:
-* reads an file (.xlsx or .csv) or a directory of files (csv)
+* reads a file (.xlsx or .csv) or a directory of files (csv)
 * reads a template file that contains a list of fields and (if needed) a mapping function
 * for each field for each patient, applies the mapping function to transform the raw data into valid model data
 * exports the data into a json file(s) appropriate for ingest
@@ -99,13 +99,13 @@ For each dataset (cohort) that you want to convert, create a directory outside o
 ## Manifest file
 The `manifest.yml` file contains settings for the cohort mapping. There is a sample file in `sample_inputs/manifest.yml` with documentation. The fields are:
 
-```
-description: A brief description
-mapping: the csv file that lists the mappings for each field
-identifier: submitter_donor_id
-schema: a URL to the openapi schema file
-functions:
-  - cohort-mapping-functions
+```yaml
+description:       # A brief description of what mapping task this manifest is being used for
+mapping:           # the mapping template csv file that lists the mappings for each field based on `moh_template.csv`
+identifier:        # the unique identifier for the donor
+schema:            # a URL to the openapi schema file
+functions:         # One or more filenames containing additional mapping functions, can be omitted if not needed
+  - new_cohort     # name of a python file with the set of mapping functions to be used in addition to the core set of functions specified in mappings.py. Assumed to be in the same directory as the manifest.yml file
 ```
 ## Mapping template
 

@@ -1,6 +1,6 @@
 description: Test mapping of DATASET-NAME dataset to MOHCCN format for CanDIG
 # mapping is the csv file that contains the list of fields and mapping functions
-mapping: dataset2moh.csv
+mapping: moh_template.csv
 # the name of the top-level identifier column in the input data
 identifier: submitter_donor_id
 # a link to the openapi schema
@@ -8,4 +8,4 @@ schema: https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_se
 # one or more files (dataset_functions.py) that implement the mappings 
 # described in mapping file
 functions:
-  - dataset_functions
+  - new_cohort

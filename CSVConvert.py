@@ -574,17 +574,15 @@ def csv_convert(input_path, manifest_file, verbose=False):
     manifest = load_manifest(manifest_file)
     mappings.IDENTIFIER_FIELD = manifest["identifier"]
     if mappings.IDENTIFIER_FIELD is None:
-        print("Need to specify what the main identifier column name as 'identifier' in the manifest file")
-        return
+        sys.exit("Need to specify what the main identifier column name is as 'identifier' in the manifest file, "
+                 "see README for more details.")
 
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold
     schema = MoHSchema(manifest["schema"])
-    if schema is None:
-        print(f"Did not find an openapi schema at {url}; please check link")
-        return
-
-    mapping_template = schema.template
+    if schema.json_schema is None:
+        sys.exit(f"Could not read an openapi schema at {manifest['schema']};\n"
+                 f"please check the url in the manifest file links to a valid openAPI schema.")
 
     # read the mapping template (contains the mapping function for each
     # field)
@@ -594,8 +592,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
     print("Reading raw data")
     raw_csv_dfs, mappings.OUTPUT_FILE = ingest_raw_data(input_path)
     if not raw_csv_dfs:
-        print(f"No ingestable files (csv or xlsx) were found at {input_path}")
-        return
+        sys.exit(f"No ingestable files (csv or xlsx) were found at {input_path}. Check path and try again.")
 
     print("Indexing data")
     mappings.INDEXED_DATA = process_data(raw_csv_dfs)
@@ -613,8 +610,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
     mapping_scaffold = create_scaffold_from_template(template_lines)
 
     if mapping_scaffold is None:
-        print("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
-        return
+        sys.exit("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
 
     packets = []
     # for each identifier's row, make a packet

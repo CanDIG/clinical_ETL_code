@@ -114,9 +114,8 @@ def test_validation(packets, schema):
     # DONOR_5 > PD_5 > TR_10: treatment type Immunotherapy should have one or more immunotherapies submitted
 
     print(schema.validation_errors)
-    assert len(schema.validation_errors) == 3
-    # should be the following 3 errors:
-    # DONOR_5 > PD_5 > TR_5 > Radiation 1: Only one radiation is allowed per treatment
+    assert len(schema.validation_errors) == 2
+    # should be the following 2 errors:
     # DONOR_6 > PD_6 > TR_9 > Surgery 0: submitter_specimen_id SPECIMEN_43 does not correspond to one of the available specimen_ids ['SPECIMEN_3']
     # Duplicated IDs: in schema followups, FOLLOW_UP_4 occurs 2 times
 

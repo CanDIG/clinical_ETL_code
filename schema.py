@@ -67,16 +67,8 @@ class BaseSchema:
             resp = requests.get(self.openapi_url)
             resp.raise_for_status()
             schema = yaml.safe_load(resp.text)
-        except requests.exceptions.HTTPError as e:
-            print("\nHTTPError: There is an error in the url provided, please correct and try again.")
-            print(e)
-            return
-        except requests.exceptions.RequestException as e:
-            print("\nSomething went wrong while trying to read the url provided, please correct and try again.")
-            print(e)
-            return
         except Exception as e:
-            print("\nError reading the openapi schema, please ensure you have provided a url to a valid openapi schema.")
+            print("Error reading the openapi schema, please ensure you have provided a url to a valid openapi schema.")
             print(e)
             return
 

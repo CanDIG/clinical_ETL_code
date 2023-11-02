@@ -359,9 +359,9 @@ class MoHSchema(BaseSchema):
 
 
     def validate_radiations(self, map_json):
-        index = self.validation_schema["radiations"]["extra_args"]["index"]
-        if index > 0:
-            self.fail("Only one radiation is allowed per treatment")
+        # index = self.validation_schema["radiations"]["extra_args"]["index"]
+        # if index > 0:
+        #     self.fail("Only one radiation is allowed per treatment")
 
         for prop in map_json:
             match prop:
@@ -373,9 +373,9 @@ class MoHSchema(BaseSchema):
 
     def validate_surgeries(self, map_json):
         specimen_ids = self.validation_schema["primary_diagnoses"]["extra_args"]["specimen_ids"]
-        index = self.validation_schema["surgeries"]["extra_args"]["index"]
-        if index > 0:
-            self.fail("Only one surgery is allowed per treatment")
+        # index = self.validation_schema["surgeries"]["extra_args"]["index"]
+        # if index > 0:
+        #     self.fail("Only one surgery is allowed per treatment")
 
         if "submitter_specimen_id" not in map_json:
             if "surgery_site" not in map_json or map_json["surgery_site"] is None:

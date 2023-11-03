@@ -164,12 +164,13 @@ def flat_list_val(data_values):
     items = list_val(data_values)
     all_items = []
     for item in items:
-        try:
-            result = ast.literal_eval(item)
-            if "list" in str(type(result)):
-                all_items.extend(result)
-        except Exception:
-            all_items.extend(map(lambda x: x.strip(), item.split(",")))
+        if item is not None:
+            try:
+                result = ast.literal_eval(item)
+                if "list" in str(type(result)):
+                    all_items.extend(result)
+            except Exception:
+                all_items.extend(map(lambda x: x.strip(), item.split(",")))
     return all_items
 
 

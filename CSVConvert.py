@@ -113,7 +113,7 @@ def map_indexed_scaffold(node, line):
             top_frame = mappings._peek_at_top_of_stack()
 
         row = get_row_for_stack_top(top_frame["sheet"], top_frame["rownum"])
-        verbose_print(f"  Comparing to index_values {index_values} to top_frame {row[index_field]}")
+        verbose_print(f"  Comparing to index_values {index_values} to top_frame[{index_field}] {row[index_field]}")
 
         possible_values = []
 

@@ -98,7 +98,7 @@ For each dataset (cohort) that you want to convert, create a directory outside o
 > If you are placing this directory under version control and the cohort is not sample / synthetic data, do not place raw or processed data files in this directory, to avoid any possibility of committing protected data.
 
 ## Manifest file
-The `manifest.yml` file contains settings for the cohort mapping. There is a sample file in `sample_inputs/manifest.yml` with documentation. The fields are:
+The `manifest.yml` file contains settings for the cohort mapping. There is a sample file in [`sample_inputs/manifest.yml`](sample_inputs/manifest.yml) with documentation and example inputs. The fields are:
 
 | field       | description                                                                                                                                                           |
 |-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|

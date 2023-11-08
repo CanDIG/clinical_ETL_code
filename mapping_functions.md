@@ -39,7 +39,7 @@ DONOR.INDEX.primary_diagnoses.INDEX.submitter_primary_diagnosis_id, {single_val(
 DONOR.INDEX.primary_diagnoses.INDEX.date_of_diagnosis, {single_date(PRIMARY_DIAGNOSES_SHEET.date_of_diagnosis)}
 ```
 
-Here, `primary_diagnoses` will be added as an an array for the Donor with `submitter_donor_id`. Each entry in `primary_diagnoses` will use the values on the `PRIMARY_DIAGNOSES_SHEET` that have the same `submitter_donor_id`.
+Here, `primary_diagnoses` will be added as an array for the Donor with `submitter_donor_id`. Each entry in `primary_diagnoses` will use the values on the `PRIMARY_DIAGNOSES_SHEET` that have the same `submitter_donor_id`.
 
 If your schema doesn't contain any instances of a particular indexed field, you can specify `NONE`:
 `{indexed_on(NONE)}`

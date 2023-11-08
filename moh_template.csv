@@ -148,7 +148,7 @@ DONOR.INDEX.comorbidities.INDEX.comorbidity_treatment, {single_val(COMORBIDITIES
 DONOR.INDEX.comorbidities.INDEX.age_at_comorbidity_diagnosis, {integer(COMORBIDITIES_SHEET.age_at_comorbidity_diagnosis)}
 DONOR.INDEX.exposures.INDEX, {indexed_on(EXPOSURES_SHEET.submitter_donor_id)}
 DONOR.INDEX.exposures.INDEX.tobacco_smoking_status, {single_val(EXPOSURES_SHEET.tobacco_smoking_status)}
-DONOR.INDEX.exposures.INDEX.tobacco_type.INDEX, {indexed_on(EXPOSURES_SHEET.tobacco_type)}
+DONOR.INDEX.exposures.INDEX.tobacco_type, {pipe_delim(EXPOSURES_SHEET.tobacco_type)}
 DONOR.INDEX.exposures.INDEX.pack_years_smoked, {float(EXPOSURES_SHEET.pack_years_smoked)}
 DONOR.INDEX.biomarkers.INDEX, {indexed_on(BIOMARKERS_SHEET.submitter_donor_id)}
 DONOR.INDEX.biomarkers.INDEX.er_status, {single_val(BIOMARKERS_SHEET.er_status)}

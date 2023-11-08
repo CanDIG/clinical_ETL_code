@@ -100,14 +100,13 @@ For each dataset (cohort) that you want to convert, create a directory outside o
 ## Manifest file
 The `manifest.yml` file contains settings for the cohort mapping. There is a sample file in `sample_inputs/manifest.yml` with documentation. The fields are:
 
-```yaml
-description:       # A brief description of what mapping task this manifest is being used for
-mapping:           # the mapping template csv file that lists the mappings for each field based on `moh_template.csv`, assumed to be in the same directory as the manifest.yml file
-identifier:        # the unique identifier for the donor
-schema:            # a URL to the openapi schema file
-functions:         # One or more filenames containing additional mapping functions, can be omitted if not needed
-  -                # name of one or more python files with the set of mapping functions to be used in addition to the core set of functions specified in mappings.py. Assumed to be in the same directory as the manifest.yml file
-```
+| field       | description                                                                                                                                                           |
+|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| description | A brief description of what mapping task this manifest is being used for                                                                                              |
+| mapping     | the mapping template csv file that lists the mappings for each field based on `moh_template.csv`, assumed to be in the same directory as the `manifest.yml` file      |
+| identifier  | the unique identifier for the donor or root node                                                                                                                      |
+| schema      | a URL to the openapi schema file                                                                                                                                      |
+| functions   | A list of one or more filenames containing additional mapping functions, can be omitted if not needed. Assumed to be in the same directory as the `manifest.yml` file |
 
 ## Mapping template
 

@@ -50,11 +50,11 @@ Depending on the format of your raw data, you may need to write an additional ti
 
 ### Setting up a cohort directory
 
-For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `data` repository. This cohort directory should contain the same elements as shown in the `sample_inputs` directory, which are:
+For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `data` repository. This cohort directory should contain the same files as shown in the `sample_inputs` directory, which are:
 
-* a `manifest.yml` file with configuration settings for the mapping and schema validation
-* a mapping csv that lists custom mappings for each field (based on `moh_template.csv`)
-* (if needed) a python file that implements any cohort-specific mapping functions
+* a [`manifest.yml`](#Manifest-file) file with configuration settings for the mapping and schema validation
+* a [mapping template](#Mapping-template) csv that lists custom mappings for each field (based on `moh_template.csv`)
+* (if needed) a python file that implements any cohort-specific mapping functions (See [mapping functions](mapping_functions.md) for detailed information)
 
 > [!IMPORTANT]
 > If you are placing this directory under version control and the cohort is not sample / synthetic data, do not place raw or processed data files in this directory, to avoid any possibility of committing protected data.
@@ -74,16 +74,17 @@ The `manifest.yml` file contains settings for the cohort mapping. There is a sam
 
 You'll need to create a mapping template that defines the mapping between the fields in your input files and the fields in the target schema. It also defines what mapping functions (if any) should be used  to transform the input data into the required format to pass validation under the target schema.
 
-Each line in the mapping template is composed of comma separated values with two components. The first value is an `element` or field from the target schema and the second value contains a suggested `mapping method` or function to map a field from an input sheet to the identified `element`. Each `element`, shows the full object linking path to each field required by the model. These values should not be edited.
+Each line in the mapping template is composed of comma separated values with two components. The first value is an `element` or field from the target schema and the second value contains a suggested `mapping method` or function to map a field from an input sheet to a valid value for the identified `element`. Each `element`, shows the full object linking path to each field required by the model. These values should not be edited.
 
-If you're generating a mapping for the current MoH model, you can use the pre-generated [`moh_template.csv`](moh_template.csv) file. This file is modified from the auto-generated template to update a few fields that require specific handling. 
+If you are generating a mapping for the current MoH model, you can use the pre-generated [`moh_template.csv`](moh_template.csv) file. This file is modified from the auto-generated template to update a few fields that require specific handling. 
 
-You will need to edit the `mapping method` column in the following ways:
+You will need to edit the `mapping method` values in each line in the following ways:
 1. Replace the generic sheet names (e.g. `DONOR_SHEET`, `SAMPLE_REGISTRATIONS_SHEET`) with the sheet names you are using as your input to `CSVConvert.py`
 2. Replace suggested field names with the relevant field/column names in your input sheets, if they differ
 
 If the field does not map in the same way as the suggested mapping function you will also need to:
-3. Choose a different existing [mapping function](mappings.py) or write a new function that does the required transformation. See the [mapping instructions](mapping_functions.md) for detailed documentation on writing your own mapping functions.
+
+3. Choose a different existing [mapping function](mappings.py) or write a new function that does the required transformation. (See the [mapping instructions](mapping_functions.md) for detailed documentation on writing your own mapping functions.)
 
 >[!NOTE] 
 > * Do not edit, delete, or re-order the template lines, except to adjust the sheet name, mapping function and field name in the `mapping method` column.
@@ -105,11 +106,11 @@ options:
 ```
 </details>
 
-## Running `CSVConvert` from the command line
+### Running `CSVConvert` from the command line
 
 CSVConvert requires two inputs: 
-1. a path to a multi-sheet spreadsheet or path to csvs specified with `--input`
-2. a path to a `manifest.yml`, the directory that contains the manifest must also contain the other files mentioned in [Setting up a cohort directory](#Setting-up-a-cohort-directory)
+1. a path to a multi-sheet spreadsheet or path to csvs specified with [`--input`](#Input-file/s-format)
+2. a path to a `manifest.yml`, in a directory that also contains the other files defined in [Setting up a cohort directory](#Setting-up-a-cohort-directory)
 
 ```
 $ python CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file] [--test] [--verbose]
@@ -123,11 +124,17 @@ $ python CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file] [--test] 
 --test allows you to add extra lines to your manifest's template file that will be populated in the mapped schema. NOTE: this mapped schema will likely not be a valid mohpacket: it should be used only for debugging.
 ```
 
-The output packets (`<INPUT_DIR>_map.json` and `<INPUT_DIR>_indexed.json`) will be in the parent of the `INPUT` directory / file.
+Example usage:
+
+```
+python CSVconvert.py --input test_data/raw_data --manifest test_data/manifest.yml
+```
+
+The output packets `<INPUT_DIR>_map.json` and `<INPUT_DIR>_indexed.json` will be in the parent of the `INPUT` directory / file. In the example above, this would be in the `test_data` directory.
 
 Validation will automatically be run after the conversion is complete. Any validation errors or warnings will be reported both on the command line and as part of the `<INPUT_DIR>_map.json` file.
 
-## Format of the output files
+#### Format of the output files
 
 `<INPUT_DIR>_map.json` is the main output and contains the results of the mapping, conversion and validation as well as summary statistics. 
 

@@ -58,8 +58,11 @@ If your schema requires more complex mapping calculations, you can define an ind
 
 In addition to mapping column names, you can also transform the values inside the cells to make them align with the schema. We've already seen the simplest case - the `single_val` function takes a single value for the named field and returns it (and should only be used when you expect one single value).
 
-The standard functions are defined in `mappings.py`. They include functions for handling single values, list values, dates, and booleans.
+The standard functions are defined in `mappings.py`. They include functions for handling single values, list values, dates, and booleans. 
 
+Many functions take one or more `data_values` arguments as input. These are a dictionary representing how the CSVConvert script parses each cell of the input data. It is a dictionary of the format `{<field>:{<OBJECT_SHEET>: <value>}}`, e.g. `{'date_of_birth': {'Donor': '6 Jan 1954'}}`. 
+
+A detailed index of all standard functions can be viewed below in the (Standard functions index)[#Standard-functions-index]
 
 ## Writing your own custom functions
 

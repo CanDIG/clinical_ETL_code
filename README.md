@@ -46,7 +46,7 @@ All rows must contain identifiers that allow linkage to the containing schema, f
 
 Data should be [tidy](https://r4ds.had.co.nz/tidy-data.html), with each variable in a separate column, each row representing an observation, and a single data entry in each cell. In the case of fields that can accept an array of values, the values within a cell should be delimited such that a mapping function can accurately return an array of permissible values.
 
-Depending on the format of your raw data, you may need to write an additional tidying script to pre-process. For example, the `ingest_redcap_data.py` converts the export format from redcap into a set of input csvs for CSVConvert.
+Depending on the format of your raw data, you may need to write an additional tidying script to pre-process. For example, the `ingest_redcap_data.py` converts the export format from redcap into a set of input csvs for `CSVConvert`.
 
 ### Setting up a cohort directory
 
@@ -84,7 +84,7 @@ You will need to edit the `mapping method` values in each line in the following 
 
 If the field does not map in the same way as the suggested mapping function you will also need to:
 
-3. Choose a different existing [mapping function](mappings.py) or write a new function that does the required transformation. (See the [mapping instructions](mapping_functions.md) for detailed documentation on writing your own mapping functions.)
+3. Choose a different existing [mapping function](mappings.py) or write a new function that does the required transformation and save it in a python file that is specified in your manifest.yml in the `functions` section. Functions in your custom mapping _must_ be fully referenced by their module name, e.g. `sample_custom_mappings.sex()`. (See the [mapping instructions](mapping_functions.md) for detailed documentation on writing your own mapping functions.)
 
 >[!NOTE] 
 > * Do not edit, delete, or re-order the template lines, except to adjust the sheet name, mapping function and field name in the `mapping method` column.

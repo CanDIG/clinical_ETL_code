@@ -1,6 +1,6 @@
 <!-- markdownlint-disable -->
 
-<a href="../mappings.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 # <kbd>module</kbd> `mappings.py`
 
@@ -20,7 +20,7 @@
 
 ---
 
-<a href="../mappings.py#L25"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L25"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `date`
 
@@ -46,7 +46,7 @@ Parses a list of strings representing dates into a list of strings with dates in
 
 ---
 
-<a href="../mappings.py#L46"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L46"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `single_date`
 
@@ -70,7 +70,7 @@ Parses a single date to YYYY-MM format.
 
 ---
 
-<a href="../mappings.py#L61"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L61"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `has_value`
 
@@ -83,7 +83,7 @@ Returns a boolean based on whether the key in the mapping has a value.
 
 ---
 
-<a href="../mappings.py#L72"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L72"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `single_val`
 
@@ -91,7 +91,7 @@ Returns a boolean based on whether the key in the mapping has a value.
 single_val(data_values)
 ```
 
-Return the input as a single value. 
+Parse a values dict and return the input as a single value. 
 
 
 
@@ -112,7 +112,7 @@ Return the input as a single value.
 
 ---
 
-<a href="../mappings.py#L101"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L101"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `list_val`
 
@@ -126,17 +126,15 @@ Takes a mapping with possibly multiple values from multiple sheets and returns a
 
 **Args:**
  
- - <b>`data_values`</b>:  a values dict 
-
-
+ - <b>`data_values`</b>:  a values dict with a list of values 
 
 **Returns:**
- a list of the data values 
+ The list of values 
 
 
 ---
 
-<a href="../mappings.py#L122"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L121"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `pipe_delim`
 
@@ -150,17 +148,17 @@ Takes a string and splits it into an array based on a pipe delimiter.
 
 **Args:**
  
- - <b>`data_values`</b>:  single pipe-delimited string 
+ - <b>`data_values`</b>:  values dict with single pipe-delimited string, e.g. "a|b|c" 
 
 
 
 **Returns:**
- a list of strings split by pipe 
+ a list of strings split by pipe, e.g. ["a","b","c"] 
 
 
 ---
 
-<a href="../mappings.py#L137"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L136"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `placeholder`
 
@@ -173,7 +171,7 @@ Return a dict with a placeholder key.
 
 ---
 
-<a href="../mappings.py#L142"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L141"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `index_val`
 
@@ -186,7 +184,7 @@ Take a mapping with possibly multiple values from multiple sheets and return an 
 
 ---
 
-<a href="../mappings.py#L155"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L154"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `flat_list_val`
 
@@ -196,10 +194,21 @@ flat_list_val(data_values)
 
 Take a list mapping and break up any stringified lists into multiple values in the list. 
 
+Attempts to use ast.literal_eval() to parse the list, uses split(',') if this fails. 
+
+
+
+**Args:**
+ 
+ - <b>`data_values`</b>:  a values dict with a stringified list, e.g. "['a','b','c']" 
+
+**Returns:**
+ A parsed list of items in the list, e.g. ['a', 'b', 'c'] 
+
 
 ---
 
-<a href="../mappings.py#L169"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L176"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `concat_vals`
 
@@ -213,7 +222,7 @@ Concatenate several data values
 
 **Args:**
  
- - <b>`data_values`</b>:  a list of values 
+ - <b>`data_values`</b>:  a values dict with a list of values 
 
 
 
@@ -223,7 +232,7 @@ Concatenate several data values
 
 ---
 
-<a href="../mappings.py#L184"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L191"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `boolean`
 
@@ -247,7 +256,7 @@ Convert value to boolean.
 
 ---
 
-<a href="../mappings.py#L204"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L211"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `integer`
 
@@ -258,9 +267,21 @@ integer(data_values)
 Convert a value to an integer. 
 
 
+
+**Args:**
+ 
+ - <b>`data_values`</b>:  a values dict with value to be converted to an int 
+
+**Returns:**
+ an integer version of the input value 
+
+**Raises:**
+ ValueError if int() cannot convert the input 
+
+
 ---
 
-<a href="../mappings.py#L216"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L231"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `float_val`
 
@@ -279,7 +300,7 @@ Convert a value to a float.
 
 
 **Returns:**
- A string or integer converted to a float or None if null value 
+ A values dict with a string or integer converted to a float or None if null value 
 
 
 
@@ -289,7 +310,7 @@ Convert a value to a float.
 
 ---
 
-<a href="../mappings.py#L249"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L264"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `ontology_placeholder`
 
@@ -305,19 +326,19 @@ Should only be used for testing.
 
 **Args:**
  
- - <b>`data_values`</b>:  a string value representing an ontology label 
+ - <b>`data_values`</b>:  a values dict with a string value representing an ontology label 
 
 
 
 **Returns:**
  a dict of the format 
- - <b>`{"id"`</b>:  "placeholder", 
- - <b>`"label"`</b>:  data_values} 
+ - <b>``{"id"`</b>:  "placeholder", 
+ - <b>`"label"`</b>:  data_values}` 
 
 
 ---
 
-<a href="../mappings.py#L273"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L288"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `indexed_on`
 
@@ -331,21 +352,20 @@ Default indexing value for arrays.
 
 **Args:**
  
- - <b>`data_values`</b>:  a dict of the format 
- - <b>`{'<identifier_field>'`</b>: {'<sheet_name>':['<identifier>']}} 
+ - <b>`data_values`</b>:  a values dict of identifiers to be indexed 
 
 
 
 **Returns:**
  a dict of the format 
- - <b>`{"field"`</b>:  <identifier_field>, 
+ - <b>``{"field"`</b>:  <identifier_field>, 
  - <b>`"sheet_name"`</b>:  <sheet_name>, 
- - <b>`"values"`</b>:  [<identifiers>]} 
+ - <b>`"values"`</b>:  [<identifiers>]}` 
 
 
 ---
 
-<a href="../mappings.py#L296"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L310"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `moh_indexed_on_donor_if_others_absent`
 
@@ -361,15 +381,17 @@ Specifically for the FollowUp object which can be linked to multiple objects.
 
 **Args:**
  
- - <b>`data_values`</b>:  dict with lists of identifiers 
+ - <b>`**data_values`</b>:  any number of values dicts with lists of identifiers, NOTE: values dict with donor identifiers must be specified first. 
 
 
 
 **Returns:**
- a dict of the format 
- - <b>`{"field"`</b>:  <field>, 
- - <b>`"sheet"`</b>:  <sheet>, 
- - <b>`"values"`</b>:  [<identifier or None>, <identifier or None>...]} Where the 'values' list contains a donor identifier if it should be linked to that donor or None if already linked to another object. 
+ a dict of the format: 
+
+
+ - <b>`{'field'`</b>:  <field>, 'sheet': <sheet>, 'values': [<identifier or None>, <identifier or None>...]} 
+
+Where the 'values' list contains a donor identifier if it should be linked to that donor or None if already linked to another object. 
 
 
 ---
@@ -379,7 +401,7 @@ Specifically for the FollowUp object which can be linked to multiple objects.
 
 
 
-<a href="../mappings.py#L16"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/CanDIG/clinical_ETL_code/blob/main/mappings.py#L16"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 

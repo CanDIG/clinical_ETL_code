@@ -228,7 +228,7 @@ def integer(data_values):
         return None
 
 
-def float_val(data_values):
+def float(data_values):
     """Convert a value to a float.
 
     Args:
@@ -270,9 +270,8 @@ def ontology_placeholder(data_values):
         data_values: a values dict with a string value representing an ontology label
 
     Returns:
-        a dict of the format
-        {"id": "placeholder",
-         "label": data_values}
+        a dict of the format:
+        {"id": "placeholder","label": data_values}
     """
     if "str" in str(type(data_values)):
         return {
@@ -292,10 +291,8 @@ def indexed_on(data_values):
         data_values: a values dict of identifiers to be indexed
 
     Returns:
-        a dict of the format
-        {"field": <identifier_field>,
-         "sheet_name": <sheet_name>,
-         "values": [<identifiers>]}
+        a dict of the format:
+        {"field": <identifier_field>,"sheet_name": <sheet_name>,"values": [<identifiers>]}
     """
     field = list(data_values.keys())[0]
     sheet = list(data_values[field].keys())[0]
@@ -317,10 +314,10 @@ def moh_indexed_on_donor_if_others_absent(data_values):
         must be specified first.
 
     Returns:
-        a dict of the format
-        {"field": <field>,
-        "sheet": <sheet>,
-        "values": [<identifier or None>, <identifier or None>...]}
+        a dict of the format:
+
+            {'field': <field>, 'sheet': <sheet>, 'values': [<identifier or None>, <identifier or None>...]}
+
         Where the 'values' list contains a donor identifier if it should be linked to that donor or None if already
         linked to another object.
     """

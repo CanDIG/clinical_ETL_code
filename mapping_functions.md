@@ -119,7 +119,7 @@ represents the following JSON dict:
 
 ```
 
-## Standard Functions Index
+# Standard Functions Index
 
 # <kbd>module</kbd> `mappings`
 

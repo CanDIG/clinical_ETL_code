@@ -121,6 +121,8 @@ represents the following JSON dict:
 
 # Standard Functions Index
 
+<!--- documentation below this line is generated automatically from docstrings by running generate_mapping_docs.py. Do not edit directly. --->
+
 # <kbd>module</kbd> `mappings`
 
 

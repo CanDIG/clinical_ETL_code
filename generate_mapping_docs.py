@@ -16,6 +16,7 @@ def main():
         else:
             updated_mapping_functions.append(line)
     updated_mapping_functions.append("# Standard Functions Index\n")
+    updated_mapping_functions.append("\n<!--- documentation below this line is generated automatically by running generate_mapping_docs.py --->\n")
     updated_mapping_functions.append(mappings_docs)
     with open("mapping_functions.md", "w+") as f:
         f.writelines(updated_mapping_functions)

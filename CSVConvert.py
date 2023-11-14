@@ -7,6 +7,7 @@ import json
 import mappings
 import os
 import pandas
+import csv
 import re
 import sys
 import yaml
@@ -401,17 +402,22 @@ def read_mapping_template(mapping_path):
     template_lines = []
     try:
         with open(mapping_path, 'r') as f:
-            lines = f.readlines()
+            lines = csv.reader(f)
             for line in lines:
-                if line.startswith("#"):
+                if len(line) == 0:
                     continue
-                if re.match(r"^\s*$", line):
+                if line[0].startswith("#"):
                     continue
-                template_lines.append(line)
+                joined_line = ''
+                for value in line:
+                    if value == '':
+                        continue
+                    else:
+                        joined_line = joined_line + value + ','
+                template_lines.append(joined_line.rstrip(','))
     except FileNotFoundError:
         sys.exit(f"Mapping template {mapping_path} not found. Ensure your mapping template is in the directory with the"
                  f" manifest.yml and is specified correctly.")
-
     return template_lines
 
 
@@ -540,7 +546,7 @@ def check_for_sheet_inconsistencies(template_sheets, csv_sheets):
     if len(csv_template_diff) > 0:
         # Exit here because if we can't find a mapping for a field we can't properly map the inputs
         sys.exit("The following sheet names are in the input csvs but not found in the mapping template:" + nl +
-              nl.join(csv_template_diff) + nl + "Please correct the sheets above and try again.")
+                 nl.join(csv_template_diff) + nl + "Please correct the sheets above and try again.")
 
 
 def load_manifest(manifest_file):

@@ -149,7 +149,7 @@ DONOR.INDEX.comorbidities.INDEX.age_at_comorbidity_diagnosis, {integer(COMORBIDI
 DONOR.INDEX.exposures.INDEX, {indexed_on(EXPOSURES_SHEET.submitter_donor_id)}
 DONOR.INDEX.exposures.INDEX.tobacco_smoking_status, {single_val(EXPOSURES_SHEET.tobacco_smoking_status)}
 DONOR.INDEX.exposures.INDEX.tobacco_type, {pipe_delim(EXPOSURES_SHEET.tobacco_type)}
-DONOR.INDEX.exposures.INDEX.pack_years_smoked, {float_val(EXPOSURES_SHEET.pack_years_smoked)}
+DONOR.INDEX.exposures.INDEX.pack_years_smoked, {float(EXPOSURES_SHEET.pack_years_smoked)}
 DONOR.INDEX.biomarkers.INDEX, {indexed_on(BIOMARKERS_SHEET.submitter_donor_id)}
 DONOR.INDEX.biomarkers.INDEX.er_status, {single_val(BIOMARKERS_SHEET.er_status)}
 DONOR.INDEX.biomarkers.INDEX.pr_status, {single_val(BIOMARKERS_SHEET.pr_status)}
@@ -166,8 +166,8 @@ DONOR.INDEX.biomarkers.INDEX.test_date, {single_date(BIOMARKERS_SHEET.test_date)
 DONOR.INDEX.biomarkers.INDEX.psa_level, {integer(BIOMARKERS_SHEET.psa_level)}
 DONOR.INDEX.biomarkers.INDEX.ca125, {integer(BIOMARKERS_SHEET.ca125)}
 DONOR.INDEX.biomarkers.INDEX.cea, {integer(BIOMARKERS_SHEET.cea)}
-DONOR.INDEX.biomarkers.INDEX.er_percent_positive, {float_val(BIOMARKERS_SHEET.er_percent_positive)}
-DONOR.INDEX.biomarkers.INDEX.pr_percent_positive, {float_val(BIOMARKERS_SHEET.pr_percent_positive)}
+DONOR.INDEX.biomarkers.INDEX.er_percent_positive, {float(BIOMARKERS_SHEET.er_percent_positive)}
+DONOR.INDEX.biomarkers.INDEX.pr_percent_positive, {float(BIOMARKERS_SHEET.pr_percent_positive)}
 DONOR.INDEX.followups.INDEX, {moh_indexed_on_donor_if_others_absent(FOLLOWUPS_SHEET.submitter_donor_id, FOLLOWUPS_SHEET.submitter_primary_diagnosis_id, FOLLOWUPS_SHEET.submitter_treatment_id)}
 DONOR.INDEX.followups.INDEX.submitter_follow_up_id, {single_val(FOLLOWUPS_SHEET.submitter_follow_up_id)}
 DONOR.INDEX.followups.INDEX.date_of_followup, {single_date(FOLLOWUPS_SHEET.date_of_followup)}

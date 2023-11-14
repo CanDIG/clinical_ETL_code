@@ -73,7 +73,7 @@
 < DONOR.INDEX.exposures.INDEX.pack_years_smoked, {single_val(EXPOSURES_SHEET.pack_years_smoked)}
 ---
 > DONOR.INDEX.exposures.INDEX.tobacco_type, {pipe_delim(EXPOSURES_SHEET.tobacco_type)}
-> DONOR.INDEX.exposures.INDEX.pack_years_smoked, {float_val(EXPOSURES_SHEET.pack_years_smoked)}
+> DONOR.INDEX.exposures.INDEX.pack_years_smoked, {float(EXPOSURES_SHEET.pack_years_smoked)}
 159c160
 < DONOR.INDEX.biomarkers.INDEX.hpv_strain.INDEX, {indexed_on(BIOMARKERS_SHEET.hpv_strain)}
 ---
@@ -89,8 +89,8 @@
 > DONOR.INDEX.biomarkers.INDEX.psa_level, {integer(BIOMARKERS_SHEET.psa_level)}
 > DONOR.INDEX.biomarkers.INDEX.ca125, {integer(BIOMARKERS_SHEET.ca125)}
 > DONOR.INDEX.biomarkers.INDEX.cea, {integer(BIOMARKERS_SHEET.cea)}
-> DONOR.INDEX.biomarkers.INDEX.er_percent_positive, {float_val(BIOMARKERS_SHEET.er_percent_positive)}
-> DONOR.INDEX.biomarkers.INDEX.pr_percent_positive, {float_val(BIOMARKERS_SHEET.pr_percent_positive)}
+> DONOR.INDEX.biomarkers.INDEX.er_percent_positive, {float(BIOMARKERS_SHEET.er_percent_positive)}
+> DONOR.INDEX.biomarkers.INDEX.pr_percent_positive, {float(BIOMARKERS_SHEET.pr_percent_positive)}
 > DONOR.INDEX.followups.INDEX, {moh_indexed_on_donor_if_others_absent(FOLLOWUPS_SHEET.submitter_donor_id, FOLLOWUPS_SHEET.submitter_primary_diagnosis_id, FOLLOWUPS_SHEET.submitter_treatment_id)}
 176,177c177,178
 < DONOR.INDEX.followups.INDEX.method_of_progression_status.INDEX, {indexed_on(FOLLOWUPS_SHEET.method_of_progression_status)}

@@ -175,7 +175,7 @@ DONOR.INDEX.biomarkers.INDEX.ca125, {integer(Biomarker.ca125)}
 DONOR.INDEX.biomarkers.INDEX.cea, {integer(Biomarker.cea)}
 DONOR.INDEX.biomarkers.INDEX.er_percent_positive, {integer(Biomarker.er_percent_positive)}
 DONOR.INDEX.biomarkers.INDEX.pr_percent_positive, {integer(Biomarker.pr_percent_positive)}
-DONOR.INDEX.followups.INDEX, {testmap.indexed_on_if_absent(Followup.submitter_donor_id, Followup.submitter_treatment_id, Followup.submitter_primary_diagnosis_id)}
+DONOR.INDEX.followups.INDEX, {moh_indexed_on_donor_if_others_absent(Followup.submitter_donor_id, Followup.submitter_primary_diagnosis_id, Followup.submitter_treatment_id)}
 DONOR.INDEX.followups.INDEX.submitter_follow_up_id, {single_val(Followup.submitter_follow_up_id)}
 DONOR.INDEX.followups.INDEX.date_of_followup, {single_date(Followup.date_of_followup)}
 DONOR.INDEX.followups.INDEX.disease_status_at_followup, {single_val(Followup.disease_status_at_followup)}

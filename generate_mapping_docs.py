@@ -1,5 +1,6 @@
 import subprocess
 
+
 def main():
     docs = subprocess.check_output(["pdoc",  "mappings"])
     print(docs.decode())
@@ -18,6 +19,7 @@ def main():
     updated_mapping_functions.append(docs.decode())
     with open("mapping_functions.md", "w+") as f:
         f.writelines(updated_mapping_functions)
+
 
 if __name__ == '__main__':
     main()

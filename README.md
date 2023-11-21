@@ -10,15 +10,16 @@ Most of the heavy lifting is done in the [`CSVConvert.py`](CSVConvert.py) script
 This script:
 * reads a file (`.xlsx` or `.csv`) or a directory of files (`.csv`)
 * reads a [template file](#mapping-template) that contains a list of fields and (if needed) a mapping function
-* for each field for each patient, applies the mapping function to transform the raw data into valid model data
+* for each field for each patient, applies the mapping function to transform the raw data into permissible values against the provided schema
 * exports the data into a json file(s) appropriate for ingest
+* performs Validation and gives warning and error feedback for any data that does not meet the schema requirements
 
 ### Environment set-up & Installation
 Prerequisites:
 - [Python 3.10+](https://www.python.org/)
 - [pip](https://github.com/pypa/pip/)
 
-Set up and activate a [virtual environment](https://docs.python.org/3/tutorial/venv.html) using the python environment tool of your choice. For example using `venv` on linux/mac systems
+Set up and activate a [virtual environment](https://docs.python.org/3/tutorial/venv.html) using the python environment tool of your choice. For example using `venv` on linux/macOS systems
 ```commandline
 python -m venv /path/to/new/virtual/environment
 source /path/to/new/virtual/environment/bin/activate
@@ -36,13 +37,13 @@ Install the repo's requirements in your virtual environment
 pip install -r requirements.txt
 ```
 
-Before running the script, you will need to have your clinical data in a tabular format (`xlsx`/`csv`) that can be read into program and a cohort directory containing the files that define the schema and mapping configurations.
+Before running the script, you will need to have your input files, this will be clinical data in a tabular format (`xlsx`/`csv`) that can be read into program and a cohort directory containing the files that define the schema and mapping configurations.
 
 ### Input file/s format
 
-The input for `CSVConvert` is either a single xlsx file, a single csv, or a directory of csvs that contain your clinical data. If providing a spreadsheet, there can be multiple sheets (usually one for each sub-schema). Examples of how csvs may look can be found in [test_data/raw_data]
+The input for `CSVConvert` is either a single xlsx file, a single csv, or a directory of csvs that contain your clinical data. If providing a spreadsheet, there can be multiple sheets (usually one for each sub-schema). Examples of how csvs may look can be found in [test_data/raw_data](test_data/raw_data).
 
-All rows must contain identifiers that allow linkage to the containing schema, for example, a row that describes a Treatment must have a link to the Donor / Patient id for that Treatment.
+All rows must contain identifiers that allow linkage between the objects in the schema, for example, a row that describes a Treatment must have a link to the Donor / Patient id for that Treatment.
 
 Data should be [tidy](https://r4ds.had.co.nz/tidy-data.html), with each variable in a separate column, each row representing an observation, and a single data entry in each cell. In the case of fields that can accept an array of values, the values within a cell should be delimited such that a mapping function can accurately return an array of permissible values.
 
@@ -54,7 +55,7 @@ For each dataset (cohort) that you want to convert, create a directory outside o
 
 * a [`manifest.yml`](#Manifest-file) file with configuration settings for the mapping and schema validation
 * a [mapping template](#Mapping-template) csv that lists custom mappings for each field (based on `moh_template.csv`)
-* (if needed) a python file that implements any cohort-specific mapping functions (See [mapping functions](mapping_functions.md) for detailed information)
+* (if needed) One or more python files that implement any cohort-specific mapping functions (See [mapping functions](mapping_functions.md) for detailed information)
 
 > [!IMPORTANT]
 > If you are placing this directory under version control and the cohort is not sample / synthetic data, do not place raw or processed data files in this directory, to avoid any possibility of committing protected data.
@@ -76,15 +77,15 @@ You'll need to create a mapping template that defines the mapping between the fi
 
 Each line in the mapping template is composed of comma separated values with two components. The first value is an `element` or field from the target schema and the second value contains a suggested `mapping method` or function to map a field from an input sheet to a valid value for the identified `element`. Each `element`, shows the full object linking path to each field required by the model. These values should not be edited.
 
-If you are generating a mapping for the current MoH model, you can use the pre-generated [`moh_template.csv`](moh_template.csv) file. This file is modified from the auto-generated template to update a few fields that require specific handling. 
+If you are generating a mapping for the current CanDIG MoH model, you can use the pre-generated [`moh_template.csv`](moh_template.csv) file. This file is modified from the auto-generated template to update a few fields that require specific handling. 
 
 You will need to edit the `mapping method` values in each line in the following ways:
-1. Replace the generic sheet names (e.g. `DONOR_SHEET`, `SAMPLE_REGISTRATIONS_SHEET`) with the sheet names you are using as your input to `CSVConvert.py`
-2. Replace suggested field names with the relevant field/column names in your input sheets, if they differ
+1. Replace the generic sheet names (e.g. `DONOR_SHEET`, `SAMPLE_REGISTRATIONS_SHEET`) with the sheet/csv names you are using as your input to `CSVConvert.py`
+2. Replace suggested field names with the relevant field/column names in your input sheets/csvs, if they differ
 
 If the field does not map in the same way as the suggested mapping function you will also need to:
 
-3. Choose a different existing [mapping function](mappings.py) or write a new function that does the required transformation and save it in a python file that is specified in your manifest.yml in the `functions` section. Functions in your custom mapping _must_ be fully referenced by their module name, e.g. `sample_custom_mappings.sex()`. (See the [mapping instructions](mapping_functions.md) for detailed documentation on writing your own mapping functions.)
+3. Choose a different existing [mapping function](mappings.py) or write a new function that does the required transformation and save it in a python file that is specified in your `manifest.yml` in the `functions` section. Functions in your custom mapping _must_ be fully referenced by their module name, e.g. `sample_custom_mappings.sex()`. (See the [mapping instructions](mapping_functions.md) for detailed documentation on writing your own mapping functions.)
 
 >[!NOTE] 
 > * Do not edit, delete, or re-order the template lines, except to adjust the sheet name, mapping function and field name in the `mapping method` column.
@@ -217,11 +218,11 @@ You can validate the generated json mapping file against the MoH data model. The
 ```
 $ python validate_coverage.py [-h] [--input map.json] [--manifest MAPPING]
 
---json: path to the map.json file created by CSVConvert
-
---manifest: Path to a manifest file describing the mapping
+--json JSON     <input-file-path-name>_map.json file generated by CSVConvert.py.
+--verbose, --v  Print extra information
 ```
-The output will report errors and warnings separately. Jsonschema validation failures and other data mismatches will be listed as errors, while fields that are conditionally required as part of the MoH model but are missing will be reported as warnings.
+
+The output will report errors and warnings separately. JSON schema validation failures and other data mismatches will be listed as errors, while fields that are conditionally required as part of the MoH model but are missing will be reported as warnings.
 
 <!-- # NOTE: the following sections have not been updated for current versions.
 

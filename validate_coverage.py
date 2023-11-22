@@ -205,6 +205,8 @@ def validate_coverage(map_json, verbose=False):
         mappings.VERBOSE = True
 
     # read the schema and generate a scaffold
+    if "openapi_url" not in map_json:
+        return {"message": "No openapi_url schema available"}
     schema = MoHSchema(map_json["openapi_url"])
     if schema.json_schema is None:
         sys.exit(f"Did not find an openapi schema at {map_json['openapi_url']}; please check the 'openapi_url' in the map json file.")
@@ -223,7 +225,8 @@ def validate_coverage(map_json, verbose=False):
     # print(json.dumps(schema.validation_results, indent=4))
     return {
         "errors": schema.validation_errors,
-        "warnings": schema.validation_warnings
+        "warnings": schema.validation_warnings,
+        "statistics": schema.statistics
     }
 
 def main(args):

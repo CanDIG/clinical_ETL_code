@@ -410,11 +410,14 @@ def read_mapping_template(mapping_path):
                     continue
                 joined_line = ''
                 for value in line:
-                    if value == '':
+                    if value.strip() == '':
                         continue
                     else:
-                        joined_line = joined_line + value + ','
-                template_lines.append(joined_line.rstrip(','))
+                        joined_line = joined_line + value.strip() + ','
+                if joined_line == '':
+                    continue
+                else:
+                    template_lines.append(joined_line.rstrip(','))
     except FileNotFoundError:
         sys.exit(f"Mapping template {mapping_path} not found. Ensure your mapping template is in the directory with the"
                  f" manifest.yml and is specified correctly.")

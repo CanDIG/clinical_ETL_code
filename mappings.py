@@ -250,17 +250,6 @@ def float(data_values):
         return None
 
 
-# This seems like a duplicate of the method above, ok to delete?
-# def double(data_values):
-#     cell = single_val(data_values)
-#     if cell is None or cell.lower() == "nan":
-#         return None
-#     try:
-#         return float_val(cell)
-#     except:
-#         return None
-
-
 def ontology_placeholder(data_values):
     """Placeholder function to make a fake ontology entry.
 

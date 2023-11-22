@@ -104,9 +104,9 @@ DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.surgery_sit
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.surgery_location, {single_val(SURGERIES_SHEET.surgery_location)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.tumour_focality, {single_val(SURGERIES_SHEET.tumour_focality)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.residual_tumour_classification, {single_val(SURGERIES_SHEET.residual_tumour_classification)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_involved, {pipe_delim(SURGERIES_SHEET.margin_types_involved)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_not_involved, {pipe_delim(SURGERIES_SHEET.margin_types_not_involved)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_not_assessed, {pipe_delim(SURGERIES_SHEET.margin_types_not_assessed)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_involved.INDEX, {pipe_delim(SURGERIES_SHEET.margin_types_involved)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_not_involved.INDEX, {pipe_delim(SURGERIES_SHEET.margin_types_not_involved)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.margin_types_not_assessed.INDEX, {pipe_delim(SURGERIES_SHEET.margin_types_not_assessed)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.lymphovascular_invasion, {single_val(SURGERIES_SHEET.lymphovascular_invasion)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.perineural_invasion, {single_val(SURGERIES_SHEET.perineural_invasion)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.submitter_specimen_id, {single_val(SURGERIES_SHEET.submitter_specimen_id)}
@@ -148,7 +148,7 @@ DONOR.INDEX.comorbidities.INDEX.comorbidity_treatment, {single_val(COMORBIDITIES
 DONOR.INDEX.comorbidities.INDEX.age_at_comorbidity_diagnosis, {integer(COMORBIDITIES_SHEET.age_at_comorbidity_diagnosis)}
 DONOR.INDEX.exposures.INDEX, {indexed_on(EXPOSURES_SHEET.submitter_donor_id)}
 DONOR.INDEX.exposures.INDEX.tobacco_smoking_status, {single_val(EXPOSURES_SHEET.tobacco_smoking_status)}
-DONOR.INDEX.exposures.INDEX.tobacco_type, {pipe_delim(EXPOSURES_SHEET.tobacco_type)}
+DONOR.INDEX.exposures.INDEX.tobacco_type.INDEX, {indexed_on(EXPOSURES_SHEET.tobacco_type)}
 DONOR.INDEX.exposures.INDEX.pack_years_smoked, {float(EXPOSURES_SHEET.pack_years_smoked)}
 DONOR.INDEX.biomarkers.INDEX, {indexed_on(BIOMARKERS_SHEET.submitter_donor_id)}
 DONOR.INDEX.biomarkers.INDEX.er_status, {single_val(BIOMARKERS_SHEET.er_status)}

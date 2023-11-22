@@ -68,9 +68,11 @@
 ---
 > DONOR.INDEX.primary_diagnoses.INDEX.followups.INDEX.method_of_progression_status, {pipe_delim(FOLLOWUPS_SHEET.method_of_progression_status)}
 > DONOR.INDEX.primary_diagnoses.INDEX.followups.INDEX.anatomic_site_progression_or_recurrence, {pipe_delim(FOLLOWUPS_SHEET.anatomic_site_progression_or_recurrence)}
-151c152
+150,151c151,152
+< DONOR.INDEX.exposures.INDEX.tobacco_type.INDEX, {indexed_on(EXPOSURES_SHEET.tobacco_type)}
 < DONOR.INDEX.exposures.INDEX.pack_years_smoked, {single_val(EXPOSURES_SHEET.pack_years_smoked)}
 ---
+> DONOR.INDEX.exposures.INDEX.tobacco_type, {pipe_delim(EXPOSURES_SHEET.tobacco_type)}
 > DONOR.INDEX.exposures.INDEX.pack_years_smoked, {float(EXPOSURES_SHEET.pack_years_smoked)}
 159c160
 < DONOR.INDEX.biomarkers.INDEX.hpv_strain.INDEX, {indexed_on(BIOMARKERS_SHEET.hpv_strain)}

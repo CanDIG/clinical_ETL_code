@@ -7,6 +7,7 @@ import json
 import mappings
 import os
 import pandas
+import csv
 import re
 import sys
 import yaml
@@ -22,14 +23,13 @@ def verbose_print(message):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input', type=str, required = True, help="Path to either an xlsx file or a directory of csv files for ingest")
+    parser.add_argument('--input', type=str, required=True, help="Path to either an xlsx file or a directory of csv files for ingest")
     # parser.add_argument('--api_key', type=str, help="BioPortal API key found in BioPortal personal account settings")
     # parser.add_argument('--email', type=str, help="Contact email to access NCBI clinvar API. Required by Entrez")
-    #parser.add_argument('--schema', type=str, help="Schema to use for template; default is mCodePacket")
-    parser.add_argument('--manifest', type=str, required = True, help="Path to a manifest file describing the mapping."
-                                                                  " See README for more information")
+    # parser.add_argument('--schema', type=str, help="Schema to use for template; default is mCodePacket")
+    parser.add_argument('--manifest', type=str, required=True, help="Path to a manifest file describing the mapping. See README for more information")
     parser.add_argument('--test', action="store_true", help="Use exact template specified in manifest: do not remove extra lines")
-    parser.add_argument('--verbose', '--v', action="store_true", help="Print extra information")
+    parser.add_argument('--verbose', '--v', action="store_true", help="Print extra information, useful for debugging and understanding how the code runs.")
     args = parser.parse_args()
     return args
 
@@ -102,7 +102,7 @@ def map_indexed_scaffold(node, line):
     # only process if there is data for this IDENTIFIER in the index_sheet
     if mappings.IDENTIFIER in mappings.INDEXED_DATA['data'][index_sheet]:
         if index_values is not None:
-        #     # add this new indexed value into the indexed_data table
+            # add this new indexed value into the indexed_data table
             mappings.INDEXED_DATA['data'][index_sheet][mappings.IDENTIFIER][index_field] = index_values
         top_frame = mappings._peek_at_top_of_stack()
 
@@ -177,7 +177,8 @@ def parse_sheet_from_field(param):
             return None, None
     if param in mappings.INDEXED_DATA["columns"]:
         if len(mappings.INDEXED_DATA["columns"][param]) > 1:
-            mappings._warn(f"There are multiple sheets that contain column name {param}. Please specify the exact sheet in the mapping.")
+            mappings._warn(
+                f"There are multiple sheets that contain column name {param}. Please specify the exact sheet in the mapping.")
         return param, mappings.INDEXED_DATA["columns"][param][0]
     return None, None
 
@@ -249,6 +250,7 @@ def populate_data_for_params(params, rownum):
                 data_values[param][sheet] = []
     return data_values
 
+
 def eval_mapping(node_name, rownum):
     """
     Given the identifier field, the data, and a particular schema node, evaluate
@@ -305,17 +307,17 @@ def ingest_raw_data(input_path):
 
 
 def process_data(raw_csv_dfs):
-    """Takes a set of raw dataframes with a common identifier and merges into a  JSON data structure."""
+    """Takes a set of raw dataframes with a common identifier and merges into a JSON data structure."""
     final_merged = {}
     cols_index = {}
     individuals = []
 
     for page in raw_csv_dfs.keys():
         print(f"Processing sheet {page}...")
-        df = raw_csv_dfs[page].dropna(axis='index', how='all')\
-            .dropna(axis='columns', how='all')\
-            .applymap(str)\
-            .applymap(lambda x: x.strip())\
+        df = raw_csv_dfs[page].dropna(axis='index', how='all') \
+            .dropna(axis='columns', how='all') \
+            .applymap(str) \
+            .applymap(lambda x: x.strip()) \
             .drop_duplicates()  # drop absolutely identical lines
 
         # Sort by identifier and then tag any dups
@@ -393,23 +395,34 @@ def process_mapping(line, test=False):
         return value, elems
     return line, None
 
+
 def read_mapping_template(mapping_path):
     """Given a path to a mapping template file, read the lines and
     return them as an array."""
     template_lines = []
     try:
         with open(mapping_path, 'r') as f:
-            lines = f.readlines()
+            lines = csv.reader(f)
             for line in lines:
-                if line.startswith("#"):
+                if len(line) == 0:
                     continue
-                if re.match(r"^\s*$", line):
+                if line[0].startswith("#"):
                     continue
-                template_lines.append(line)
+                joined_line = ''
+                for value in line:
+                    if value.strip() == '':
+                        continue
+                    else:
+                        joined_line = joined_line + value.strip() + ','
+                if joined_line == '':
+                    continue
+                else:
+                    template_lines.append(joined_line.rstrip(','))
     except FileNotFoundError:
-        print(f"Mapping template {mapping_path} not found")
-
+        sys.exit(f"Mapping template {mapping_path} not found. Ensure your mapping template is in the directory with the"
+                 f" manifest.yml and is specified correctly.")
     return template_lines
+
 
 def create_scaffold_from_template(lines, test=False):
     """Given lines from a template mapping csv file, create a scaffold
@@ -421,7 +434,7 @@ def create_scaffold_from_template(lines, test=False):
             # this line is a comment, skip it
             continue
         if re.match(r"^\s*$", line):
-            #print(f"skipping {line}")
+            # print(f"skipping {line}")
             continue
         value, elems = process_mapping(line, test)
         # elems are the first column in the csv, the parts of the schema field,
@@ -435,16 +448,16 @@ def create_scaffold_from_template(lines, test=False):
                 # not seen yet, add empty list
                 props[x] = []
             if len(elems) > 0:
-                tempvar=(".".join(elems)+","+value)
-                #print(f"Appending tempvar {tempvar} to props for {x} : {line}")
-                props[x].append(".".join(elems)+","+value)
+                tempvar = (".".join(elems) + "," + value)
+                # print(f"Appending tempvar {tempvar} to props for {x} : {line}")
+                props[x].append(".".join(elems) + "," + value)
             elif value != "":
-                #print(f"Appending value {value} to props for {x} : {line}")
+                # print(f"Appending value {value} to props for {x} : {line}")
                 props[x].append(value)
             else:
-                #print(f"How do we get here, {x}, adding empty list : {line}")
+                # print(f"How do we get here, {x}, adding empty list : {line}")
                 props[x] = [x]
-            #print(f"Now {props[x]} for {x}")
+            # print(f"Now {props[x]} for {x}")
         else:
             return line
 
@@ -458,7 +471,7 @@ def create_scaffold_from_template(lines, test=False):
     #         empty_keys.append(key)
     # for key in empty_keys:
     #     props.pop(key)
-    #print(f"Cleared empty keys {empty_keys}")
+    # print(f"Cleared empty keys {empty_keys}")
 
     for key in props.keys():
         if key == "INDEX":  # this maps to a list
@@ -483,8 +496,8 @@ def scan_template_for_duplicate_mappings(template_lines):
             if val not in field_map:
                 field_map[val] = []
             field_map[val].append(template_line)
-                # else:
-                #     print(f"WARNING: No parameter '{val}' exists")
+            # else:
+            #     print(f"WARNING: No parameter '{val}' exists")
     data_values = list(field_map.keys())
     for dv in data_values:
         indices = []
@@ -506,21 +519,37 @@ def scan_template_for_duplicate_mappings(template_lines):
             indexed_on = []
             for i in field_map[dv]:
                 bits = i.split(".")
-                indexed_on.append(".".join(bits[len(bits)-2:len(bits)-1]))
+                indexed_on.append(".".join(bits[len(bits) - 2:len(bits) - 1]))
             uniques = list(set(indexed_on))
-            for u in range(0,len(uniques)):
+            for u in range(0, len(uniques)):
                 count = 0
-                for i in range(0,len(indexed_on)):
+                for i in range(0, len(indexed_on)):
                     if uniques[u] == indexed_on[i]:
                         count += 1
                 if count > 1:
                     msg = f"ERROR: Key {dv} can only be used to index one line. If one of these duplicates does not have an index, use {{indexed_on(NONE)}}:\n"
-                    for i in range(0,len(indexed_on)):
+                    for i in range(0, len(indexed_on)):
                         msg += f"    {field_map[dv][i]}\n"
                     raise Exception(msg)
 
-    #print(json.dumps(field_map, indent=4))
+    # print(json.dumps(field_map, indent=4))
 
+
+def check_for_sheet_inconsistencies(template_sheets, csv_sheets):
+    nl = "\n"
+    verbose_print(f"Expected sheet/csv names based on template_csv: {nl}{nl.join(template_sheets)}{nl}")
+    verbose_print(f"Expected sheet/csv names based on input files:{nl}{nl.join(csv_sheets)}{nl}")
+    template_csv_diff = template_sheets.difference(csv_sheets)
+    csv_template_diff = csv_sheets.difference(template_sheets)
+    if len(template_csv_diff) > 0:
+        # Print a warning if verbose enabled, it is possible that the template sheet has more than is required
+        print("WARNING: The following csv/sheet names are in the mapping template but were not found in the input sheets"
+              "/csvs:" + nl + nl.join(template_csv_diff) + nl +
+              "If this is an error please correct it as it may result in errors with mapping your data." + nl)
+    if len(csv_template_diff) > 0:
+        # Exit here because if we can't find a mapping for a field we can't properly map the inputs
+        sys.exit("The following sheet names are in the input csvs but not found in the mapping template:" + nl +
+                 nl.join(csv_template_diff) + nl + "Please correct the sheets above and try again.")
 
 
 def load_manifest(manifest_file):
@@ -528,11 +557,15 @@ def load_manifest(manifest_file):
     identifier = None
     schema = "mcode"
     mapping_path = None
-    with open(manifest_file, 'r') as f:
-        manifest = yaml.safe_load(f)
-    if manifest is None:
-        print("Manifest file needs to be in YAML format")
-        return
+    try:
+        with open(manifest_file, 'r') as f:
+            manifest = yaml.safe_load(f)
+    except yaml.YAMLError as e:
+        print(e)
+        sys.exit("Manifest file isn't a valid yaml, please fix the errors and try again.")
+    except FileNotFoundError as e:
+        print(e)
+        sys.exit(f"Manifest file not found at provided path: {manifest_file}")
 
     if "identifier" in manifest:
         identifier = manifest["identifier"]
@@ -556,8 +589,10 @@ def load_manifest(manifest_file):
                 sys.modules[mod] = mappings.MODULES[mod]
                 spec.loader.exec_module(mappings.MODULES[mod])
             except Exception as e:
-                print(e)
-                return
+                print(
+                    f"---\nCould not find appropriate mapping functions at {mod_path}, ensure your mapping file is in "
+                    f"{manifest_dir} and has the correct name.\n---")
+                sys.exit(e)
     # mappings is a standard module: add it
     mappings.MODULES["mappings"] = importlib.import_module("mappings")
     return {
@@ -569,33 +604,31 @@ def load_manifest(manifest_file):
 
 def csv_convert(input_path, manifest_file, verbose=False):
     mappings.VERBOSE = verbose
-
     # read manifest data
     manifest = load_manifest(manifest_file)
     mappings.IDENTIFIER_FIELD = manifest["identifier"]
     if mappings.IDENTIFIER_FIELD is None:
-        print("Need to specify what the main identifier column name as 'identifier' in the manifest file")
-        return
+        sys.exit("Need to specify what the main identifier column name is as 'identifier' in the manifest file, "
+                 "see README for more details.")
 
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold
     schema = MoHSchema(manifest["schema"])
-    if schema is None:
-        print(f"Did not find an openapi schema at {url}; please check link")
-        return
-
-    mapping_template = schema.template
+    if schema.json_schema is None:
+        sys.exit(f"Could not read an openapi schema at {manifest['schema']};\n"
+              f"please check the url in the manifest file links to a valid openAPI schema.")
 
     # read the mapping template (contains the mapping function for each
     # field)
     template_lines = read_mapping_template(manifest["mapping"])
 
-    # # read the raw data
+    # read the raw data
     print("Reading raw data")
     raw_csv_dfs, mappings.OUTPUT_FILE = ingest_raw_data(input_path)
     if not raw_csv_dfs:
-        print(f"No ingestable files (csv or xlsx) were found at {input_path}")
-        return
+        sys.exit(f"No ingestable files (csv or xlsx) were found at {input_path}. Check path and try again.")
+    check_for_sheet_inconsistencies(set([re.findall(r"\((\w+)", x)[0] for x in template_lines]),
+                                    set(raw_csv_dfs.keys()))
 
     print("Indexing data")
     mappings.INDEXED_DATA = process_data(raw_csv_dfs)
@@ -605,7 +638,8 @@ def csv_convert(input_path, manifest_file, verbose=False):
     # if verbose flag is set, warn if column name is present in multiple sheets:
     for col in mappings.INDEXED_DATA["columns"]:
         if col != mappings.IDENTIFIER_FIELD and len(mappings.INDEXED_DATA["columns"][col]) > 1:
-            mappings._warn(f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
+            mappings._warn(
+                f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
 
     # warn if any template lines map the same column to multiple lines:
     scan_template_for_duplicate_mappings(template_lines)
@@ -613,8 +647,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
     mapping_scaffold = create_scaffold_from_template(template_lines)
 
     if mapping_scaffold is None:
-        print("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
-        return
+        sys.exit("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
 
     packets = []
     # for each identifier's row, make a packet
@@ -628,7 +661,8 @@ def csv_convert(input_path, manifest_file, verbose=False):
         if mappings._pop_from_stack() is None:
             raise Exception(f"Stack popped too far!\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}")
         if mappings._pop_from_stack() is not None:
-            raise Exception(f"Stack not empty\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}\n {mappings.INDEX_STACK}")
+            raise Exception(
+                f"Stack not empty\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}\n {mappings.INDEX_STACK}")
 
     with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
         json.dump(mappings.INDEXED_DATA, f, indent=4)
@@ -639,7 +673,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
     }
     if schema.katsu_sha is not None:
         result["katsu_sha"] = schema.katsu_sha
-    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:    # write to json file for ingestion
+    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
         json.dump(result, f, indent=4)
 
     # add validation data:
@@ -647,11 +681,12 @@ def csv_convert(input_path, manifest_file, verbose=False):
     result["validation_errors"] = schema.validation_errors
     result["validation_warnings"] = schema.validation_warnings
     result["statistics"] = schema.statistics
-    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:    # write to json file for ingestion
+    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
         json.dump(result, f, indent=4)
 
     if len(result["validation_warnings"]) > 0:
-        print("\n\nWARNING: Your data is missing required data for the MoHCCN data model! The following problems were found:")
+        print(
+            "\n\nWARNING: Your data is missing required data for the MoHCCN data model! The following problems were found:")
         print("\n".join(result["validation_warnings"]))
     if len(result["validation_errors"]) > 0:
         print("\n\nWARNING: Your data is not valid for the MoHCCN data model! The following errors were found:")

@@ -6,8 +6,8 @@ import json
 import re
 from copy import deepcopy
 import jsonschema
-import dateparser
 from collections import Counter
+import openapi_spec_validator as osv
 
 
 class ValidationError(Exception):
@@ -62,15 +62,16 @@ class BaseSchema:
         self.scaffold = None
 
         """Retrieve the schema from the supplied URL, return as dictionary."""
-        resp = requests.get(self.openapi_url)
+        try:
+            osv.validate_url(self.openapi_url)
+            resp = requests.get(self.openapi_url)
+            resp.raise_for_status()
+            schema = yaml.safe_load(resp.text)
+        except Exception as e:
+            print("Error reading the openapi schema, please ensure you have provided a url to a valid openapi schema.")
+            print(e)
+            return
 
-        # rudimentary test that we have found something that looks like an openapi schema
-        # would be better to formally validate
-        schema = yaml.safe_load(resp.text)
-
-        if not "openapi" in schema:
-            print("Error: does not seem to be an openapi schema")
-            schema = None
         self.schema = schema["components"]["schemas"]
         sha_match = re.match(r".+Based on commit \"(.+)\".*", schema["info"]["description"])
         if sha_match is not None:

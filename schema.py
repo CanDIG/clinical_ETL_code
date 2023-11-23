@@ -17,6 +17,29 @@ class ValidationError(Exception):
     def __str__(self):
         return repr(f"Validation error: {self.value}")
 
+"""
+Convenience methods for validating openapi as jsonschema
+"""
+
+def openapi_to_jsonschema(schema_text, schema_name):
+    # save off all the component schemas into a "defs" component that can be passed into a jsonschema validation
+    defs_set = set()
+    schema_text = schema_text.split("\n")
+    for i in range(0, len(schema_text)):
+        ref_match = re.match(r"(.*\$ref:).*(#/components/schemas/.+)$", schema_text[i])
+        if ref_match is not None:
+            schema_text[i] = schema_text[i].replace("#/components/schemas/", "#/$defs/")
+            defs_set.add(ref_match.group(2).strip('\"').strip("\'").replace("#/components/schemas/", ""))
+
+    openapi_components = yaml.safe_load("\n".join(schema_text))["components"]["schemas"]
+    # populate defs for jsonschema
+    defs = {}
+    for d in defs_set:
+        defs[d] = openapi_components[d]
+
+    json_schema = deepcopy(openapi_components[schema_name])
+    json_schema["$defs"] = defs
+    return json_schema
 
 """
 Base class to represent a Katsu OpenAPI schema for ETL.
@@ -81,24 +104,7 @@ class BaseSchema:
             if sha_match is not None:
                 self.katsu_sha = sha_match.group(1)
 
-        # save off all the component schemas into a "defs" component that can be passed into a jsonschema validation
-        defs_set = set()
-        schema_text = resp.text.split("\n")
-        for i in range(0, len(schema_text)):
-            ref_match = re.match(r"(.*\$ref:) *(.+)$", schema_text[i])
-            if ref_match is not None:
-                schema_text[i] = schema_text[i].replace("#/components/schemas/", "#/$defs/")
-                defs_set.add(ref_match.group(2).strip('\"').strip("\'").replace("#/components/schemas/", ""))
-
-        openapi_components = yaml.safe_load("\n".join(schema_text))["components"]["schemas"]
-
-        # populate defs for jsonschema
-        defs = {}
-        for d in defs_set:
-            defs[d] = openapi_components[d]
-
-        self.json_schema = deepcopy(openapi_components[self.schema_name])
-        self.json_schema["$defs"] = defs
+        self.json_schema = openapi_to_jsonschema(resp.text, self.schema_name)
 
         # create the template for the schema_name schema
         self.scaffold = self.generate_schema_scaffold(self.schema[self.schema_name])

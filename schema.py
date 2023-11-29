@@ -136,8 +136,10 @@ class BaseSchema:
 
 
     def expand_ref(self, ref):
-        refName = ref["$ref"].replace("#/components/schemas/", "")
-        return self.generate_schema_scaffold(json.loads(json.dumps(self.schema[refName])))
+        if "$ref" in ref:
+            refName = ref["$ref"].replace("#/components/schemas/", "")
+            return self.generate_schema_scaffold(json.loads(json.dumps(self.schema[refName])))
+        return ref["type"]
 
 
     def generate_schema_scaffold(self, schema_obj):

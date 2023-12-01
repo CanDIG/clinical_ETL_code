@@ -107,7 +107,7 @@ class BaseSchema:
         self.json_schema = openapi_to_jsonschema(resp.text, self.schema_name)
 
         # create the template for the schema_name schema
-        self.scaffold = self.generate_schema_scaffold(self.schema[self.schema_name])
+        self.scaffold = self.generate_schema_scaffold(self.schema[self.schema_name], list(self.validation_schema.keys())[0])
         # print(json.dumps(self.scaffold, indent=4))
         _, raw_template = self.generate_mapping_template(self.scaffold, node_name="DONOR.INDEX")
 
@@ -135,32 +135,39 @@ class BaseSchema:
         self.validation_errors.append(f"{message}")
 
 
-    def expand_ref(self, ref):
+    def expand_ref(self, ref, validation_schema_node):
         if "$ref" in ref:
             refName = ref["$ref"].replace("#/components/schemas/", "")
-            return self.generate_schema_scaffold(json.loads(json.dumps(self.schema[refName])))
+            return self.generate_schema_scaffold(json.loads(json.dumps(self.schema[refName])), validation_schema_node)
         return ref["type"]
 
 
-    def generate_schema_scaffold(self, schema_obj):
+    def generate_schema_scaffold(self, schema_obj, validation_schema_node):
         result = {}
         if "type" in schema_obj:
             if schema_obj["type"] == "object":
                 for prop in schema_obj["properties"]:
-                    prop_obj = self.generate_schema_scaffold(schema_obj["properties"][prop])
+                    prop_obj = self.generate_schema_scaffold(schema_obj["properties"][prop], prop)
                     result[prop] = prop_obj
+                if validation_schema_node in self.validation_schema:
+                    nested_schemas = {}
+                    for schema in self.validation_schema[validation_schema_node]["nested_schemas"]:
+                        if schema in result:
+                            nested_schemas[schema] = result.pop(schema)
+                    for schema in nested_schemas:
+                        result[schema] = nested_schemas[schema]
             elif schema_obj["type"] == "array":
-                result = [self.generate_schema_scaffold(schema_obj["items"])]
+                result = [self.generate_schema_scaffold(schema_obj["items"], validation_schema_node)]
             else:
                 result = schema_obj["type"]
         elif "$ref" in schema_obj:
-            result = self.expand_ref(schema_obj)
+            result = self.expand_ref(schema_obj, validation_schema_node)
         elif "allOf" in schema_obj:
-            result = self.expand_ref(schema_obj["allOf"][0])
+            result = self.expand_ref(schema_obj["allOf"][0], validation_schema_node)
         elif "oneOf" in schema_obj:
-            result = self.expand_ref(schema_obj["oneOf"][0])
+            result = self.expand_ref(schema_obj["oneOf"][0], validation_schema_node)
         elif "anyOf" in schema_obj:
-            result = self.expand_ref(schema_obj["anyOf"][0])
+            result = self.expand_ref(schema_obj["anyOf"][0], validation_schema_node)
         else:
             result = "unknown"
         return result
@@ -245,16 +252,16 @@ class BaseSchema:
                                 break
 
                     sheet_stack.append(f"{index_value.upper()}_SHEET")
+                    temp = index_value.lower()
+                    if f"{temp}s" in self.validation_schema:
+                        temp = f"{temp}s"
+                    index_value = self.validation_schema[temp]["id"]
 
                     # next case: data value could be the the next line's last bit:
                     next_line = template[i+1]
                     next_match = re.match(r"(.+),", next_line)
                     next_bits = next_match.group(1).split(".")
                     if field in next_line:
-                        # if the next line is a nested version of field, we need to think about the stack
-                        index_value = next_bits[-1]
-
-                        # but...do we need to un-nest?
                         # this index is NOT a nested entry of the prev one; we need to figure out how far back to un-nest.
                         if len(index_stack) > 0:
                             prev_line = template[i-1]
@@ -294,10 +301,12 @@ class BaseSchema:
                                         index_stack.pop()
 
                         # this should be added to the stack, but not if the value is "INDEX"
-                        if index_value != "INDEX":
+                        if index_value is not None and index_value != "INDEX":
                             index_stack.append(index_value)
                             if len(index_stack) > 1:
                                 index_value = index_stack[-2]
+                        else:
+                            index_value = index_stack[-1]
                     else:
                         sheet_stack.pop()
                     x += f" {{indexed_on({sheet_stack[-1]}.{index_value})}}"

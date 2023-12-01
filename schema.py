@@ -177,21 +177,8 @@ class BaseSchema:
         """Create a template for the schema, for use with the --template flag."""
         if node_names is None:
             node_names = []
-        if node_name != "" and not node_name.endswith(".id"):
-            # check to see if the last node_name is a header for this node_name:
-            if len(node_names) > 0:
-                x = node_names.pop()
-                x_match = re.match(r"(.+),", x)
-                if x_match is not None:
-                    if x.endswith(".INDEX,"):
-                        node_names.append(x)
-                    elif x_match.group(1) not in node_name:
-                        node_names.append(x)
-            if "description" in node:
-                node_names.append(f"{node_name},\"##{node['description']}\"")
-            else:
-                node_names.append(f"{node_name},")
         if "str" in str(type(node)):
+            node_names.append(f"{node_name},")
             return "string", node_names
         elif "list" in str(type(node)):
             new_node_name = ".".join((node_name, "INDEX"))
@@ -203,6 +190,7 @@ class BaseSchema:
             return True, node_names
         elif "dict" in str(type(node)):
             scaffold = {}
+            node_names.append(f"{node_name},")
             for prop in node.keys():
                 if node_name == "":
                     new_node_name = prop

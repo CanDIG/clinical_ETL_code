@@ -25,7 +25,7 @@ jobs:
       - name: Compare moh_template.csv
         shell: bash {0}
         run: |
-          python generate_schema.py --url https://raw.githubusercontent.com/CanDIG/katsu/sonchau/uuid_with_fk/chord_metadata_service/mohpackets/docs/schema.yml
+          python generate_schema.py
           diff template.csv moh_template.csv > curr_diff.txt
           bytes=$(head -5 curr_diff.txt | wc -c)
           dd if=curr_diff.txt bs="$bytes" skip=1 conv=notrunc of=curr_diff.txt

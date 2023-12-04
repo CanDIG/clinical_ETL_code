@@ -1,5 +1,3 @@
-> ## Based on repo commit sha "29fd55d173b7a01daa72fcc89187e3aabd1fb51e"
-> ## MoH template is manually updated to match the MoH clinical data model
 13c14
 < DONOR.INDEX.primary_site, {single_val(DONOR_SHEET.primary_site)}
 ---
@@ -112,11 +110,6 @@
 ---
 > DONOR.INDEX.followups.INDEX, {moh_indexed_on_donor_if_others_absent(FOLLOWUPS_SHEET.submitter_donor_id, FOLLOWUPS_SHEET.submitter_primary_diagnosis_id, FOLLOWUPS_SHEET.submitter_treatment_id)}
 > DONOR.INDEX.followups.INDEX.anatomic_site_progression_or_recurrence, {pipe_delim(FOLLOWUPS_SHEET.anatomic_site_progression_or_recurrence)}
-175c176
-< DONOR.INDEX.followups.INDEX.method_of_progression_status, {single_val(FOLLOWUPS_SHEET.method_of_progression_status)}
----
-> DONOR.INDEX.followups.INDEX.method_of_progression_status, {pipe_delim(FOLLOWUPS_SHEET.method_of_progression_status)}
-.anatomic_site_progression_or_recurrence, {pipe_delim(FOLLOWUPS_SHEET.anatomic_site_progression_or_recurrence)}
 175c176
 < DONOR.INDEX.followups.INDEX.method_of_progression_status, {single_val(FOLLOWUPS_SHEET.method_of_progression_status)}
 ---

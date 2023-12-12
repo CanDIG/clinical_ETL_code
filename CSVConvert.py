@@ -627,7 +627,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
     raw_csv_dfs, mappings.OUTPUT_FILE = ingest_raw_data(input_path)
     if not raw_csv_dfs:
         sys.exit(f"No ingestable files (csv or xlsx) were found at {input_path}. Check path and try again.")
-    check_for_sheet_inconsistencies(set([re.findall(r"\(([\w\" ]+)", x)[0] for x in template_lines]),
+    check_for_sheet_inconsistencies(set([re.findall(r"\(([\w\" ]+)", x)[0].replace('"',"") for x in template_lines]),
                                     set(raw_csv_dfs.keys()))
 
     print("Indexing data")

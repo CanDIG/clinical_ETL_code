@@ -164,12 +164,13 @@ def flat_list_val(data_values):
     items = list_val(data_values)
     all_items = []
     for item in items:
-        try:
-            result = ast.literal_eval(item)
-            if "list" in str(type(result)):
-                all_items.extend(result)
-        except Exception:
-            all_items.extend(map(lambda x: x.strip(), item.split(",")))
+        if item is not None:
+            try:
+                result = ast.literal_eval(item)
+                if "list" in str(type(result)):
+                    all_items.extend(result)
+            except Exception:
+                all_items.extend(map(lambda x: x.strip(), item.split(",")))
     return all_items
 
 
@@ -196,16 +197,19 @@ def boolean(data_values):
 
     Returns:
         A boolean based on the input,
-        `False` if value is in ["No", "no", "False", "false"]
-        `None` if value is in [`None`, "nan", "NaN", "NAN"]
-        `True` otherwise
+        `False` if value is in ["No", "no", "N", "n", "False", "false", "F", "f"]
+        `True` if value is in ["Yes", "yes", "Y", "y", True", "true", "T", "t"]
+        None if value is in [`None`, "nan", "NaN", "NAN"]
+        None otherwise
     """
     cell = single_val(data_values)
     if cell is None or cell.lower().strip() == "nan":
         return None
-    if cell.lower().strip() == "no" or cell.lower().strip() == "false":
+    if cell.lower().strip()[0] == "n" or cell.lower().strip()[0] == "f":
         return False
-    return True
+    if cell.lower().strip()[0] == "y" or cell.lower().strip()[0] == "t":
+        return True
+    return None
 
 
 def integer(data_values):

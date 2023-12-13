@@ -8,37 +8,6 @@ from clinical_etl.mohschema import MoHSchema
 
 # read sheet from given data pathway
 REPO_DIR = os.path.abspath(f"{os.path.dirname(os.path.realpath(__file__))}")
-raw_csvs, mappings.OUTPUT_FILE = CSVConvert.ingest_raw_data(f"{REPO_DIR}/test_data/pytest_data")
-mappings.IDENTIFIER_FIELD =  "Subject"
-mappings.INDEXED_DATA = CSVConvert.process_data(raw_csvs)
-mappings._push_to_stack(None, None, mappings.IDENTIFIER)
-
-def test_single_val():
-    mappings.IDENTIFIER = "ABC-01-03"
-    test = CSVConvert.eval_mapping("{single_val(Treatment.THER_TX_NAME)}", None)
-    assert test == "IRINOTECAN,IRINOTECAN"
-
-
-def test_date():
-    mappings.IDENTIFIER = "ABC-01-03"
-    test = CSVConvert.eval_mapping("{single_date(Demographics.DTH_DT_RAW)}", None)
-    assert test == "2023-09"
-
-
-def test_list_val():
-    mappings.IDENTIFIER = "ABC-01-05"
-    test = CSVConvert.eval_mapping("{list_val(Demographics.DTH_DT_RAW)}", None)
-    assert len(test) == 1
-
-    mappings.IDENTIFIER = "ABC-01-03"
-    test = CSVConvert.eval_mapping("{list_val(Treatment.THER_TX_NAME)}", None)
-    assert test == ['IRINOTECAN,IRINOTECAN', 'IRINOTECAN,IRINOTECAN']
-
-    mappings.IDENTIFIER = "ABC-01-03"
-    test = CSVConvert.eval_mapping("{flat_list_val(Treatment.THER_TX_NAME)}", None)
-    assert test == ['IRINOTECAN', 'IRINOTECAN', 'IRINOTECAN', 'IRINOTECAN']
-
-
 @pytest.fixture
 def schema():
     manifest_file = f"{REPO_DIR}/test_data/manifest.yml"

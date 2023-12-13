@@ -10,7 +10,7 @@ from clinical_etl.mohschema import MoHSchema
 REPO_DIR = os.path.abspath(f"{os.path.dirname(os.path.realpath(__file__))}")
 @pytest.fixture
 def schema():
-    manifest_file = f"{REPO_DIR}/test_data/manifest.yml"
+    manifest_file = f"{REPO_DIR}/manifest.yml"
     with open(manifest_file, 'r') as f:
         manifest = yaml.safe_load(f)
     if manifest is not None:
@@ -20,8 +20,8 @@ def schema():
 
 @pytest.fixture
 def packets():
-    input_path = f"{REPO_DIR}/test_data/raw_data"
-    manifest_file = f"{REPO_DIR}/test_data/manifest.yml"
+    input_path = f"{REPO_DIR}/raw_data"
+    manifest_file = f"{REPO_DIR}/manifest.yml"
     mappings.INDEX_STACK = []
     return CSVConvert.csv_convert(input_path, manifest_file, verbose=False)
 

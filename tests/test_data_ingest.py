@@ -31,6 +31,10 @@ def test_csv_convert(packets):
     assert len(packets) == 6
 
 
+def test_external_mapping(packets):
+    assert packets[0]['test_mapping'] == "test string"
+
+
 def test_donor_1(packets):
     for packet in packets:
         if packet['submitter_donor_id'] == "DONOR_1":

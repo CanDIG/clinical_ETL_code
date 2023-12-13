@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+version = "2.0.0"
+name = "clinical_ETL"
+dependencies = [
+    "pandas~=1.3.4",
+    "pytest==7.2.0",
+    "pyYAML~=5.4.1",
+    "dateparser~=1.1.0",
+    "openpyxl~=3.0.9",
+    "jsoncomparison~=1.1.0",
+    "requests>=2.26.0",
+    "jsonschema~=4.19.2"
+    ]
+requires-python = ">= 3.10"
+description = "ETL module for transforming clinical CSV data into properly-formatted packets for ingest into Katsu"
+readme = "README.md"
+
+[project.urls]
+Repository = "https://github.com/CanDIG/clinical_ETL_code"

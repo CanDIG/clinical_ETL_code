@@ -4,7 +4,7 @@
 from copy import deepcopy
 import importlib.util
 import json
-import mappings
+from clinical_etl import mappings
 import os
 import pandas
 import csv
@@ -13,7 +13,7 @@ import sys
 import yaml
 import argparse
 
-from mohschema import MoHSchema
+from clinical_etl.mohschema import MoHSchema
 
 
 def verbose_print(message):
@@ -259,7 +259,7 @@ def eval_mapping(node_name, rownum):
     """
     verbose_print(f"  Evaluating {mappings.IDENTIFIER}: {node_name}")
     if "mappings" not in mappings.MODULES:
-        mappings.MODULES["mappings"] = importlib.import_module("mappings")
+        mappings.MODULES["mappings"] = importlib.import_module("clinical_etl.mappings")
     modulename = "mappings"
 
     method, parameters = parse_mapping_function(node_name)
@@ -594,7 +594,7 @@ def load_manifest(manifest_file):
                     f"{manifest_dir} and has the correct name.\n---")
                 sys.exit(e)
     # mappings is a standard module: add it
-    mappings.MODULES["mappings"] = importlib.import_module("mappings")
+    mappings.MODULES["mappings"] = importlib.import_module("clinical_etl.mappings")
     return {
         "identifier": identifier,
         "schema": schema,

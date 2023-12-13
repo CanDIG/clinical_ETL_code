@@ -1,10 +1,10 @@
 import pytest
 import yaml
-import CSVConvert
-import mappings
+from clinical_etl import CSVConvert
+from clinical_etl import mappings
 import json
 import os
-from mohschema import MoHSchema
+from clinical_etl.mohschema import MoHSchema
 
 # read sheet from given data pathway
 REPO_DIR = os.path.abspath(f"{os.path.dirname(os.path.realpath(__file__))}")

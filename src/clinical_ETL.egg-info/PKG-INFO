@@ -7,13 +7,15 @@ Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: pandas~=1.3.4
-Requires-Dist: pytest==7.2.0
-Requires-Dist: pyYAML~=5.4.1
-Requires-Dist: dateparser~=1.1.0
-Requires-Dist: openpyxl~=3.0.9
-Requires-Dist: jsoncomparison~=1.1.0
-Requires-Dist: requests>=2.26.0
+Requires-Dist: pytest>=7.2.0
+Requires-Dist: pyYAML>=5.4.1
+Requires-Dist: dateparser>=1.1.0
+Requires-Dist: openpyxl>=3.0.9
+Requires-Dist: jsoncomparison>=1.1.0
+Requires-Dist: requests>=2.29.0
 Requires-Dist: jsonschema~=4.19.2
+Requires-Dist: openapi-spec-validator>=0.7.1
+Requires-Dist: pdoc3>=0.10.0
 
 # clinical_ETL_code
 
@@ -21,8 +23,14 @@ This repository provides tools to convert input csv files with clinical (phenoty
 
 Specifically, this code was designed to convert clinical data for the MOHCCN project into the packet format needed for ingest into CanDIG's clinical data service (katsu).
 
+## Using clinical_etl as a package
+You can import this module as a package by including the following in your `requirements.txt`:
+```
+clinical_etl@git+https://github.com/CanDIG/clinical_ETL_code.git@main
+```
+
 ## CSVConvert
-Most of the heavy lifting is done in the [`CSVConvert.py`](CSVConvert.py) script. See sections below for setting up the inputs and running the script. 
+Most of the heavy lifting is done in the [`CSVConvert.py`](CSVConvert.py) script. See sections below for setting up the inputs and running the script.
 
 This script:
 * reads a file (`.xlsx` or `.csv`) or a directory of files (`.csv`)
@@ -64,8 +72,6 @@ All rows must contain identifiers that allow linkage between the objects in the 
 
 Data should be [tidy](https://r4ds.had.co.nz/tidy-data.html), with each variable in a separate column, each row representing an observation, and a single data entry in each cell. In the case of fields that can accept an array of values, the values within a cell should be delimited such that a mapping function can accurately return an array of permissible values.
 
-Depending on the format of your raw data, you may need to write an additional tidying script to pre-process. For example, the `ingest_redcap_data.py` converts the export format from redcap into a set of input csvs for `CSVConvert`.
-
 ### Setting up a cohort directory
 
 For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `data` repository. This cohort directory should contain the same files as shown in the `sample_inputs` directory, which are:
@@ -94,7 +100,7 @@ You'll need to create a mapping template that defines the mapping between the fi
 
 Each line in the mapping template is composed of comma separated values with two components. The first value is an `element` or field from the target schema and the second value contains a suggested `mapping method` or function to map a field from an input sheet to a valid value for the identified `element`. Each `element`, shows the full object linking path to each field required by the model. These values should not be edited.
 
-If you are generating a mapping for the current CanDIG MoH model, you can use the pre-generated [`moh_template.csv`](moh_template.csv) file. This file is modified from the auto-generated template to update a few fields that require specific handling. 
+If you are generating a mapping for the current CanDIG MoH model, you can use the pre-generated [`moh_template.csv`](moh_template.csv) file. This file is modified from the auto-generated template to update a few fields that require specific handling.
 
 You will need to edit the `mapping method` values in each line in the following ways:
 1. Replace the generic sheet names (e.g. `DONOR_SHEET`, `SAMPLE_REGISTRATIONS_SHEET`) with the sheet/csv names you are using as your input to `CSVConvert.py`
@@ -102,9 +108,9 @@ You will need to edit the `mapping method` values in each line in the following 
 
 If the field does not map in the same way as the suggested mapping function you will also need to:
 
-3. Choose a different existing [mapping function](mappings.py) or write a new function that does the required transformation and save it in a python file that is specified in your `manifest.yml` in the `functions` section. Functions in your custom mapping _must_ be fully referenced by their module name, e.g. `sample_custom_mappings.sex()`. (See the [mapping instructions](mapping_functions.md) for detailed documentation on writing your own mapping functions.)
+3. Choose a different existing [mapping function](src/clinical_etl/mappings.py) or write a new function that does the required transformation and save it in a python file that is specified in your `manifest.yml` in the `functions` section. Functions in your custom mapping _must_ be fully referenced by their module name, e.g. `sample_custom_mappings.sex()`. (See the [mapping instructions](mapping_functions.md) for detailed documentation on writing your own mapping functions.)
 
->[!NOTE] 
+>[!NOTE]
 > * Do not edit, delete, or re-order the template lines, except to adjust the sheet name, mapping function and field name in the `mapping method` column.
 > * Fields not requiring mapping can be commented out with a # at the start of the line
 
@@ -113,31 +119,32 @@ If the field does not map in the same way as the suggested mapping function you 
 The `generate_schema.py` script will generate a template file based an openapi.yaml file.
 
 ```
-$ python generate_schema.py -h
+$ python src/clinical_etl/generate_schema.py -h
 usage: generate_schema.py [-h] --url URL [--out OUT]
 
 options:
   -h, --help  show this help message and exit
   --url URL   URL to openAPI schema file (raw github link)
   --out OUT   name of output file; csv extension will be added. Default is template
-
 ```
 </details>
 
 ### Running `CSVConvert` from the command line
 
-CSVConvert requires two inputs: 
+CSVConvert requires two inputs:
 1. a path to a multi-sheet spreadsheet or path to csvs specified with [`--input`](#Input-file/s-format)
 2. a path to a `manifest.yml`, in a directory that also contains the other files defined in [Setting up a cohort directory](#Setting-up-a-cohort-directory)
 
 ```
-$ python CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file] [--test] [--verbose]
+$ python src/clinical_etl/CSVConvert.py -h
+usage: CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file] [--test] [--verbose]
 
---input: path to dataset to be converted to data model
-
---manifest: Path to a manifest file with settings for the ETL
-
---verbose prints out extra statements for debugging where things have gone wrong
+options:
+  -h, --help           show this help message and exit
+  --input INPUT        Path to either an xlsx file or a directory of csv files for ingest
+  --manifest MANIFEST  Path to a manifest file describing the mapping.
+  --test               Use exact template specified in manifest: do not remove extra lines
+  --verbose, --v       Print extra information, useful for debugging and understanding how the code runs.
 
 --test allows you to add extra lines to your manifest's template file that will be populated in the mapped schema. NOTE: this mapped schema will likely not be a valid mohpacket: it should be used only for debugging.
 ```
@@ -145,7 +152,7 @@ $ python CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file] [--test] 
 Example usage:
 
 ```
-python CSVconvert.py --input test_data/raw_data --manifest test_data/manifest.yml
+python src/clinical_etl/CSVConvert.py --input test_data/raw_data --manifest test_data/manifest.yml
 ```
 
 The output packets `<INPUT_DIR>_map.json` and `<INPUT_DIR>_indexed.json` will be in the parent of the `INPUT` directory / file. In the example above, this would be in the `test_data` directory.
@@ -154,7 +161,7 @@ Validation will automatically be run after the conversion is complete. Any valid
 
 #### Format of the output files
 
-`<INPUT_DIR>_map.json` is the main output and contains the results of the mapping, conversion and validation as well as summary statistics. 
+`<INPUT_DIR>_map.json` is the main output and contains the results of the mapping, conversion and validation as well as summary statistics.
 
 The mapping and transformation result is found in the `"donors"` key.
 
@@ -233,10 +240,13 @@ Run the `update_moh_template.sh` script to see what's changed in `test_data/moh_
 You can validate the generated json mapping file against the MoH data model. The validation will compare the mapping to the json schema used to generate the template, as well as other known requirements and data conditions specified in the MoH data model.
 
 ```
-$ python validate_coverage.py [-h] [--input map.json] [--manifest MAPPING]
+$ python src/clinical_etl/validate_coverage.py -h
+validate_coverage.py [-h] [--input map.json] [--manifest MAPPING]
 
---json JSON     <input-file-path-name>_map.json file generated by CSVConvert.py.
---verbose, --v  Print extra information
+options:
+  -h, --help      show this help message and exit
+  --json JSON     <input-file-path-name>_map.json file generated by CSVConvert.py.
+  --verbose, --v  Print extra information
 ```
 
 The output will report errors and warnings separately. JSON schema validation failures and other data mismatches will be listed as errors, while fields that are conditionally required as part of the MoH model but are missing will be reported as warnings.

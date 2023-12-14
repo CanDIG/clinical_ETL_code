@@ -17,6 +17,7 @@ import re
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--url', type=str, help="URL to openAPI schema file (raw github link)", default="https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml")
+    parser.add_argument('--schema', type=str, help="Name of schema class", default="MoHSchema")
     parser.add_argument('--out', type=str, help="name of output file; csv extension will be added. Default is template", default="template")
     args = parser.parse_args()
     return args
@@ -24,7 +25,10 @@ def parse_args():
 
 def main(args):
     url = args.url
-    schema = MoHSchema(url)
+    schema_name = args.schema
+    schema_class = schema_name.lower()
+    mod = importlib.import_module(schema_class)
+    schema = eval(f'mod.{schema_name}(url)')
     if schema is None:
         print("Did not find an openapi schema at {}; please check link".format(url))
         return

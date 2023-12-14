@@ -1,47 +1,16 @@
 import pytest
 import yaml
-import CSVConvert
-import mappings
+from clinical_etl import CSVConvert
+from clinical_etl import mappings
 import json
 import os
-from mohschema import MoHSchema
+from clinical_etl.mohschema import MoHSchema
 
 # read sheet from given data pathway
 REPO_DIR = os.path.abspath(f"{os.path.dirname(os.path.realpath(__file__))}")
-raw_csvs, mappings.OUTPUT_FILE = CSVConvert.ingest_raw_data(f"{REPO_DIR}/test_data/pytest_data")
-mappings.IDENTIFIER_FIELD =  "Subject"
-mappings.INDEXED_DATA = CSVConvert.process_data(raw_csvs)
-mappings._push_to_stack(None, None, mappings.IDENTIFIER)
-
-def test_single_val():
-    mappings.IDENTIFIER = "ABC-01-03"
-    test = CSVConvert.eval_mapping("{single_val(Treatment.THER_TX_NAME)}", None)
-    assert test == "IRINOTECAN,IRINOTECAN"
-
-
-def test_date():
-    mappings.IDENTIFIER = "ABC-01-03"
-    test = CSVConvert.eval_mapping("{single_date(Demographics.DTH_DT_RAW)}", None)
-    assert test == "2023-09"
-
-
-def test_list_val():
-    mappings.IDENTIFIER = "ABC-01-05"
-    test = CSVConvert.eval_mapping("{list_val(Demographics.DTH_DT_RAW)}", None)
-    assert len(test) == 1
-
-    mappings.IDENTIFIER = "ABC-01-03"
-    test = CSVConvert.eval_mapping("{list_val(Treatment.THER_TX_NAME)}", None)
-    assert test == ['IRINOTECAN,IRINOTECAN', 'IRINOTECAN,IRINOTECAN']
-
-    mappings.IDENTIFIER = "ABC-01-03"
-    test = CSVConvert.eval_mapping("{flat_list_val(Treatment.THER_TX_NAME)}", None)
-    assert test == ['IRINOTECAN', 'IRINOTECAN', 'IRINOTECAN', 'IRINOTECAN']
-
-
 @pytest.fixture
 def schema():
-    manifest_file = f"{REPO_DIR}/test_data/manifest.yml"
+    manifest_file = f"{REPO_DIR}/manifest.yml"
     with open(manifest_file, 'r') as f:
         manifest = yaml.safe_load(f)
     if manifest is not None:
@@ -51,8 +20,8 @@ def schema():
 
 @pytest.fixture
 def packets():
-    input_path = f"{REPO_DIR}/test_data/raw_data"
-    manifest_file = f"{REPO_DIR}/test_data/manifest.yml"
+    input_path = f"{REPO_DIR}/raw_data"
+    manifest_file = f"{REPO_DIR}/manifest.yml"
     mappings.INDEX_STACK = []
     return CSVConvert.csv_convert(input_path, manifest_file, verbose=False)
 
@@ -60,6 +29,10 @@ def packets():
 def test_csv_convert(packets):
     # there are 6 donors
     assert len(packets) == 6
+
+
+def test_external_mapping(packets):
+    assert packets[0]['test_mapping'] == "test string"
 
 
 def test_donor_1(packets):

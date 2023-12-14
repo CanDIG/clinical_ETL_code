@@ -1,4 +1,4 @@
-import mappings
+import clinical_etl.mappings
 
 def indexed_on_if_absent(data_values):
     #{'submitter_donor_id': {'Followup': ['DONOR_1', 'DONOR_1', 'DONOR_1', 'DONOR_1']}, 'submitter_primary_diagnosis_id': {'Followup': ['PD_1', None, None, None]}, 'submitter_treatment_id': {'Followup': [None, 'TR_1', None, None]}}
@@ -27,3 +27,6 @@ def indexed_on_if_absent(data_values):
         "values": result
     }
 
+def fake_map(data_values):
+    """Return a dict with a placeholder key."""
+    return "test string"

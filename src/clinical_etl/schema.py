@@ -109,7 +109,7 @@ class BaseSchema:
         # create the template for the schema_name schema
         self.scaffold = self.generate_schema_scaffold(self.schema[self.schema_name], list(self.validation_schema.keys())[0])
         # print(json.dumps(self.scaffold, indent=4))
-        _, raw_template = self.generate_mapping_template(self.scaffold, node_name="DONOR.INDEX")
+        _, raw_template = self.generate_mapping_template(self.scaffold, node_name=f"{self.base_name}.INDEX")
 
         # add default mapping functions:
         self.template = self.add_default_mappings(raw_template)
@@ -235,7 +235,7 @@ class BaseSchema:
                     if len(sheet_stack) > 1:
                         while 1:
                             last_sheet = sheet_stack.pop()
-                            if last_sheet == "DONOR_SHEET" or last_sheet.replace("_SHEET", "").lower() in field:
+                            if last_sheet == f"{self.base_name}_SHEET" or last_sheet.replace("_SHEET", "").lower() in field:
                                 sheet_stack.append(last_sheet)
                                 break
 
@@ -331,8 +331,8 @@ class BaseSchema:
                         self.fail(f"Duplicated IDs: in schema {schema}, {x[0]} occurs {x[1]} times")
         self.statistics["schemas_not_used"] = list(set(self.validation_schema.keys()) - set(self.statistics["schemas_used"]))
         self.statistics["summary_cases"] = {
-            "complete_cases": len(map_json["donors"]) - len(self.statistics["cases_missing_data"]),
-            "total_cases": len(map_json["donors"])
+            "complete_cases": len(map_json[root_schema]) - len(self.statistics["cases_missing_data"]),
+            "total_cases": len(map_json[root_schema])
         }
 
 
@@ -344,7 +344,8 @@ class BaseSchema:
             if error.instance is None and 'nullable' in error.schema and error.schema['nullable'] == True:
                 pass # this was too hard to write as a negative statement, so the error is in the else
             else:
-                location = [f"Donor {index}"]
+                root_schema = list(self.validation_schema.keys())[0]
+                location = [f"{self.validation_schema[root_schema]['name']} {index}"]
                 if id_field in map_json:
                     location = [map_json[id_field]]
                     curr_map = map_json

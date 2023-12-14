@@ -9,6 +9,7 @@ A class for the representation of a DonorWithClinicalData (MoHCCN data model v2)
 
 class MoHSchema(BaseSchema):
     schema_name = "DonorWithClinicalDataSchema"
+    base_name = "DONOR"
 
 
     ## Following are specific checks for required fields in the MoH data model, as well as checks for conditionals specified in the model.

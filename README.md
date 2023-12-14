@@ -7,8 +7,9 @@ Specifically, this code was designed to convert clinical data for the MOHCCN pro
 ## Using clinical_etl as a package
 You can import this module as a package by including the following in your `requirements.txt`:
 ```
-clinical_etl@git+https://github.com/CanDIG/clinical_ETL_code.git@main
+clinical_etl@git+https://github.com/CanDIG/clinical_ETL_code.git@stable
 ```
+If you need the latest version, you can replace `stable` with `develop`.
 
 ## CSVConvert
 Most of the heavy lifting is done in the [`CSVConvert.py`](CSVConvert.py) script. See sections below for setting up the inputs and running the script.

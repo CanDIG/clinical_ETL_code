@@ -316,8 +316,8 @@ def process_data(raw_csv_dfs):
         print(f"Processing sheet {page}...")
         df = raw_csv_dfs[page].dropna(axis='index', how='all') \
             .dropna(axis='columns', how='all') \
-            .applymap(str) \
-            .applymap(lambda x: x.strip()) \
+            .map(str) \
+            .map(lambda x: x.strip()) \
             .drop_duplicates()  # drop absolutely identical lines
 
         # Sort by identifier and then tag any dups

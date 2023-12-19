@@ -6,12 +6,11 @@ Project-URL: Repository, https://github.com/CanDIG/clinical_ETL_code
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: pandas~=1.3.4
+Requires-Dist: pandas>=2.1.0
 Requires-Dist: pytest>=7.2.0
 Requires-Dist: pyYAML>=5.4.1
 Requires-Dist: dateparser>=1.1.0
 Requires-Dist: openpyxl>=3.0.9
-Requires-Dist: jsoncomparison>=1.1.0
 Requires-Dist: requests>=2.29.0
 Requires-Dist: jsonschema~=4.19.2
 Requires-Dist: openapi-spec-validator>=0.7.1
@@ -26,8 +25,9 @@ Specifically, this code was designed to convert clinical data for the MOHCCN pro
 ## Using clinical_etl as a package
 You can import this module as a package by including the following in your `requirements.txt`:
 ```
-clinical_etl@git+https://github.com/CanDIG/clinical_ETL_code.git@main
+clinical_etl@git+https://github.com/CanDIG/clinical_ETL_code.git@stable
 ```
+If you need the latest version, you can replace `stable` with `develop`.
 
 ## CSVConvert
 Most of the heavy lifting is done in the [`CSVConvert.py`](CSVConvert.py) script. See sections below for setting up the inputs and running the script.

@@ -1,6 +1,8 @@
 import ast
 import dateparser
 import json
+import datetime
+from dateutil.rrule import rrule, MONTHLY, DAILY
 
 VERBOSE = False
 MODULES = {}
@@ -41,6 +43,47 @@ def date(data_values):
     for date in raw_date:
         dates.append(_parse_date(date))
     return dates
+
+
+def earliest_date(data_values):
+    earliest = DEFAULT_DATE_PARSER.get_date_data(str(datetime.date.today()))
+    for date_string in list_val(data_values):
+        d = DEFAULT_DATE_PARSER.get_date_data(date_string)
+        if d['date_obj'] < earliest['date_obj']:
+            earliest = d
+    return {
+        "offset": earliest['date_obj'].strftime("%Y-%m-%d"),
+        "period": earliest['period']
+    }
+
+
+def date_interval(data_values):
+    reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
+    endpoint = single_val(data_values)
+    if endpoint is None:
+        return None
+    offset = DEFAULT_DATE_PARSER.get_date_data(reference["offset"])["date_obj"]
+    date_obj = DEFAULT_DATE_PARSER.get_date_data(endpoint)["date_obj"]
+    is_neg = False
+    if offset <= date_obj:
+        start = offset
+        end = date_obj
+    else:
+        start = date_obj
+        end = offset
+        is_neg = True
+    month_interval = len(list(rrule(MONTHLY, dtstart=start, until=end))) - 1
+    if is_neg:
+        month_interval = -month_interval
+    result = {
+        "month_interval": month_interval
+    }
+    if reference["period"] == "day":
+        day_interval = len(list(rrule(DAILY, dtstart=start, until=end))) - 1
+        if is_neg:
+            day_interval = -day_interval
+        result["day_interval"] = day_interval
+    return result
 
 
 # Single date

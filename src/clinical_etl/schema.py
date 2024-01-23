@@ -51,7 +51,7 @@ class BaseSchema:
 
     # schema for validation beyond jsonschema checks. Each schema that is described in the model gets an entry.
     validation_schema = {
-        "example": {             # There should be a method `validate_example` implemented to validate conditionals
+        "examples": {             # There should be a method `validate_examples` implemented to validate conditionals
             "id": "example_id",  # The id used to disambiguate instances of the schema. If None, an array index is used
             "name": "Example",   # The proper name for the schema
             "required_fields": [ # Any fields specified as required in the model (but not absolutely necessary for jsonschema)
@@ -59,10 +59,10 @@ class BaseSchema:
                 "attribute_1"
             ],
             "nested_schemas": [  # Any schema instances that may be nested within instances of this schema.
-                "example_2"      # Nested instances will be validated as part of the validation of the parent.
+                "more_examples"      # Nested instances will be validated as part of the validation of the parent.
             ]
         },
-        "example_2": {
+        "more_examples": {
             "id": None,
             "name": "Example 2",
             "required_fields": [],

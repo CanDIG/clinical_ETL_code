@@ -667,9 +667,11 @@ def csv_convert(input_path, manifest_file, verbose=False):
     with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
         json.dump(mappings.INDEXED_DATA, f, indent=4)
 
+    result_key = list(schema.validation_schema.keys()).pop(0)
+
     result = {
         "openapi_url": schema.openapi_url,
-        "donors": packets
+        result_key: packets
     }
     if schema.katsu_sha is not None:
         result["katsu_sha"] = schema.katsu_sha

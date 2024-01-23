@@ -557,6 +557,7 @@ def load_manifest(manifest_file):
     identifier = None
     schema = "mcode"
     mapping_path = None
+    result = {}
     try:
         with open(manifest_file, 'r') as f:
             manifest = yaml.safe_load(f)
@@ -568,15 +569,16 @@ def load_manifest(manifest_file):
         sys.exit(f"Manifest file not found at provided path: {manifest_file}")
 
     if "identifier" in manifest:
-        identifier = manifest["identifier"]
+        result["identifier"] = manifest["identifier"]
     if "schema" in manifest:
-        schema = manifest["schema"]
+        result["schema"] = manifest["schema"]
     if "mapping" in manifest:
         mapping_file = manifest["mapping"]
         manifest_dir = os.path.dirname(os.path.abspath(manifest_file))
         mapping_path = os.path.join(manifest_dir, mapping_file)
         if os.path.isabs(mapping_file):
             mapping_path = manifest_file
+        result["mapping"] = mapping_path
 
     if "functions" in manifest:
         for mod in manifest["functions"]:
@@ -595,11 +597,7 @@ def load_manifest(manifest_file):
                 sys.exit(e)
     # mappings is a standard module: add it
     mappings.MODULES["mappings"] = importlib.import_module("clinical_etl.mappings")
-    return {
-        "identifier": identifier,
-        "schema": schema,
-        "mapping": mapping_path
-    }
+    return result
 
 
 def csv_convert(input_path, manifest_file, verbose=False):

@@ -10,6 +10,7 @@ INDEX_STACK = []
 INDEXED_DATA = None
 CURRENT_LINE = ""
 OUTPUT_FILE = ""
+DEFAULT_DATE_PARSER = dateparser.DateDataParser(settings={'PREFER_DAY_OF_MONTH': 'first'})
 
 
 class MappingError(Exception):
@@ -404,8 +405,8 @@ def _parse_date(date_string):
     """
     if any(char in '0123456789' for char in date_string):
         try:
-            d = dateparser.parse(date_string, settings={'TIMEZONE': 'UTC'})
-            return d.date().strftime("%Y-%m")
+            d = DEFAULT_DATE_PARSER.get_date_data(date_string)
+            return d['date_obj'].strftime("%Y-%m")
         except Exception as e:
             raise MappingError(f"error in date({date_string}): {type(e)} {e}")
     return date_string

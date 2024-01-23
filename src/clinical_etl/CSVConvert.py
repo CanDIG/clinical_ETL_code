@@ -603,6 +603,7 @@ def load_manifest(manifest_file):
 def csv_convert(input_path, manifest_file, verbose=False):
     mappings.VERBOSE = verbose
     # read manifest data
+    print("Starting conversion")
     manifest = load_manifest(manifest_file)
     mappings.IDENTIFIER_FIELD = manifest["identifier"]
     if mappings.IDENTIFIER_FIELD is None:
@@ -611,6 +612,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
 
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold
+    print("Loading schema")
     schema = MoHSchema(manifest["schema"])
     if schema.json_schema is None:
         sys.exit(f"Could not read an openapi schema at {manifest['schema']};\n"

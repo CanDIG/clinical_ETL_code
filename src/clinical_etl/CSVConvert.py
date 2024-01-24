@@ -13,8 +13,6 @@ import sys
 import yaml
 import argparse
 
-from clinical_etl.mohschema import MoHSchema
-
 
 def verbose_print(message):
     if mappings.VERBOSE:
@@ -555,7 +553,7 @@ def check_for_sheet_inconsistencies(template_sheets, csv_sheets):
 def load_manifest(manifest_file):
     """Given a manifest file's path, return the data inside it."""
     identifier = None
-    schema = "mcode"
+    schema_class = "MoHSchema"
     mapping_path = None
     result = {}
     try:
@@ -570,8 +568,21 @@ def load_manifest(manifest_file):
 
     if "identifier" in manifest:
         result["identifier"] = manifest["identifier"]
-    if "schema" in manifest:
-        result["schema"] = manifest["schema"]
+    if "schema" not in manifest:
+        sys.exit("Need to specify an OpenAPI schema as 'schema' in the manifest file, "
+                 "see README for more details.")
+    if "schema_class" in manifest:
+        schema_class = manifest["schema_class"]
+
+    # programatically load schema class based on manifest value:
+    # schema class definition will be in a file named schema_class.lower()
+    schema_mod = importlib.import_module(f"clinical_etl.{schema_class.lower()}")
+    schema = getattr(schema_mod, schema_class)(manifest["schema"])
+    if schema.json_schema is None:
+        sys.exit(f"Could not read an openapi schema at {manifest['schema']};\n"
+              f"please check the url in the manifest file links to a valid openAPI schema.")
+    result["schema"] = schema
+
     if "mapping" in manifest:
         mapping_file = manifest["mapping"]
         manifest_dir = os.path.dirname(os.path.abspath(manifest_file))
@@ -613,7 +624,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold
     print("Loading schema")
-    schema = MoHSchema(manifest["schema"])
+    schema = manifest["schema"]
     if schema.json_schema is None:
         sys.exit(f"Could not read an openapi schema at {manifest['schema']};\n"
               f"please check the url in the manifest file links to a valid openAPI schema.")
@@ -672,6 +683,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
 
     result = {
         "openapi_url": schema.openapi_url,
+        "schema_class": type(schema).__name__,
         result_key: packets
     }
     if schema.katsu_sha is not None:

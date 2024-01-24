@@ -5,7 +5,9 @@ mapping: moh_template.csv
 identifier: submitter_donor_id
 # a link to the openapi schema
 schema: https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml
-# one or more files (dataset_functions.py) that implement the mappings 
+# class of schema for validation:
+schema_class: MoHSchema
+# one or more files (dataset_functions.py) that implement the mappings
 # described in mapping file
 functions:
   - new_cohort

@@ -201,8 +201,9 @@ def parse_mapping_function(mapping):
 
 def get_row_for_stack_top(sheet, rownum):
     result = {}
-    for param in mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER].keys():
-        result[param] = mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER][param][rownum]
+    if mappings.IDENTIFIER in mappings.INDEXED_DATA["data"][sheet]:
+        for param in mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER].keys():
+            result[param] = mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER][param][rownum]
     verbose_print(f"get_row_for_stack_top {sheet} is {result}")
     return result
 

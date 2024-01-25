@@ -13,8 +13,6 @@ import sys
 import yaml
 import argparse
 
-from clinical_etl.mohschema import MoHSchema
-
 
 def verbose_print(message):
     if mappings.VERBOSE:
@@ -555,8 +553,9 @@ def check_for_sheet_inconsistencies(template_sheets, csv_sheets):
 def load_manifest(manifest_file):
     """Given a manifest file's path, return the data inside it."""
     identifier = None
-    schema = "mcode"
+    schema_class = "MoHSchema"
     mapping_path = None
+    result = {}
     try:
         with open(manifest_file, 'r') as f:
             manifest = yaml.safe_load(f)
@@ -568,15 +567,29 @@ def load_manifest(manifest_file):
         sys.exit(f"Manifest file not found at provided path: {manifest_file}")
 
     if "identifier" in manifest:
-        identifier = manifest["identifier"]
-    if "schema" in manifest:
-        schema = manifest["schema"]
+        result["identifier"] = manifest["identifier"]
+    if "schema" not in manifest:
+        sys.exit("Need to specify an OpenAPI schema as 'schema' in the manifest file, "
+                 "see README for more details.")
+    if "schema_class" in manifest:
+        schema_class = manifest["schema_class"]
+
+    # programatically load schema class based on manifest value:
+    # schema class definition will be in a file named schema_class.lower()
+    schema_mod = importlib.import_module(f"clinical_etl.{schema_class.lower()}")
+    schema = getattr(schema_mod, schema_class)(manifest["schema"])
+    if schema.json_schema is None:
+        sys.exit(f"Could not read an openapi schema at {manifest['schema']};\n"
+              f"please check the url in the manifest file links to a valid openAPI schema.")
+    result["schema"] = schema
+
     if "mapping" in manifest:
         mapping_file = manifest["mapping"]
         manifest_dir = os.path.dirname(os.path.abspath(manifest_file))
         mapping_path = os.path.join(manifest_dir, mapping_file)
         if os.path.isabs(mapping_file):
             mapping_path = manifest_file
+        result["mapping"] = mapping_path
 
     if "functions" in manifest:
         for mod in manifest["functions"]:
@@ -595,16 +608,13 @@ def load_manifest(manifest_file):
                 sys.exit(e)
     # mappings is a standard module: add it
     mappings.MODULES["mappings"] = importlib.import_module("clinical_etl.mappings")
-    return {
-        "identifier": identifier,
-        "schema": schema,
-        "mapping": mapping_path
-    }
+    return result
 
 
 def csv_convert(input_path, manifest_file, verbose=False):
     mappings.VERBOSE = verbose
     # read manifest data
+    print("Starting conversion")
     manifest = load_manifest(manifest_file)
     mappings.IDENTIFIER_FIELD = manifest["identifier"]
     if mappings.IDENTIFIER_FIELD is None:
@@ -613,7 +623,8 @@ def csv_convert(input_path, manifest_file, verbose=False):
 
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold
-    schema = MoHSchema(manifest["schema"])
+    print("Loading schema")
+    schema = manifest["schema"]
     if schema.json_schema is None:
         sys.exit(f"Could not read an openapi schema at {manifest['schema']};\n"
               f"please check the url in the manifest file links to a valid openAPI schema.")
@@ -657,7 +668,8 @@ def csv_convert(input_path, manifest_file, verbose=False):
         mappings._push_to_stack(None, None, 0)
         packet = map_data_to_scaffold(deepcopy(mapping_scaffold), None, 0)
         if packet is not None:
-            packets.extend(packet["DONOR"])
+            main_key = list(packet.keys())[0]
+            packets.extend(packet[main_key])
         if mappings._pop_from_stack() is None:
             raise Exception(f"Stack popped too far!\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}")
         if mappings._pop_from_stack() is not None:
@@ -667,9 +679,12 @@ def csv_convert(input_path, manifest_file, verbose=False):
     with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
         json.dump(mappings.INDEXED_DATA, f, indent=4)
 
+    result_key = list(schema.validation_schema.keys()).pop(0)
+
     result = {
         "openapi_url": schema.openapi_url,
-        "donors": packets
+        "schema_class": type(schema).__name__,
+        result_key: packets
     }
     if schema.katsu_sha is not None:
         result["katsu_sha"] = schema.katsu_sha

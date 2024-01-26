@@ -61,7 +61,10 @@ def earliest_date(data_values):
 
 
 def date_interval(data_values):
-    reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
+    try:
+        reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
+    except Exception as e:
+        raise MappingError("No reference date found to calculate date_interval: is there a reference_date specified in the manifest?")
     endpoint = single_val(data_values)
     if endpoint is None:
         return None

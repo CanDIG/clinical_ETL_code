@@ -46,6 +46,14 @@ def date(data_values):
 
 
 def earliest_date(data_values):
+    """Calculates the earliest date from a set of dates
+
+    Args:
+        data_values: A values dict of dates of diagnosis and date_resolution
+
+    Returns:
+        A dictionary containing the earliest date (`offset`) as a date object and the provided `date_resolution`
+    """
     fields = list(data_values.keys())
     date_resolution = list(data_values[fields[0]].values())[0]
     dates = list(data_values[fields[1]].values())[0]
@@ -61,6 +69,15 @@ def earliest_date(data_values):
 
 
 def date_interval(data_values):
+    """Calculates a date interval from a given date relative to the reference date specified in the manifest.
+
+    Args:
+        data_values: a values dict with a date
+
+    Returns:
+        A dictionary with calculated month_interval and optionally a day_interval depending on the specified
+        date_resolution.
+    """
     try:
         reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
     except Exception as e:

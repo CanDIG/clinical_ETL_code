@@ -23,6 +23,7 @@ class MoHSchema(BaseSchema):
                 "sex_at_birth",
                 "is_deceased",
                 "program_id",
+                "date_resolution",
                 "date_of_birth",
                 "primary_site"
             ],

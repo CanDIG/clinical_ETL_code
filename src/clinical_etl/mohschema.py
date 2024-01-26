@@ -23,6 +23,7 @@ class MoHSchema(BaseSchema):
                 "sex_at_birth",
                 "is_deceased",
                 "program_id",
+                "date_resolution",
                 "date_of_birth",
                 "primary_site"
             ],
@@ -216,8 +217,12 @@ class MoHSchema(BaseSchema):
                             self.fail("date_of_death should only be submitted if is_deceased = Yes")
                         else:
                             if map_json["date_of_birth"] is not None:
-                                death = dateparser.parse(map_json["date_of_death"]).date()
-                                birth = dateparser.parse(map_json["date_of_birth"]).date()
+                                if "dict" in str(type(map_json["date_of_birth"])):
+                                    death = map_json["date_of_death"]["month_interval"]
+                                    birth = map_json["date_of_birth"]["month_interval"]
+                                else:
+                                    death = dateparser.parse(map_json["date_of_death"]).date()
+                                    birth = dateparser.parse(map_json["date_of_birth"]).date()
                                 if birth > death:
                                     self.fail("date_of_death cannot be earlier than date_of_birth")
                 case "biomarkers":

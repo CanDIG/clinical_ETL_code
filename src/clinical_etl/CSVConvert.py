@@ -201,8 +201,9 @@ def parse_mapping_function(mapping):
 
 def get_row_for_stack_top(sheet, rownum):
     result = {}
-    for param in mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER].keys():
-        result[param] = mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER][param][rownum]
+    if mappings.IDENTIFIER in mappings.INDEXED_DATA["data"][sheet]:
+        for param in mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER].keys():
+            result[param] = mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER][param][rownum]
     verbose_print(f"get_row_for_stack_top {sheet} is {result}")
     return result
 
@@ -591,6 +592,9 @@ def load_manifest(manifest_file):
             mapping_path = manifest_file
         result["mapping"] = mapping_path
 
+    if "reference_date" in manifest:
+        result["reference_date"] = manifest["reference_date"]
+
     if "functions" in manifest:
         for mod in manifest["functions"]:
             try:
@@ -665,6 +669,16 @@ def csv_convert(input_path, manifest_file, verbose=False):
     for indiv in mappings.INDEXED_DATA["individuals"]:
         print(f"Creating packet for {indiv}")
         mappings.IDENTIFIER = indiv
+
+        # If there is a reference_date in the manifest, we need to calculate that and add CALCULATED.REFERENCE_DATE to the INDEXED_DATA
+        if "reference_date" in manifest:
+            ref_temp = f"REFERENCE_DATE, {{{manifest['reference_date']}}}"
+            reference_date_scaffold = create_scaffold_from_template([ref_temp])
+            func, params = parse_mapping_function(reference_date_scaffold['REFERENCE_DATE'])
+            sheet = params[0].split('.')[0]
+            mappings._push_to_stack(sheet, mappings.IDENTIFIER_FIELD, 0)
+            map_data_to_scaffold(reference_date_scaffold, None, 0)
+            mappings.INDEX_STACK = []
         mappings._push_to_stack(None, None, 0)
         packet = map_data_to_scaffold(deepcopy(mapping_scaffold), None, 0)
         if packet is not None:

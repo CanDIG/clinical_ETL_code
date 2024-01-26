@@ -4,7 +4,7 @@ import subprocess
 def main():
     docs = subprocess.check_output(["pdoc",  "mappings"])
     print(docs.decode())
-    with open("mapping_functions.md", "r") as f:
+    with open("../../mapping_functions.md", "r") as f:
         mapping_functions_lines = f.readlines()
 
     updated_mapping_functions = []
@@ -17,7 +17,7 @@ def main():
     updated_mapping_functions.append(
         "\n<!--- documentation below this line is generated automatically by running generate_mapping_docs.py --->\n\n")
     updated_mapping_functions.append(docs.decode())
-    with open("mapping_functions.md", "w+") as f:
+    with open("../../mapping_functions.md", "w+") as f:
         f.writelines(updated_mapping_functions)
 
 

@@ -125,6 +125,7 @@ represents the following JSON dict:
 # Standard Functions Index
 
 <!--- documentation below this line is generated automatically by running generate_mapping_docs.py --->
+
 Module mappings
 ===============
 
@@ -140,9 +141,10 @@ Functions
     
     Returns:
         A boolean based on the input,
-        `False` if value is in ["No", "no", "False", "false"]
-        `None` if value is in [`None`, "nan", "NaN", "NAN"]
-        `True` otherwise
+        `False` if value is in ["No", "no", "N", "n", "False", "false", "F", "f"]
+        `True` if value is in ["Yes", "yes", "Y", "y", True", "true", "T", "t"]
+        None if value is in [`None`, "nan", "NaN", "NAN"]
+        None otherwise
 
     
 `concat_vals(data_values)`
@@ -165,6 +167,27 @@ Functions
     
     Returns:
         a list of dates in YYYY-MM format or None if blank/empty/unparseable
+
+    
+`date_interval(data_values)`
+:   Calculates a date interval from a given date relative to the reference date specified in the manifest.
+    
+    Args:
+        data_values: a values dict with a date
+    
+    Returns:
+        A dictionary with calculated month_interval and optionally a day_interval depending on the specified
+        date_resolution.
+
+    
+`earliest_date(data_values)`
+:   Calculates the earliest date from a set of dates
+    
+    Args:
+        data_values: A values dict of dates of diagnosis and date_resolution
+    
+    Returns:
+        A dictionary containing the earliest date (`offset`) as a date object and the provided `date_resolution`
 
     
 `flat_list_val(data_values)`

@@ -75,6 +75,7 @@ The `manifest.yml` file contains settings for the cohort mapping. There is a sam
 | identifier    | the unique identifier for the donor or root node                                                                                                                                                          |
 | schema        | a URL to the openapi schema file                                                                                                                                                                          |
 | schema_class  | The name of the class in the schema used as the model for creating the map.json. Currently supported: `MoHSchema` - for clinical MoH data and `GenomicSchema` for creating a genomic ingest linking file. |
+| reference_date | a reference date used to calculate date intervals, formatted as a mapping entry for the mapping template                                                                                                 |
 | functions     | A list of one or more filenames containing additional mapping functions, can be omitted if not needed. Assumed to be in the same directory as the `manifest.yml` file                                     |
 
 #### Mapping template

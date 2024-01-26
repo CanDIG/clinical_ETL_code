@@ -7,6 +7,8 @@ identifier: submitter_donor_id
 schema: https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml
 # class of schema for validation:
 schema_class: MoHSchema
+# a reference date used to calculate date intervals, formatted as a mapping entry for the mapping template
+reference_date: earliest_date(Donor.date_resolution, PrimaryDiagnosis.date_of_diagnosis)
 # one or more files (dataset_functions.py) that implement the mappings
 # described in mapping file
 functions:

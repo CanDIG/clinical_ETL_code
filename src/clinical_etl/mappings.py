@@ -47,8 +47,8 @@ def date(data_values):
 
 def earliest_date(data_values):
     fields = list(data_values.keys())
-    date_resolution = list(data_values[fields[0]].values())[0][0]
-    dates = list(data_values[fields[1]].values())
+    date_resolution = list(data_values[fields[0]].values())[0]
+    dates = list(data_values[fields[1]].values())[0]
     earliest = DEFAULT_DATE_PARSER.get_date_data(str(datetime.date.today()))
     for date_string in dates:
         d = DEFAULT_DATE_PARSER.get_date_data(date_string)

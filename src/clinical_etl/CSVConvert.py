@@ -674,7 +674,8 @@ def csv_convert(input_path, manifest_file, verbose=False):
         if "reference_date" in manifest:
             ref_temp = f"REFERENCE_DATE, {{{manifest['reference_date']}}}"
             reference_date_scaffold = create_scaffold_from_template([ref_temp])
-            sheet = mappings.INDEXED_DATA["columns"][mappings.IDENTIFIER_FIELD][0]
+            func, params = parse_mapping_function(reference_date_scaffold['REFERENCE_DATE'])
+            sheet = params[0].split('.')[0]
             mappings._push_to_stack(sheet, mappings.IDENTIFIER_FIELD, 0)
             map_data_to_scaffold(reference_date_scaffold, None, 0)
             mappings.INDEX_STACK = []

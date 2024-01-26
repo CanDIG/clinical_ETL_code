@@ -5,6 +5,7 @@
 DONOR.INDEX, {indexed_on(DONOR_SHEET.submitter_donor_id)}
 DONOR.INDEX.submitter_donor_id, {single_val(DONOR_SHEET.submitter_donor_id)}
 DONOR.INDEX.program_id, {single_val(DONOR_SHEET.program_id)}
+DONOR.INDEX.date_resolution, {single_val(DONOR_SHEET.date_resolution)}
 DONOR.INDEX.lost_to_followup_after_clinical_event_identifier, {single_val(DONOR_SHEET.lost_to_followup_after_clinical_event_identifier)}
 DONOR.INDEX.lost_to_followup_reason, {single_val(DONOR_SHEET.lost_to_followup_reason)}
 DONOR.INDEX.date_alive_after_lost_to_followup, {date_interval(DONOR_SHEET.date_alive_after_lost_to_followup)}

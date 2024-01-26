@@ -7,6 +7,7 @@ DONOR.INDEX, {indexed_on(Donor.submitter_donor_id)}
 DONOR.INDEX.submitter_donor_id, {single_val(Donor.submitter_donor_id)}
 DONOR.INDEX.test_mapping, {testmap.fake_map(Donor.is_deceased)}
 DONOR.INDEX.program_id, {single_val(Donor.program_id)}
+DONOR.INDEX.date_resolution, {single_val(Donor.date_resolution)}
 DONOR.INDEX.is_deceased, {boolean(Donor.is_deceased)}
 DONOR.INDEX.cause_of_death, {single_val(Donor.cause_of_death)}
 DONOR.INDEX.date_of_birth, {date_interval(Donor.date_of_birth)}

@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import sys
+import os
 from copy import deepcopy
 import importlib.util
 import json
-from clinical_etl import mappings
-import os
 import pandas
 import csv
 import re
-import sys
 import yaml
 import argparse
+# Include clinical_etl parent directory in the module search path.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+from clinical_etl import mappings
 
 
 def verbose_print(message):

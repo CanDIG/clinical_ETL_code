@@ -225,7 +225,7 @@ You can validate the generated json mapping file against the MoH data model. The
 
 ```
 $ python src/clinical_etl/validate_coverage.py -h
-validate_coverage.py [-h] [--input map.json] [--manifest MAPPING]
+usage: validate_coverage.py [-h] --json JSON [--verbose]
 
 options:
   -h, --help      show this help message and exit

@@ -131,7 +131,7 @@ def int_to_date_interval_json(data_values):
     except:
         raise MappingError("No date_resolution found to specify date interval resolution: is there a date_resolution specified in the donor file?")
     # Format as JSON, indicating interval resolution.
-    return {resolution + "_interval": single_val(data_values)}
+    return {resolution + "_interval": integer(data_values)}
 
 # Single date
 def single_date(data_values):

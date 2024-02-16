@@ -2,6 +2,7 @@ import ast
 import dateparser
 import json
 import datetime
+import math
 from dateutil.rrule import rrule, MONTHLY, DAILY
 
 VERBOSE = False
@@ -113,25 +114,41 @@ def date_interval(data_values):
         result["day_interval"] = day_interval
     return result
 
+
 def int_to_date_interval_json(data_values):
-    """Converts an integer date interval into JSON format, specifying either a month or day interval.
+    """Converts an integer date interval into JSON format.
 
     Args:
         data_values: a values dict with an integer.
 
     Returns:
-        A dictionary with calculated month_interval or day_interval depending on the specified date_resolution in the donor file.
+        A dictionary with a calculated month_interval and optionally a day_interval depending on the specified date_resolution in the donor file.
     """
 
-    # Lookup either month or day date resolution
+    # Dates are by nature messy.  This function does not account for leap years and February's 28 days, but is close enough.
+    # Either month or day date resolutions are permitted.
     resolution = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["date_resolution"][0]
-    # Ensure the date interval is in either months or days.
     try:
         resolution in ("month", "day")
     except:
         raise MappingError("No date_resolution found to specify date interval resolution: is there a date_resolution specified in the donor file?")
-    # Format as JSON, indicating interval resolution.
-    return {resolution + "_interval": integer(data_values)}
+    # Format as JSON.  Always include a month_interval.  day_interval is optional.
+    if resolution == "month":
+        return {resolution + "_interval": integer(data_values)}
+    if resolution == "day":
+        date_interval = {"day_interval": integer(data_values)}
+        # Calculate month_interval from day_interval
+        day_integer = integer(data_values)
+        if day_integer < 0:
+            sign = -1
+        else:
+            sign = 1
+        if sign * day_integer <= 365:
+            date_interval["month_interval"] = sign * math.floor(sign * day_integer / 30)
+        else: # Calculate 12 months per year and remaining months.
+            date_interval["month_interval"] = sign * (12 * math.floor(sign * day_integer / 365) + math.floor((sign * day_integer % 365) / 30))
+    return date_interval
+
 
 # Single date
 def single_date(data_values):

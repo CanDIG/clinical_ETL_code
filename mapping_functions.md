@@ -66,15 +66,23 @@ A detailed index of all standard functions can be viewed below in the [Standard 
 
 ## Writing your own custom functions
 
-If the data cannot be transformed with one of the standard functions, you can define your own. In your data directory (the one that contains `manifest.yml`) create a python file (let's assume you called it `new_cohort.py`) and add the name of that file as the `mapping` entry in the manifest.
+If the data cannot be transformed with one of the standard functions, you can define your own.
 
-Following the format in the generic `mappings.py`, write your own functions in your python file for how to translate the data. To specify a custom mapping function in the template:
+In your data directory (the one that contains `manifest.yml`) create a python file (let's assume you called it `new_cohort.py`) and add the name of that file as a .yml list after `functions` in the manifest.  For example:
+```
+functions:
+  - new_cohort
+```
 
-`DONOR.INDEX.primary_diagnoses.INDEX.basis_of_diagnosis,{new_cohort.custom_function(DATA_SHEET.field_name)}`
+Following the format in the generic `mappings.py`, write your own functions in your python file to translate the data.
+
+To use a custom mapping function in the template, you must specify the file and function using dot-separated notation:
+
+DONOR.INDEX.primary_diagnoses.INDEX.basis_of_diagnosis,{**new_cohort.custom_function**(DATA_SHEET.field_name)}
 
 Examples:
 
-To map input values to output values (in case your data capture used different values than the model):
+Map input values to output values (in case your data capture used different values than the model):
 
 ```
 def sex(data_value):

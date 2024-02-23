@@ -1,3 +1,9 @@
+import os
+import sys
+# Include src/ directory in the module search path.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(os.sep.join([parent_dir, "src"]))
 import clinical_etl.mappings
 
 def indexed_on_if_absent(data_values):

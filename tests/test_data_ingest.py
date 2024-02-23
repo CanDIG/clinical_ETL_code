@@ -1,9 +1,14 @@
 import pytest
 import yaml
+import os
+import sys
+import json
+# Include src/clinical_etl directory in the module search path.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(os.sep.join([parent_dir, "src"]))
 from clinical_etl import CSVConvert
 from clinical_etl import mappings
-import json
-import os
 from clinical_etl.mohschema import MoHSchema
 
 # read sheet from given data pathway

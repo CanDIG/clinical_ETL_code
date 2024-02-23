@@ -3,6 +3,11 @@ import json
 import sys
 import mappings
 import importlib.util
+import os
+# Include clinical_etl parent directory in the module search path for a later import.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
 # from jsoncomparison import Compare
 # from copy import deepcopy
 # import yaml

@@ -242,13 +242,13 @@ Functions
 
 
 `int_to_date_interval_json(data_values)`
-:   Converts an integer date interval into JSON format, specifying either a month or day interval.
+:   Converts an integer date interval into JSON format.
 
     Args:
         data_values: a values dict with an integer.
 
     Returns:
-        A dictionary with calculated month_interval or day_interval depending on the specified date_resolution in the donor file.
+        A dictionary with a calculated month_interval and optionally a day_interval depending on the specified date_resolution in the donor file.
 
 
 `integer(data_values)`

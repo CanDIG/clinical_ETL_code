@@ -126,6 +126,8 @@ def int_to_date_interval_json(data_values):
     """
 
     # Dates are by nature messy.  This function does not account for leap years and February's 28 days, but is close enough.
+    if integer(data_values) is None:
+        return
     # Either month or day date resolutions are permitted.
     resolution = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["date_resolution"][0]
     try:

@@ -58,8 +58,13 @@ def earliest_date(data_values):
     date_resolution = list(data_values[fields[0]].values())[0]
     dates = list(data_values[fields[1]].values())[0]
     earliest = DEFAULT_DATE_PARSER.get_date_data(str(datetime.date.today()))
-    for date_string in dates:
-        d = DEFAULT_DATE_PARSER.get_date_data(date_string)
+    # Ensure dates is a list, not a string, to allow non-indexed, single value entries.
+    if type(dates) is not list:
+        dates_list = [dates]
+    else:
+        dates_list = dates
+    for date in dates_list:
+        d = DEFAULT_DATE_PARSER.get_date_data(date)
         if d['date_obj'] < earliest['date_obj']:
             earliest = d
     return {
@@ -108,6 +113,25 @@ def date_interval(data_values):
         result["day_interval"] = day_interval
     return result
 
+def int_to_date_interval_json(data_values):
+    """Converts an integer date interval into JSON format, specifying either a month or day interval.
+
+    Args:
+        data_values: a values dict with an integer.
+
+    Returns:
+        A dictionary with calculated month_interval or day_interval depending on the specified date_resolution in the donor file.
+    """
+
+    # Lookup either month or day date resolution
+    resolution = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["date_resolution"][0]
+    # Ensure the date interval is in either months or days.
+    try:
+        resolution in ("month", "day")
+    except:
+        raise MappingError("No date_resolution found to specify date interval resolution: is there a date_resolution specified in the donor file?")
+    # Format as JSON, indicating interval resolution.
+    return {resolution + "_interval": single_val(data_values)}
 
 # Single date
 def single_date(data_values):

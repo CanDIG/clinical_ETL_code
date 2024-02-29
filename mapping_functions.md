@@ -209,7 +209,7 @@ Functions
         A parsed list of items in the list, e.g. ['a', 'b', 'c']
 
 
-`float(data_values)`
+`floating(data_values)`
 :   Convert a value to a float.
 
     Args:

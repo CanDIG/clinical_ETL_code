@@ -342,7 +342,7 @@ def integer(data_values):
         return None
 
 
-def floating(data_values):
+def float(data_values):
     """Convert a value to a float.
 
     Args:

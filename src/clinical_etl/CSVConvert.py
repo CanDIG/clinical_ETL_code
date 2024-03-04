@@ -653,8 +653,8 @@ def csv_convert(input_path, manifest_file, verbose=False):
 
     print("Indexing data")
     mappings.INDEXED_DATA = process_data(raw_csv_dfs)
-    with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
-        if args.index:
+    if args.index:
+        with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
             if args.minify:
                 json.dump(mappings.INDEXED_DATA, f)
             else:
@@ -699,9 +699,8 @@ def csv_convert(input_path, manifest_file, verbose=False):
         if mappings._pop_from_stack() is not None:
             raise Exception(
                 f"Stack not empty\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}\n {mappings.INDEX_STACK}")
-
-    with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
-        if args.indexed:
+    if args.index:
+        with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
             if args.minify:
                 json.dump(mappings.INDEXED_DATA, f)
             else:

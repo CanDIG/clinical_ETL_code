@@ -621,7 +621,7 @@ def load_manifest(manifest_file):
     return result
 
 
-def csv_convert(input_path, manifest_file, verbose=False):
+def csv_convert(input_path, manifest_file, minify=False, index_output=False, verbose=False):
     mappings.VERBOSE = verbose
     # read manifest data
     print("Starting conversion")
@@ -653,9 +653,9 @@ def csv_convert(input_path, manifest_file, verbose=False):
 
     print("Indexing data")
     mappings.INDEXED_DATA = process_data(raw_csv_dfs)
-    if args.index:
+    if index_output:
         with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
-            if args.minify:
+            if minify:
                 json.dump(mappings.INDEXED_DATA, f)
             else:
                 json.dump(mappings.INDEXED_DATA, f, indent=4)
@@ -699,9 +699,9 @@ def csv_convert(input_path, manifest_file, verbose=False):
         if mappings._pop_from_stack() is not None:
             raise Exception(
                 f"Stack not empty\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}\n {mappings.INDEX_STACK}")
-    if args.index:
+    if index_output:
         with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
-            if args.minify:
+            if minify:
                 json.dump(mappings.INDEXED_DATA, f)
             else:
                 json.dump(mappings.INDEXED_DATA, f, indent=4)
@@ -716,7 +716,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
     if schema.katsu_sha is not None:
         result["katsu_sha"] = schema.katsu_sha
     with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
-        if args.minify:
+        if minify:
             json.dump(result, f)
         else:
             json.dump(result, f, indent=4)
@@ -727,7 +727,7 @@ def csv_convert(input_path, manifest_file, verbose=False):
     result["validation_warnings"] = schema.validation_warnings
     result["statistics"] = schema.statistics
     with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
-        if args.minify:
+        if minify:
             json.dump(result, f)
         else:
             json.dump(result, f, indent=4)
@@ -747,4 +747,4 @@ if __name__ == '__main__':
     args = parse_args()
     input_path = args.input
     manifest_file = args.manifest
-    csv_convert(input_path, manifest_file, verbose=args.verbose)
+    csv_convert(input_path, manifest_file,  minify=args.minify, index_output=args.index, verbose=args.verbose)

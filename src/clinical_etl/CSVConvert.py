@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument('--manifest', type=str, required=True, help="Path to a manifest file describing the mapping. See README for more information")
     parser.add_argument('--test', action="store_true", help="Use exact template specified in manifest: do not remove extra lines")
     parser.add_argument('--verbose', '--v', action="store_true", help="Print extra information, useful for debugging and understanding how the code runs.")
-    parser.add_argument('--index', '--i', action="store_true", help="Out put 'indexed' file, useful for debugging and seeing relationships.")
+    parser.add_argument('--index', '--i', action="store_true", help="Output 'indexed' file, useful for debugging and seeing relationships.")
     parser.add_argument('--minify', action="store_true", help="Remove white space and line breaks from json outputs to reduce file size. Less readable for humans.")
     args = parser.parse_args()
     return args

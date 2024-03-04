@@ -32,6 +32,7 @@ def parse_args():
     parser.add_argument('--manifest', type=str, required=True, help="Path to a manifest file describing the mapping. See README for more information")
     parser.add_argument('--test', action="store_true", help="Use exact template specified in manifest: do not remove extra lines")
     parser.add_argument('--verbose', '--v', action="store_true", help="Print extra information, useful for debugging and understanding how the code runs.")
+    parser.add_argument('--minify', action="store_true", help="Remove white space and line breaks from json outputs to reduce file size. Less readable for humans.")
     args = parser.parse_args()
     return args
 
@@ -652,7 +653,10 @@ def csv_convert(input_path, manifest_file, verbose=False):
     print("Indexing data")
     mappings.INDEXED_DATA = process_data(raw_csv_dfs)
     with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
-        json.dump(mappings.INDEXED_DATA, f, indent=4)
+        if args.minify:
+            json.dump(mappings.INDEXED_DATA, f)
+        else:
+            json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     # if verbose flag is set, warn if column name is present in multiple sheets:
     for col in mappings.INDEXED_DATA["columns"]:
@@ -695,7 +699,10 @@ def csv_convert(input_path, manifest_file, verbose=False):
                 f"Stack not empty\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}\n {mappings.INDEX_STACK}")
 
     with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
-        json.dump(mappings.INDEXED_DATA, f, indent=4)
+        if args.minify:
+            json.dump(mappings.INDEXED_DATA, f)
+        else:
+            json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     result_key = list(schema.validation_schema.keys()).pop(0)
 
@@ -707,7 +714,10 @@ def csv_convert(input_path, manifest_file, verbose=False):
     if schema.katsu_sha is not None:
         result["katsu_sha"] = schema.katsu_sha
     with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
-        json.dump(result, f, indent=4)
+        if args.minify:
+            json.dump(result, f)
+        else:
+            json.dump(result, f, indent=4)
 
     # add validation data:
     schema.validate_ingest_map(result)
@@ -715,7 +725,10 @@ def csv_convert(input_path, manifest_file, verbose=False):
     result["validation_warnings"] = schema.validation_warnings
     result["statistics"] = schema.statistics
     with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
-        json.dump(result, f, indent=4)
+        if args.minify:
+            json.dump(result, f)
+        else:
+            json.dump(result, f, indent=4)
 
     if len(result["validation_warnings"]) > 0:
         print(

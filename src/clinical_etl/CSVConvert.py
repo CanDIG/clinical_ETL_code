@@ -743,8 +743,12 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     return packets
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
     input_path = args.input
     manifest_file = args.manifest
-    csv_convert(input_path, manifest_file,  minify=args.minify, index_output=args.index, verbose=args.verbose)
+    csv_convert(input_path, manifest_file, minify=args.minify, index_output=args.index, verbose=args.verbose)
+
+
+if __name__ == '__main__':
+    main()

@@ -20,5 +20,8 @@ requires-python = ">= 3.10"
 description = "ETL module for transforming clinical CSV data into properly-formatted packets for ingest into Katsu"
 readme = "README.md"
 
+[project.scripts]
+CSVConvert = "clinical_etl.CSVConvert:main"
+
 [project.urls]
 Repository = "https://github.com/CanDIG/clinical_ETL_code"

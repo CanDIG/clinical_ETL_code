@@ -4,6 +4,7 @@ pyproject.toml
 src/clinical_ETL.egg-info/PKG-INFO
 src/clinical_ETL.egg-info/SOURCES.txt
 src/clinical_ETL.egg-info/dependency_links.txt
+src/clinical_ETL.egg-info/entry_points.txt
 src/clinical_ETL.egg-info/requires.txt
 src/clinical_ETL.egg-info/top_level.txt
 src/clinical_etl/CSVConvert.py

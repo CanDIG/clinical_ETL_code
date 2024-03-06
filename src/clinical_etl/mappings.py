@@ -336,9 +336,9 @@ def integer(data_values):
     if cell is None or cell.lower() == "nan":
         return None
     try:
-        return int(cell)
+        return int(float(cell))
     except ValueError as e:
-        _warn(e)
+        _warn(e, data_values)
         return None
 
 
@@ -360,7 +360,7 @@ def floating(data_values):
     try:
         return float(cell)
     except ValueError as e:
-        _warn(e)
+        _warn(e, data_values)
         return None
 
 
@@ -445,13 +445,15 @@ def moh_indexed_on_donor_if_others_absent(data_values):
     }
 
 
-def _warn(message):
+def _warn(message, input_values=None):
     """Warns a user when a mapping is unsuccessful with the IDENTIFIER and FIELD."""
     global IDENTIFIER
-    if IDENTIFIER is not None:
-        print(f"WARNING for {IDENTIFIER_FIELD}={IDENTIFIER}: {message}")
+    if IDENTIFIER is not None and input_values is not None:
+        print(f"WARNING for {IDENTIFIER_FIELD}={IDENTIFIER}: {message}. Input data: {input_values}")
     else:
         print(f"WARNING: {message}")
+        if input_values is not None:
+            print(f"WARNING: {message}. Input data: {input_values}")
 
 
 def _push_to_stack(sheet, id, rownum):

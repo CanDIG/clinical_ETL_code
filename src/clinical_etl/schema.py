@@ -8,6 +8,7 @@ from copy import deepcopy
 import jsonschema
 from collections import Counter
 import openapi_spec_validator as osv
+from requests_file import FileAdapter
 
 
 class ValidationError(Exception):
@@ -87,7 +88,9 @@ class BaseSchema:
         """Retrieve the schema from the supplied URL, return as dictionary."""
         try:
             osv.validate_url(self.openapi_url)
-            resp = requests.get(self.openapi_url)
+            req = requests.Session()
+            req.mount('file://', FileAdapter())
+            resp = req.get(self.openapi_url)
             resp.raise_for_status()
             schema = yaml.safe_load(resp.text)
         except Exception as e:

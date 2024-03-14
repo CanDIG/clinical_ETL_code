@@ -33,5 +33,9 @@ class GenomicSchema(BaseSchema):
     }
 
 
+    def validate_genomic_ids(self, map_json):
+        return
+
+
     def validate_samples(self, map_json):
         return

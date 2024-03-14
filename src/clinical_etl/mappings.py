@@ -1,6 +1,9 @@
 import ast
 import dateparser
 import json
+import datetime
+import math
+from dateutil.rrule import rrule, MONTHLY, DAILY
 
 VERBOSE = False
 MODULES = {}
@@ -10,6 +13,7 @@ INDEX_STACK = []
 INDEXED_DATA = None
 CURRENT_LINE = ""
 OUTPUT_FILE = ""
+DEFAULT_DATE_PARSER = dateparser.DateDataParser(settings={'PREFER_DAY_OF_MONTH': 'first'})
 
 
 class MappingError(Exception):
@@ -40,6 +44,112 @@ def date(data_values):
     for date in raw_date:
         dates.append(_parse_date(date))
     return dates
+
+
+def earliest_date(data_values):
+    """Calculates the earliest date from a set of dates
+
+    Args:
+        data_values: A values dict of dates of diagnosis and date_resolution
+
+    Returns:
+        A dictionary containing the earliest date (`offset`) as a date object and the provided `date_resolution`
+    """
+    fields = list(data_values.keys())
+    date_resolution = list(data_values[fields[0]].values())[0]
+    dates = list(data_values[fields[1]].values())[0]
+    earliest = DEFAULT_DATE_PARSER.get_date_data(str(datetime.date.today()))
+    # Ensure dates is a list, not a string, to allow non-indexed, single value entries.
+    if type(dates) is not list:
+        dates_list = [dates]
+    else:
+        dates_list = dates
+    for date in dates_list:
+        d = DEFAULT_DATE_PARSER.get_date_data(date)
+        if d['date_obj'] < earliest['date_obj']:
+            earliest = d
+    return {
+        "offset": earliest['date_obj'].strftime("%Y-%m-%d"),
+        "period": date_resolution
+    }
+
+
+def date_interval(data_values):
+    """Calculates a date interval from a given date relative to the reference date specified in the manifest.
+
+    Args:
+        data_values: a values dict with a date
+
+    Returns:
+        A dictionary with calculated month_interval and optionally a day_interval depending on the specified
+        date_resolution.
+    """
+    try:
+        reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
+    except Exception as e:
+        raise MappingError("No reference date found to calculate date_interval: is there a reference_date specified in the manifest?")
+    endpoint = single_val(data_values)
+    if endpoint is None:
+        return None
+    offset = DEFAULT_DATE_PARSER.get_date_data(reference["offset"])["date_obj"]
+    date_obj = DEFAULT_DATE_PARSER.get_date_data(endpoint)["date_obj"]
+    is_neg = False
+    if offset <= date_obj:
+        start = offset
+        end = date_obj
+    else:
+        start = date_obj
+        end = offset
+        is_neg = True
+    month_interval = len(list(rrule(MONTHLY, dtstart=start, until=end))) - 1
+    if is_neg:
+        month_interval = -month_interval
+    result = {
+        "month_interval": month_interval
+    }
+    if reference["period"] == "day":
+        day_interval = len(list(rrule(DAILY, dtstart=start, until=end))) - 1
+        if is_neg:
+            day_interval = -day_interval
+        result["day_interval"] = day_interval
+    return result
+
+
+def int_to_date_interval_json(data_values):
+    """Converts an integer date interval into JSON format.
+
+    Args:
+        data_values: a values dict with an integer.
+
+    Returns:
+        A dictionary with a calculated month_interval and optionally a day_interval depending on the specified date_resolution in the donor file.
+    """
+
+    # Dates are by nature messy.  This function does not account for leap years and February's 28 days, but is close enough.
+    if integer(data_values) is None:
+        return
+    # Either month or day date resolutions are permitted.
+    resolution = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["date_resolution"][0]
+    try:
+        resolution in ("month", "day")
+    except:
+        raise MappingError("No date_resolution found to specify date interval resolution: is there a date_resolution specified in the donor file?")
+    # Format as JSON.  Always include a month_interval.  day_interval is optional.
+    if resolution == "month":
+        return {resolution + "_interval": integer(data_values)}
+    if resolution == "day":
+        date_interval = {"day_interval": integer(data_values)}
+        # Calculate month_interval from day_interval
+        day_integer = integer(data_values)
+        if day_integer < 0:
+            sign = -1
+        else:
+            sign = 1
+        if sign * day_integer <= 365:
+            date_interval["month_interval"] = sign * math.floor(sign * day_integer / 30)
+        else: # Calculate 12 months per year and remaining months.
+            date_interval["month_interval"] = sign * (12 * math.floor(sign * day_integer / 365) + math.floor((sign * day_integer % 365) / 30))
+    return date_interval
 
 
 # Single date
@@ -226,13 +336,13 @@ def integer(data_values):
     if cell is None or cell.lower() == "nan":
         return None
     try:
-        return int(cell)
+        return int(float(cell))
     except ValueError as e:
-        _warn(e)
+        _warn(e, data_values)
         return None
 
 
-def float(data_values):
+def floating(data_values):
     """Convert a value to a float.
 
     Args:
@@ -250,7 +360,7 @@ def float(data_values):
     try:
         return float(cell)
     except ValueError as e:
-        _warn(e)
+        _warn(e, data_values)
         return None
 
 
@@ -335,13 +445,15 @@ def moh_indexed_on_donor_if_others_absent(data_values):
     }
 
 
-def _warn(message):
+def _warn(message, input_values=None):
     """Warns a user when a mapping is unsuccessful with the IDENTIFIER and FIELD."""
     global IDENTIFIER
-    if IDENTIFIER is not None:
-        print(f"WARNING for {IDENTIFIER_FIELD}={IDENTIFIER}: {message}")
+    if IDENTIFIER is not None and input_values is not None:
+        print(f"WARNING for {IDENTIFIER_FIELD}={IDENTIFIER}: {message}. Input data: {input_values}")
     else:
         print(f"WARNING: {message}")
+        if input_values is not None:
+            print(f"WARNING: {message}. Input data: {input_values}")
 
 
 def _push_to_stack(sheet, id, rownum):
@@ -404,8 +516,8 @@ def _parse_date(date_string):
     """
     if any(char in '0123456789' for char in date_string):
         try:
-            d = dateparser.parse(date_string, settings={'TIMEZONE': 'UTC'})
-            return d.date().strftime("%Y-%m")
+            d = DEFAULT_DATE_PARSER.get_date_data(date_string)
+            return d['date_obj'].strftime("%Y-%m")
         except Exception as e:
             raise MappingError(f"error in date({date_string}): {type(e)} {e}")
     return date_string

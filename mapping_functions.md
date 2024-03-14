@@ -58,23 +58,45 @@ If your schema requires more complex mapping calculations, you can define an ind
 
 In addition to mapping column names, you can also transform the values inside the cells to make them align with the schema. We've already seen the simplest case - the `single_val` function takes a single value for the named field and returns it (and should only be used when you expect one single value).
 
-The standard functions are defined in `mappings.py`. They include functions for handling single values, list values, dates, and booleans. 
+The standard functions are defined in `mappings.py`. They include functions for handling single values, list values, dates, and booleans.
 
-Many functions take one or more `data_values` arguments as input. These are a dictionary representing how the CSVConvert script parses each cell of the input data. It is a dictionary of the format `{<field>:{<OBJECT_SHEET>: <value>}}`, e.g. `{'date_of_birth': {'Donor': '6 Jan 1954'}}`. 
+Many functions take one or more `data_values` arguments as input. These are a dictionary representing how the CSVConvert script parses each cell of the input data. It is a dictionary of the format `{<field>:{<OBJECT_SHEET>: <value>}}`, e.g. `{'date_of_birth': {'Donor': '6 Jan 1954'}}`.
 
 A detailed index of all standard functions can be viewed below in the [Standard functions index](#Standard-functions-index).
 
+### Dealing with Dates
+
+As of version 2.1 of the [MoHCCN Data Model](https://www.marathonofhopecancercentres.ca/docs/default-source/policies-and-guidelines/clinical-data-model-v2.1/mohccn-clinical-data-model-release-notes_sep2023.pdf?Status=Master&sfvrsn=19ece028_3), dates need to be converted into date intervals relative to the earliest date of diagnosis. Support for this has been incorporated into clinical_ETL_code v.2.0.0. In order to convert dates to date intervals, a `reference_date` must be provided in the `manifest.yml`. This can be an absolute date, or a function to calculate a date based on the input date, e.g. `earliest_date(Donor.date_resolution, PrimaryDiagnosis.date_of_diagnosis)`. In the mapping csv, the in-built `date_interval()` mapping function can be used to calculate the appropriate date interval information for any date-type field. e.g.:
+
+```commandline
+DONOR.INDEX.date_of_birth, {date_interval(Donor.date_of_birth)}
+```
+
+If input data has pre-calculated date intervals as integers, the `int_to_date_interval_json()` function can be used to transform the integer into the required DateInterval json object. e.g.:
+
+```commandline
+DONOR.INDEX.date_of_death, {int_to_date_interval_json(Donor.date_of_death)}
+```
+
 ## Writing your own custom functions
 
-If the data cannot be transformed with one of the standard functions, you can define your own. In your data directory (the one that contains `manifest.yml`) create a python file (let's assume you called it `new_cohort.py`) and add the name of that file as the `mapping` entry in the manifest.
+If the data cannot be transformed with one of the standard functions, you can define your own. In your data directory (the one that contains `manifest.yml`) create a python file (let's assume you called it `new_cohort.py`) and add the name of that file as the `functions` entry in the manifest (without the .py extension).
 
-Following the format in the generic `mappings.py`, write your own functions in your python file for how to translate the data. To specify a custom mapping function in the template:
+In your data directory (the one that contains `manifest.yml`) create a python file (let's assume you called it `new_cohort.py`) and add the name of that file as a .yml list after `functions` in the manifest.  For example:
+```
+functions:
+  - new_cohort
+```
 
-`DONOR.INDEX.primary_diagnoses.INDEX.basis_of_diagnosis,{new_cohort.custom_function(DATA_SHEET.field_name)}`
+Following the format in the generic `mappings.py`, write your own functions in your python file to translate the data.
+
+To use a custom mapping function in the template, you must specify the file and function using dot-separated notation:
+
+DONOR.INDEX.primary_diagnoses.INDEX.basis_of_diagnosis,{**new_cohort.custom_function**(DATA_SHEET.field_name)}
 
 Examples:
 
-To map input values to output values (in case your data capture used different values than the model):
+Map input values to output values (in case your data capture used different values than the model):
 
 ```
 def sex(data_value):
@@ -125,6 +147,7 @@ represents the following JSON dict:
 # Standard Functions Index
 
 <!--- documentation below this line is generated automatically by running generate_mapping_docs.py --->
+
 Module mappings
 ===============
 
@@ -140,9 +163,10 @@ Functions
     
     Returns:
         A boolean based on the input,
-        `False` if value is in ["No", "no", "False", "false"]
-        `None` if value is in [`None`, "nan", "NaN", "NAN"]
-        `True` otherwise
+        `False` if value is in ["No", "no", "N", "n", "False", "false", "F", "f"]
+        `True` if value is in ["Yes", "yes", "Y", "y", True", "true", "T", "t"]
+        None if value is in [`None`, "nan", "NaN", "NAN"]
+        None otherwise
 
     
 `concat_vals(data_values)`
@@ -167,6 +191,27 @@ Functions
         a list of dates in YYYY-MM format or None if blank/empty/unparseable
 
     
+`date_interval(data_values)`
+:   Calculates a date interval from a given date relative to the reference date specified in the manifest.
+    
+    Args:
+        data_values: a values dict with a date
+    
+    Returns:
+        A dictionary with calculated month_interval and optionally a day_interval depending on the specified
+        date_resolution.
+
+    
+`earliest_date(data_values)`
+:   Calculates the earliest date from a set of dates
+    
+    Args:
+        data_values: A values dict of dates of diagnosis and date_resolution
+    
+    Returns:
+        A dictionary containing the earliest date (`offset`) as a date object and the provided `date_resolution`
+
+    
 `flat_list_val(data_values)`
 :   Take a list mapping and break up any stringified lists into multiple values in the list.
     
@@ -177,8 +222,9 @@ Functions
     Returns:
         A parsed list of items in the list, e.g. ['a', 'b', 'c']
 
-    
-`float(data_values)`
+
+`floating(data_values)`
+
 :   Convert a value to a float.
     
     Args:
@@ -208,6 +254,16 @@ Functions
     Returns:
         a dict of the format:
         {"field": <identifier_field>,"sheet_name": <sheet_name>,"values": [<identifiers>]}
+
+    
+`int_to_date_interval_json(data_values)`
+:   Converts an integer date interval into JSON format.
+    
+    Args:
+        data_values: a values dict with an integer.
+    
+    Returns:
+        A dictionary with a calculated month_interval and optionally a day_interval depending on the specified date_resolution in the donor file.
 
     
 `integer(data_values)`

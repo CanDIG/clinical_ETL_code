@@ -8,3 +8,4 @@ __pycache__/*
 _local
 .idea
 .~lock*
+build/

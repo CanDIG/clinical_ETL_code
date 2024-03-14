@@ -2,7 +2,12 @@ import argparse
 import json
 import sys
 import mappings
-from mohschema import MoHSchema
+import importlib.util
+import os
+# Include clinical_etl parent directory in the module search path for a later import.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
 # from jsoncomparison import Compare
 # from copy import deepcopy
 # import yaml
@@ -207,7 +212,12 @@ def validate_coverage(map_json, verbose=False):
     # read the schema and generate a scaffold
     if "openapi_url" not in map_json:
         return {"message": "No openapi_url schema available"}
-    schema = MoHSchema(map_json["openapi_url"])
+    schema_class = "MoHSchema"
+    if "schema_class" in map_json:
+        schema_class = map_json["schema_class"]
+    schema_mod = importlib.import_module(f"clinical_etl.{schema_class.lower()}")
+    schema = getattr(schema_mod, schema_class)(map_json["openapi_url"])
+
     if schema.json_schema is None:
         sys.exit(f"Did not find an openapi schema at {map_json['openapi_url']}; please check the 'openapi_url' in the map json file.")
 

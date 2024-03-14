@@ -1,19 +1,21 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import sys
+import os
 from copy import deepcopy
 import importlib.util
 import json
-from clinical_etl import mappings
-import os
 import pandas
 import csv
 import re
-import sys
 import yaml
 import argparse
-
-from clinical_etl.mohschema import MoHSchema
+# Include clinical_etl parent directory in the module search path.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+from clinical_etl import mappings
 
 
 def verbose_print(message):
@@ -30,6 +32,8 @@ def parse_args():
     parser.add_argument('--manifest', type=str, required=True, help="Path to a manifest file describing the mapping. See README for more information")
     parser.add_argument('--test', action="store_true", help="Use exact template specified in manifest: do not remove extra lines")
     parser.add_argument('--verbose', '--v', action="store_true", help="Print extra information, useful for debugging and understanding how the code runs.")
+    parser.add_argument('--index', '--i', action="store_true", help="Output 'indexed' file, useful for debugging and seeing relationships.")
+    parser.add_argument('--minify', action="store_true", help="Remove white space and line breaks from json outputs to reduce file size. Less readable for humans.")
     args = parser.parse_args()
     return args
 
@@ -203,8 +207,9 @@ def parse_mapping_function(mapping):
 
 def get_row_for_stack_top(sheet, rownum):
     result = {}
-    for param in mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER].keys():
-        result[param] = mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER][param][rownum]
+    if mappings.IDENTIFIER in mappings.INDEXED_DATA["data"][sheet]:
+        for param in mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER].keys():
+            result[param] = mappings.INDEXED_DATA["data"][sheet][mappings.IDENTIFIER][param][rownum]
     verbose_print(f"get_row_for_stack_top {sheet} is {result}")
     return result
 
@@ -316,8 +321,8 @@ def process_data(raw_csv_dfs):
         print(f"Processing sheet {page}...")
         df = raw_csv_dfs[page].dropna(axis='index', how='all') \
             .dropna(axis='columns', how='all') \
-            .applymap(str) \
-            .applymap(lambda x: x.strip()) \
+            .map(str) \
+            .map(lambda x: x.strip()) \
             .drop_duplicates()  # drop absolutely identical lines
 
         # Sort by identifier and then tag any dups
@@ -555,8 +560,9 @@ def check_for_sheet_inconsistencies(template_sheets, csv_sheets):
 def load_manifest(manifest_file):
     """Given a manifest file's path, return the data inside it."""
     identifier = None
-    schema = "mcode"
+    schema_class = "MoHSchema"
     mapping_path = None
+    result = {}
     try:
         with open(manifest_file, 'r') as f:
             manifest = yaml.safe_load(f)
@@ -568,15 +574,32 @@ def load_manifest(manifest_file):
         sys.exit(f"Manifest file not found at provided path: {manifest_file}")
 
     if "identifier" in manifest:
-        identifier = manifest["identifier"]
-    if "schema" in manifest:
-        schema = manifest["schema"]
+        result["identifier"] = manifest["identifier"]
+    if "schema" not in manifest:
+        sys.exit("Need to specify an OpenAPI schema as 'schema' in the manifest file, "
+                 "see README for more details.")
+    if "schema_class" in manifest:
+        schema_class = manifest["schema_class"]
+
+    # programatically load schema class based on manifest value:
+    # schema class definition will be in a file named schema_class.lower()
+    schema_mod = importlib.import_module(f"clinical_etl.{schema_class.lower()}")
+    schema = getattr(schema_mod, schema_class)(manifest["schema"])
+    if schema.json_schema is None:
+        sys.exit(f"Could not read an openapi schema at {manifest['schema']};\n"
+              f"please check the url in the manifest file links to a valid openAPI schema.")
+    result["schema"] = schema
+
     if "mapping" in manifest:
         mapping_file = manifest["mapping"]
         manifest_dir = os.path.dirname(os.path.abspath(manifest_file))
         mapping_path = os.path.join(manifest_dir, mapping_file)
         if os.path.isabs(mapping_file):
             mapping_path = manifest_file
+        result["mapping"] = mapping_path
+
+    if "reference_date" in manifest:
+        result["reference_date"] = manifest["reference_date"]
 
     if "functions" in manifest:
         for mod in manifest["functions"]:
@@ -595,16 +618,13 @@ def load_manifest(manifest_file):
                 sys.exit(e)
     # mappings is a standard module: add it
     mappings.MODULES["mappings"] = importlib.import_module("clinical_etl.mappings")
-    return {
-        "identifier": identifier,
-        "schema": schema,
-        "mapping": mapping_path
-    }
+    return result
 
 
-def csv_convert(input_path, manifest_file, verbose=False):
+def csv_convert(input_path, manifest_file, minify=False, index_output=False, verbose=False):
     mappings.VERBOSE = verbose
     # read manifest data
+    print("Starting conversion")
     manifest = load_manifest(manifest_file)
     mappings.IDENTIFIER_FIELD = manifest["identifier"]
     if mappings.IDENTIFIER_FIELD is None:
@@ -613,7 +633,8 @@ def csv_convert(input_path, manifest_file, verbose=False):
 
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold
-    schema = MoHSchema(manifest["schema"])
+    print("Loading schema")
+    schema = manifest["schema"]
     if schema.json_schema is None:
         sys.exit(f"Could not read an openapi schema at {manifest['schema']};\n"
               f"please check the url in the manifest file links to a valid openAPI schema.")
@@ -632,8 +653,12 @@ def csv_convert(input_path, manifest_file, verbose=False):
 
     print("Indexing data")
     mappings.INDEXED_DATA = process_data(raw_csv_dfs)
-    with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
-        json.dump(mappings.INDEXED_DATA, f, indent=4)
+    if index_output:
+        with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
+            if minify:
+                json.dump(mappings.INDEXED_DATA, f)
+            else:
+                json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     # if verbose flag is set, warn if column name is present in multiple sheets:
     for col in mappings.INDEXED_DATA["columns"]:
@@ -654,27 +679,47 @@ def csv_convert(input_path, manifest_file, verbose=False):
     for indiv in mappings.INDEXED_DATA["individuals"]:
         print(f"Creating packet for {indiv}")
         mappings.IDENTIFIER = indiv
+
+        # If there is a reference_date in the manifest, we need to calculate that and add CALCULATED.REFERENCE_DATE to the INDEXED_DATA
+        if "reference_date" in manifest:
+            ref_temp = f"REFERENCE_DATE, {{{manifest['reference_date']}}}"
+            reference_date_scaffold = create_scaffold_from_template([ref_temp])
+            func, params = parse_mapping_function(reference_date_scaffold['REFERENCE_DATE'])
+            sheet = params[0].split('.')[0]
+            mappings._push_to_stack(sheet, mappings.IDENTIFIER_FIELD, 0)
+            map_data_to_scaffold(reference_date_scaffold, None, 0)
+            mappings.INDEX_STACK = []
         mappings._push_to_stack(None, None, 0)
         packet = map_data_to_scaffold(deepcopy(mapping_scaffold), None, 0)
         if packet is not None:
-            packets.extend(packet["DONOR"])
+            main_key = list(packet.keys())[0]
+            packets.extend(packet[main_key])
         if mappings._pop_from_stack() is None:
             raise Exception(f"Stack popped too far!\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}")
         if mappings._pop_from_stack() is not None:
             raise Exception(
                 f"Stack not empty\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}\n {mappings.INDEX_STACK}")
+    if index_output:
+        with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
+            if minify:
+                json.dump(mappings.INDEXED_DATA, f)
+            else:
+                json.dump(mappings.INDEXED_DATA, f, indent=4)
 
-    with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
-        json.dump(mappings.INDEXED_DATA, f, indent=4)
+    result_key = list(schema.validation_schema.keys()).pop(0)
 
     result = {
         "openapi_url": schema.openapi_url,
-        "donors": packets
+        "schema_class": type(schema).__name__,
+        result_key: packets
     }
     if schema.katsu_sha is not None:
         result["katsu_sha"] = schema.katsu_sha
     with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
-        json.dump(result, f, indent=4)
+        if minify:
+            json.dump(result, f)
+        else:
+            json.dump(result, f, indent=4)
 
     # add validation data:
     schema.validate_ingest_map(result)
@@ -682,7 +727,10 @@ def csv_convert(input_path, manifest_file, verbose=False):
     result["validation_warnings"] = schema.validation_warnings
     result["statistics"] = schema.statistics
     with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
-        json.dump(result, f, indent=4)
+        if minify:
+            json.dump(result, f)
+        else:
+            json.dump(result, f, indent=4)
 
     if len(result["validation_warnings"]) > 0:
         print(
@@ -695,8 +743,12 @@ def csv_convert(input_path, manifest_file, verbose=False):
     return packets
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
     input_path = args.input
     manifest_file = args.manifest
-    csv_convert(input_path, manifest_file, verbose=args.verbose)
+    csv_convert(input_path, manifest_file, minify=args.minify, index_output=args.index, verbose=args.verbose)
+
+
+if __name__ == '__main__':
+    main()

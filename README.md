@@ -68,13 +68,15 @@ For each dataset (cohort) that you want to convert, create a directory outside o
 #### Manifest file
 The `manifest.yml` file contains settings for the cohort mapping. There is a sample file in [`sample_inputs/manifest.yml`](sample_inputs/manifest.yml) with documentation and example inputs. The fields are:
 
-| field       | description                                                                                                                                                           |
-|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| description | A brief description of what mapping task this manifest is being used for                                                                                              |
-| mapping     | the mapping template csv file that lists the mappings for each field based on `moh_template.csv`, assumed to be in the same directory as the `manifest.yml` file      |
-| identifier  | the unique identifier for the donor or root node                                                                                                                      |
-| schema      | a URL to the openapi schema file                                                                                                                                      |
-| functions   | A list of one or more filenames containing additional mapping functions, can be omitted if not needed. Assumed to be in the same directory as the `manifest.yml` file |
+| field         | description                                                                                                                                                                                               |
+|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| description   | A brief description of what mapping task this manifest is being used for                                                                                                                                  |
+| mapping       | the mapping template csv file that lists the mappings for each field based on `moh_template.csv`, assumed to be in the same directory as the `manifest.yml` file                                          |
+| identifier    | the unique identifier for the donor or root node                                                                                                                                                          |
+| schema        | a URL to the openapi schema file                                                                                                                                                                          |
+| schema_class  | The name of the class in the schema used as the model for creating the map.json. Currently supported: `MoHSchema` - for clinical MoH data and `GenomicSchema` for creating a genomic ingest linking file. |
+| reference_date | a reference date used to calculate date intervals, formatted as a mapping entry for the mapping template                                                                                                 |
+| functions     | A list of one or more filenames containing additional mapping functions, can be omitted if not needed. Assumed to be in the same directory as the `manifest.yml` file                                     |
 
 #### Mapping template
 
@@ -119,17 +121,19 @@ CSVConvert requires two inputs:
 
 ```
 $ python src/clinical_etl/CSVConvert.py -h
-usage: CSVConvert.py [-h] [--input INPUT] [--manifest manifest_file] [--test] [--verbose]
+usage: CSVConvert.py [-h] --input INPUT --manifest MANIFEST [--test] [--verbose] [--index] [--minify]
 
 options:
   -h, --help           show this help message and exit
   --input INPUT        Path to either an xlsx file or a directory of csv files for ingest
-  --manifest MANIFEST  Path to a manifest file describing the mapping.
+  --manifest MANIFEST  Path to a manifest file describing the mapping. See README for more information
   --test               Use exact template specified in manifest: do not remove extra lines
   --verbose, --v       Print extra information, useful for debugging and understanding how the code runs.
-
---test allows you to add extra lines to your manifest's template file that will be populated in the mapped schema. NOTE: this mapped schema will likely not be a valid mohpacket: it should be used only for debugging.
+  --index, --i         Output 'indexed' file, useful for debugging and seeing relationships.
+  --minify             Remove white space and line breaks from json outputs to reduce file size. Less readable for humans.
 ```
+
+* `--test` allows you to add extra lines to your manifest's template file that will be populated in the mapped schema. NOTE: this mapped schema will likely not be a valid mohpacket: it should be used only for debugging.
 
 Example usage:
 
@@ -137,7 +141,7 @@ Example usage:
 python src/clinical_etl/CSVConvert.py --input test_data/raw_data --manifest test_data/manifest.yml
 ```
 
-The output packets `<INPUT_DIR>_map.json` and `<INPUT_DIR>_indexed.json` will be in the parent of the `INPUT` directory / file. In the example above, this would be in the `test_data` directory.
+The main output `<INPUT_DIR>_map.json` and optional output`<INPUT_DIR>_indexed.json` will be in the parent of the `INPUT` directory / file. In the example above, this would be in the `test_data` directory.
 
 Validation will automatically be run after the conversion is complete. Any validation errors or warnings will be reported both on the command line and as part of the `<INPUT_DIR>_map.json` file.
 
@@ -193,7 +197,7 @@ A summarised example of the output is below:
 }
 ```
 
-`<INPUT_DIR>_indexed.json` contains information about how the ETL is looking up the mappings and can be useful for debugging.
+`<INPUT_DIR>_indexed.json` contains information about how the ETL is looking up the mappings and can be useful for debugging. It is only generated if the `--index` argument is specified when CSVConvert is run. Note: This file can be very large if the input data is large.
 
 ## Testing
 
@@ -223,7 +227,7 @@ You can validate the generated json mapping file against the MoH data model. The
 
 ```
 $ python src/clinical_etl/validate_coverage.py -h
-validate_coverage.py [-h] [--input map.json] [--manifest MAPPING]
+usage: validate_coverage.py [-h] --json JSON [--verbose]
 
 options:
   -h, --help      show this help message and exit

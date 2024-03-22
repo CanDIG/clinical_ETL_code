@@ -337,6 +337,7 @@ class BaseSchema:
 
 
     def validate_jsonschema(self, map_json, index):
+        print(map_json)
         for error in jsonschema.Draft202012Validator(self.json_schema).iter_errors(map_json):
             id_field = self.validation_schema[list(self.validation_schema.keys())[0]]["id"]
 

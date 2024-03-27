@@ -185,7 +185,6 @@ class MoHSchema(BaseSchema):
         }
     }
 
-
     def validate_donors(self, map_json):
         for prop in map_json:
             match prop:
@@ -198,33 +197,99 @@ class MoHSchema(BaseSchema):
                 case "lost_to_followup_after_clinical_event_identifier":
                     if map_json["lost_to_followup_after_clinical_event_identifier"] is not None:
                         if map_json["is_deceased"]:
-                            self.fail("lost_to_followup_after_clinical_event_identifier cannot be present if is_deceased = Yes")
+                            self.fail(
+                                "lost_to_followup_after_clinical_event_identifier cannot be present if is_deceased = Yes")
                 case "lost_to_followup_reason":
                     if map_json["lost_to_followup_reason"] is not None:
                         if "lost_to_followup_after_clinical_event_identifier" not in map_json:
-                            self.fail("lost_to_followup_reason should only be submitted if lost_to_followup_after_clinical_event_identifier is submitted")
+                            self.fail(
+                                "lost_to_followup_reason should only be submitted if lost_to_followup_after_clinical_event_identifier is submitted")
                 case "date_alive_after_lost_to_followup":
                     if map_json["date_alive_after_lost_to_followup"] is not None:
                         if "lost_to_followup_after_clinical_event_identifier" not in map_json:
-                            self.warn("lost_to_followup_after_clinical_event_identifier is required if date_alive_after_lost_to_followup is submitted")
+                            self.warn(
+                                "lost_to_followup_after_clinical_event_identifier is required if date_alive_after_lost_to_followup is submitted")
                 case "cause_of_death":
                     if map_json["cause_of_death"] is not None:
                         if not map_json["is_deceased"]:
                             self.fail("cause_of_death should only be submitted if is_deceased = Yes")
-                case "date_of_death":
-                    if map_json["date_of_death"] is not None:
-                        if not map_json["is_deceased"]:
-                            self.fail("date_of_death should only be submitted if is_deceased = Yes")
-                        else:
-                            if map_json["date_of_birth"] is not None:
+                case "primary_diagnoses":
+                    if len(map_json["primary_diagnoses"]) > 0:
+                        diagnoses = {}
+                        for diagnosis in map_json["primary_diagnoses"]:
+                            if "date_of_diagnosis" in diagnosis and diagnosis["date_of_diagnosis"] is not None:
+                                if "dict" in str(type(diagnosis["date_of_diagnosis"])):
+                                    diagnoses[diagnosis["submitter_primary_diagnosis_id"]] = (
+                                        diagnosis)["date_of_diagnosis"]["month_interval"]
+                                else:
+                                    diagnoses[diagnosis["submitter_primary_diagnosis_id"]] = dateparser.parse(
+                                        diagnosis["date_of_diagnosis"]).date()
+                            if len(diagnosis["treatments"]) > 0:
+                                treatment_starts = {}
+                                treatment_ends = {}
+                                for treatment in diagnosis["treatments"]:
+                                    if "treatment_start_date" in treatment and treatment["treatment_start_date"] is not None:
+                                        if "dict" in str(type(treatment["treatment_start_date"])):
+                                            treatment_starts[treatment["submitter_treatment_id"]] = treatment["treatment_start_date"]['month_interval']
+                                            if "treatment_end_date" in treatment:
+                                                treatment_ends[treatment["submitter_treatment_id"]] = treatment["treatment_end_date"]['month_interval']
+                                        else:
+                                            treatment_starts[treatment["submitter_treatment_id"]] = dateparser.parse(treatment["treatment_start_date"]).date()
+                                            if "treatment_end_date" in treatment:
+                                                treatment_ends[treatment["submitter_treatment_id"]] = dateparser.parse(treatment["treatment_end_date"]).date()
+                        print(diagnoses)
+                        diag_values_list = list(diagnoses.values())
+                        if len(diag_values_list) > 0 and "int" in str(type(diag_values_list[0])) and 0 not in diag_values_list:
+                            self.fail(f"Earliest primary_diagnosis.date_of_diagnosis.month_interval must be 0, current "
+                                      f"month_intervals: {diagnoses}")
+                        if "date_of_birth" in map_json and "date_of_death" in map_json:
+                            if map_json["date_of_birth"] is not None and map_json["date_of_death"] is not None:
                                 if "dict" in str(type(map_json["date_of_birth"])):
                                     death = map_json["date_of_death"]["month_interval"]
                                     birth = map_json["date_of_birth"]["month_interval"]
                                 else:
                                     death = dateparser.parse(map_json["date_of_death"]).date()
                                     birth = dateparser.parse(map_json["date_of_birth"]).date()
-                                if birth > death:
-                                    self.fail("date_of_death cannot be earlier than date_of_birth")
+                                for pd_id, date in diagnoses.items():
+                                    if date > death:
+                                        self.fail(f"{pd_id}: date_of_death cannot be earlier than date_of_diagnosis")
+                                    if date < birth:
+                                        self.fail(f"{pd_id}: date_of_birth cannot be later than date_of_diagnosis")
+                                for t_id, date in treatment_ends.items():
+                                    if date > death:
+                                        self.fail(f"{t_id}: date_of_death cannot be earlier than treatment_end_date ")
+                                for t_id, date in treatment_starts.items():
+                                    if date > death:
+                                        self.fail(f"{t_id}: treatment_start_date cannot be after date_of_death ")
+                                    if date < birth:
+                                        self.fail(f"{t_id}: treatment_start_date cannot be before date_of_birth")
+
+                case "date_of_death":
+                    if map_json["date_of_death"] is not None:
+                        if not map_json["is_deceased"]:
+                            self.fail("date_of_death should only be submitted if is_deceased = Yes")
+                    if map_json["date_of_birth"] is not None and map_json["date_of_death"] is not None:
+                        if "dict" in str(type(map_json["date_of_birth"])):
+                            death = map_json["date_of_death"]["month_interval"]
+                            birth = map_json["date_of_birth"]["month_interval"]
+                            if ("date_alive_after_lost_to_followup" in map_json and
+                                    map_json["date_alive_after_lost_to_followup"] is not None):
+                                date_alive = map_json["date_alive_after_lost_to_followup"]["month_interval"]
+                        else:
+                            death = dateparser.parse(map_json["date_of_death"]).date()
+                            birth = dateparser.parse(map_json["date_of_birth"]).date()
+                            if ("date_alive_after_lost_to_followup" in map_json and
+                                    map_json["date_alive_after_lost_to_followup"] is not None):
+                                date_alive = dateparser.parse(
+                                    map_json["date_alive_after_lost_to_followup"]).date()
+                        if birth > death:
+                            self.fail("date_of_death cannot be earlier than date_of_birth")
+                        if "date_alive_after_lost_to_followup" in map_json and date_alive > death:
+                            self.fail("date_alive_after_lost_to_followup cannot be after date_of death")
+                        if "date_alive_after_lost_to_followup" in map_json and date_alive < birth:
+                            self.fail("date_alive_after_lost_to_followup cannot be before date_of birth")
+
+
                 case "biomarkers":
                     for x in map_json["biomarkers"]:
                         if "test_date" not in x or x["test_date"] is None:
@@ -324,8 +389,8 @@ class MoHSchema(BaseSchema):
             match prop:
                 case "treatment_type":
                     if map_json["treatment_type"] is not None:
-                        for type in map_json["treatment_type"]:
-                            match type:
+                        for t_type in map_json["treatment_type"]:
+                            match t_type:
                                 case "Chemotherapy":
                                     if "chemotherapies" not in map_json or len(map_json["chemotherapies"]) == 0:
                                         self.warn("treatment type Chemotherapy should have one or more chemotherapies submitted")
@@ -341,6 +406,17 @@ class MoHSchema(BaseSchema):
                                 case "Surgery":
                                     if "surgeries" not in map_json or len(map_json["surgeries"]) == 0:
                                         self.warn("treatment type Surgery should have one or more surgery submitted")
+                case "treatment_start_date":
+                    if map_json["treatment_start_date"] is not None:
+                        if "treatment_end_date" in map_json and map_json["treatment_end_date"] is not None:
+                            if "dict" in str(type(map_json["treatment_start_date"])):
+                                start = map_json["treatment_start_date"]["month_interval"]
+                                end = map_json["treatment_end_date"]["month_interval"]
+                            else:
+                                start = dateparser.parse(map_json["treatment_start_date"]).date()
+                                end = dateparser.parse(map_json["treatment_end_date"]).date()
+                            if start > end:
+                                self.fail("Treatment start cannot be after treatment end.")
 
 
     def validate_chemotherapies(self, map_json):

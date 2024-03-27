@@ -11,11 +11,13 @@ import csv
 import re
 import yaml
 import argparse
+from clinical_etl import mappings
+from clinical_etl.schema import ValidationError
 # Include clinical_etl parent directory in the module search path.
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
-from clinical_etl import mappings
+
 
 
 def verbose_print(message):
@@ -731,7 +733,7 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
             json.dump(result, f)
         else:
             json.dump(result, f, indent=4)
-
+    errors_present = False
     if len(result["validation_warnings"]) > 0:
         print(
             "\n\nWARNING: Your data is missing required data for the MoHCCN data model! The following problems were found:")
@@ -739,15 +741,21 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     if len(result["validation_errors"]) > 0:
         print("\n\nWARNING: Your data is not valid for the MoHCCN data model! The following errors were found:")
         print("\n".join(result["validation_errors"]))
+        errors_present = True
 
-    return packets
+    return packets, errors_present
 
 
 def main():
     args = parse_args()
     input_path = args.input
     manifest_file = args.manifest
-    csv_convert(input_path, manifest_file, minify=args.minify, index_output=args.index, verbose=args.verbose)
+    packets, errors = csv_convert(input_path, manifest_file, minify=args.minify, index_output=args.index,
+                                  verbose=args.verbose)
+    print(f"Converted file written to {mappings.OUTPUT_FILE}_map.json")
+    if errors:
+        raise ValidationError("Data has errors and cannot be ingested. See above for detailed list.")
+    sys.exit(0)
 
 
 if __name__ == '__main__':

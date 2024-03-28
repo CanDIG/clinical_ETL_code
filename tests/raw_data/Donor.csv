@@ -1,6 +1,6 @@
 submitter_donor_id, program_id, lost_to_followup_after_clinical_event_identifier, lost_to_followup_reason, date_alive_after_lost_to_followup, is_deceased, cause_of_death, date_of_birth, date_of_death, gender, sex_at_birth, primary_site,date_resolution
 DONOR_1,TEST_1,,,,Yes,Died of cancer,6 Jan 1954,35,Man,Male,Esophagus,month
-DONOR_2,TEST_1,,,,Yes,Died of other reasons,12 Feb 1982,239,Woman,Female,Eye and adnexa,day
+DONOR_2,TEST_1,,,,Yes,Died of other reasons,12 Feb 1982,1675,Woman,Female,Eye and adnexa,day
 DONOR_3,TEST_1,PD_3,Lost contact,6/2022,No,,7/12/1945,,Non-binary,Other,Floor of mouth,month
 DONOR_4,TEST_1,,,,Yes,Unknown,6/1984,239,Man,Male,Gallbladder,month
 DONOR_5,TEST_2,PD_5,Unknown,6/2022,Yes,,2/1984,,Woman,Female,Gum,month

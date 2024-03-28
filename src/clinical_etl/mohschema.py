@@ -232,6 +232,7 @@ class MoHSchema(BaseSchema):
                                     diagnosis_date = diagnosis["date_of_diagnosis"]["month_interval"]
                                 else:
                                     diagnosis_date = dateparser.parse(diagnosis["date_of_diagnosis"]).date()
+                                diagnoses_dates[diagnosis['submitter_primary_diagnosis_id']] = diagnosis_date
                                 if 'death' in locals() and diagnosis_date > death:
                                     self.fail(f"{diagnosis['submitter_primary_diagnosis_id']}: date_of_death cannot be earlier than date_of_diagnosis")
                                 if 'birth' in locals() and diagnosis_date < birth:
@@ -249,19 +250,21 @@ class MoHSchema(BaseSchema):
                                                 treatment_end = dateparser.parse(treatment["treatment_end_date"]).date()
                                     if 'death' in locals() and 'treatment_end' in locals() and treatment_end > death:
                                         self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: date_of_death cannot be earlier than treatment_end_date ")
+                                    if 'diagnosis_date' in locals() and 'treatment_end' in locals() and treatment_end < diagnosis_date:
+                                        self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: date_of_diagnosis cannot be earlier than treatment_end_date ")
                                     if 'treatment_start' in locals():
                                         if 'death' in locals() and treatment_start > death:
                                             self.fail(
                                                     f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date cannot be after date_of_death ")
                                         if 'birth' in locals() and treatment_start < birth:
                                             self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date cannot be before date_of_birth")
+                                        if 'diagnosis_date' in locals() and treatment_start < diagnosis_date:
+                                            self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date cannot be before date_of_diagnosis")
                         diagnosis_values_list = list(diagnoses_dates.values())
                         if (len(diagnosis_values_list) > 0 and "int" in str(type(diagnosis_values_list[0])) and
                                 0 not in diagnosis_values_list):
                             self.fail(f"Earliest primary_diagnosis.date_of_diagnosis.month_interval must be 0, current "
                                       f"month_intervals: {diagnoses_dates}")
-
-
                 case "date_of_death":
                     if map_json["date_of_death"] is not None:
                         if not map_json["is_deceased"]:
@@ -286,13 +289,10 @@ class MoHSchema(BaseSchema):
                             self.fail("date_alive_after_lost_to_followup cannot be after date_of death")
                         if "date_alive_after_lost_to_followup" in map_json and date_alive < birth:
                             self.fail("date_alive_after_lost_to_followup cannot be before date_of birth")
-
-
                 case "biomarkers":
                     for x in map_json["biomarkers"]:
                         if "test_date" not in x or x["test_date"] is None:
                             self.warn("test_date is required for biomarkers not associated with nested events")
-
 
     def validate_primary_diagnoses(self, map_json):
         # check to see if this primary_diagnosis is a tumour:

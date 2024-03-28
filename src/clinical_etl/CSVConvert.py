@@ -751,33 +751,35 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
         else:
             json.dump(result, f, indent=4)
     errors_present = False
-    open(f"{input_path}_summary.txt", 'w').close()
+    open(f"{input_path}_validation_results.txt", 'w').close()
     if len(result["validation_warnings"]) > 0:
         if len(result["validation_warnings"]) > 20:
             print(f"\n{Bcolors.WARNING}WARNING: There are {len(result['validation_warnings'])} validation warnings in "
-                  f"your data, see raw_data_summary for details.{Bcolors.ENDC}")
-            with open(f"{input_path}_summary.txt", "a") as f:
-                f.write(f"<< VALIDATION WARNINGS START >>\n")
-                f.write("\n".join(result["validation_warnings"]))
-                f.write(f"\n<< VALIDATION WARNINGS END >>\n\n")
-                print(f"Warnings written to {input_path}_summary.txt.")
+                  f"your data, see {input_path}_validation_results.txt for details.{Bcolors.ENDC}")
         else:
-            print(f"\n\n{Bcolors.WARNING}WARNING: Your data is missing required fields from the MoHCCN data model! It "
-                  f"can be ingested but will not be considered complete until the following problems are fixed:{Bcolors.ENDC}")
+            print(f"\n{Bcolors.WARNING}WARNING: Your data is missing required fields from the MoHCCN data model! It "
+                f"can be ingested but will not be considered complete until the following problems are fixed:{Bcolors.ENDC}")
             print("\n".join(result["validation_warnings"]))
+        with open(f"{input_path}_validation_results.txt", "a") as f:
+            f.write(f"<< VALIDATION WARNINGS START >>\n")
+            f.write("\n".join(result["validation_warnings"]))
+            f.write(f"\n<< VALIDATION WARNINGS END >>\n\n")
+            print(f"Warnings written to {input_path}_validation_results.txt.")
+
     if len(result["validation_errors"]) > 0:
         if len(result["validation_errors"]) > 20:
             print(f"\n{Bcolors.FAIL}FAILURE: Your data has failed validation. There are {len(result['validation_errors'])} validation errors in "
-                  f"your data, it cannot be ingested until the errors in raw_data_summary are corrected. {Bcolors.ENDC}")
-            with open(f"{input_path}_summary.txt", "a") as f:
-                f.write(f"<< VALIDATION ERRORS START >>\n")
-                f.write("\n".join(result["validation_errors"]))
-                f.write(f"\n<< VALIDATION ERRORS END >>\n")
-                print(f"Errors written to {input_path}_summary.txt.")
+                  f"your data, it cannot be ingested until the errors in {input_path}_validation_results.txt are corrected. {Bcolors.ENDC}")
         else:
             print(f"\n{Bcolors.FAIL}FAILURE: Your data has failed validation against the MoHCCN data model! It cannot be ingested until "
                   f"the following errors are fixed:{Bcolors.ENDC}")
             print("\n".join(result["validation_errors"]))
+        with open(f"{input_path}_summary.txt", "a") as f:
+            f.write(f"<< VALIDATION ERRORS START >>\n")
+            f.write("\n".join(result["validation_errors"]))
+            f.write(f"\n<< VALIDATION ERRORS END >>\n")
+            print(f"Errors written to {input_path}_validation_results.txt.")
+
         errors_present = True
     return packets, errors_present
 

@@ -774,7 +774,7 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
             print(f"\n{Bcolors.FAIL}FAILURE: Your data has failed validation against the MoHCCN data model! It cannot be ingested until "
                   f"the following errors are fixed:{Bcolors.ENDC}")
             print("\n".join(result["validation_errors"]))
-        with open(f"{input_path}_summary.txt", "a") as f:
+        with open(f"{input_path}_validation_results.txt", "a") as f:
             f.write(f"<< VALIDATION ERRORS START >>\n")
             f.write("\n".join(result["validation_errors"]))
             f.write(f"\n<< VALIDATION ERRORS END >>\n")

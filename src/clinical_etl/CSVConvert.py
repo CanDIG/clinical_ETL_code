@@ -742,8 +742,6 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     # add validation data:
     print(f"\n{Bcolors.OKGREEN}Starting validation...{Bcolors.ENDC}")
     schema.validate_ingest_map(result)
-    result["validation_errors"] = schema.validation_errors
-    result["validation_warnings"] = schema.validation_warnings
     result["statistics"] = schema.statistics
     with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
         if minify:

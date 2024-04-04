@@ -214,56 +214,67 @@ class MoHSchema(BaseSchema):
                         if not map_json["is_deceased"]:
                             self.fail("cause_of_death should only be submitted if is_deceased = Yes")
                 case "primary_diagnoses":
+                    birth = None
+                    death = None
                     if len(map_json["primary_diagnoses"]) > 0:
-                        if "date_of_birth" in map_json and map_json["date_of_birth"] is not None:
+                        if "date_of_birth" in map_json and map_json["date_of_birth"] not in [None, '']:
                             if "dict" in str(type(map_json["date_of_birth"])):
                                 birth = map_json["date_of_birth"]["month_interval"]
                             else:
                                 birth = dateparser.parse(map_json["date_of_birth"]).date()
-                        if "date_of_death" in map_json and map_json["date_of_death"] is not None:
+                        if "date_of_death" in map_json and map_json["date_of_death"] not in [None, '']:
                             if "dict" in str(type(map_json["date_of_death"])):
                                 death = map_json["date_of_death"]["month_interval"]
                             else:
                                 death = dateparser.parse(map_json["date_of_death"]).date()
                         diagnoses_dates = {}
                         for diagnosis in map_json["primary_diagnoses"]:
-                            if "date_of_diagnosis" in diagnosis and diagnosis["date_of_diagnosis"] is not None:
+                            diagnosis_date = None
+                            if "date_of_diagnosis" in diagnosis and diagnosis["date_of_diagnosis"] not in [None, '']:
                                 if "dict" in str(type(diagnosis["date_of_diagnosis"])):
                                     diagnosis_date = diagnosis["date_of_diagnosis"]["month_interval"]
                                 else:
                                     diagnosis_date = dateparser.parse(diagnosis["date_of_diagnosis"]).date()
                                 diagnoses_dates[diagnosis['submitter_primary_diagnosis_id']] = diagnosis_date
-                                if 'death' in locals() and diagnosis_date > death:
+                                if 'death' in locals() and death not in [None, ''] and diagnosis_date > death:
                                     self.fail(f"{diagnosis['submitter_primary_diagnosis_id']}: date_of_death cannot be earlier than date_of_diagnosis")
-                                if 'birth' in locals() and diagnosis_date < birth:
+                                if 'birth' in locals() and birth not in [None, ''] and diagnosis_date < birth:
                                     self.fail(f"{diagnosis['submitter_primary_diagnosis_id']}: date_of_birth cannot be later than date_of_diagnosis")
                             if "treatments" in diagnosis and len(diagnosis["treatments"]) > 0:
                                 for treatment in diagnosis["treatments"]:
-                                    if "treatment_start_date" in treatment and treatment["treatment_start_date"] is not None:
+                                    treatment_start = None
+                                    treatment_end = None
+                                    if "treatment_start_date" in treatment and treatment["treatment_start_date"] not in [None, '']:
                                         if "dict" in str(type(treatment["treatment_start_date"])):
                                             treatment_start = treatment["treatment_start_date"]['month_interval']
-                                            if "treatment_end_date" in treatment and treatment["treatment_end_date"] is not None:
-                                                treatment_end = treatment["treatment_end_date"]['month_interval']
+
                                         else:
                                             treatment_start = dateparser.parse(treatment["treatment_start_date"]).date()
-                                            if "treatment_end_date" in treatment and treatment["treatment_end_date"] is not None:
-                                                treatment_end = dateparser.parse(treatment["treatment_end_date"]).date()
-                                    if 'death' in locals() and 'treatment_end' in locals() and treatment_end > death:
+                                    if "treatment_end_date" in treatment and treatment["treatment_end_date"] not in [None, '']:
+                                        if "dict" in str(type(treatment["treatment_end_date"])):
+                                            treatment_end = treatment["treatment_end_date"]['month_interval']
+                                        else:
+                                            treatment_end = dateparser.parse(treatment["treatment_end_date"]).date()
+                                    if ('death' in locals() and death not in [None, ''] and
+                                            'treatment_end' in locals() and treatment_end not in [None, '']
+                                            and treatment_end > death):
                                         self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: date_of_death cannot be earlier than treatment_end_date ")
-                                    if 'diagnosis_date' in locals() and 'treatment_end' in locals() and treatment_end < diagnosis_date:
-                                        self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: date_of_diagnosis cannot be earlier than treatment_end_date ")
-                                    if 'treatment_start' in locals():
-                                        if 'death' in locals() and treatment_start > death:
+                                    if ('diagnosis_date' in locals() and diagnosis_date not in [None, ''] and
+                                            treatment_end not in [None, ''] and 'treatment_end' in locals() and
+                                            treatment_end < diagnosis_date):
+                                        self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: date_of_diagnosis must be earlier than treatment_end_date ")
+                                    if 'treatment_start' in locals() and treatment_start not in [None, '']:
+                                        if 'death' in locals() and death not in [None, ''] and treatment_start > death:
                                             self.fail(
                                                     f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date cannot be after date_of_death ")
-                                        if 'birth' in locals() and treatment_start < birth:
+                                        if 'birth' in locals() and birth not in [None, ''] and treatment_start < birth and treatment_start is not None:
                                             self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date cannot be before date_of_birth")
-                                        if 'diagnosis_date' in locals() and treatment_start < diagnosis_date:
+                                        if 'diagnosis_date' in locals() and diagnosis_date not in [None, ''] and treatment_start < diagnosis_date:
                                             self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date cannot be before date_of_diagnosis")
                         diagnosis_values_list = list(diagnoses_dates.values())
                         if (len(diagnosis_values_list) > 0 and "int" in str(type(diagnosis_values_list[0])) and
                                 0 not in diagnosis_values_list):
-                            self.fail(f"Earliest primary_diagnosis.date_of_diagnosis.month_interval must be 0, current "
+                            self.warn(f"Earliest primary_diagnosis.date_of_diagnosis.month_interval should be 0, current "
                                       f"month_intervals: {diagnoses_dates}")
                 case "date_of_death":
                     if map_json["date_of_death"] is not None:

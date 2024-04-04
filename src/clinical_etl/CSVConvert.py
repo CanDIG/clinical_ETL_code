@@ -742,8 +742,8 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     # add validation data:
     print(f"\n{Bcolors.OKGREEN}Starting validation...{Bcolors.ENDC}")
     schema.validate_ingest_map(result)
-    result["validation_errors"] = schema.validation_errors
-    result["validation_warnings"] = schema.validation_warnings
+    validation_results = {"validation_errors": schema.validation_errors,
+                          "validation_warnings": schema.validation_warnings}
     result["statistics"] = schema.statistics
     with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
         if minify:
@@ -751,34 +751,28 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
         else:
             json.dump(result, f, indent=4)
     errors_present = False
-    open(f"{input_path}_validation_results.txt", 'w').close()
-    if len(result["validation_warnings"]) > 0:
-        if len(result["validation_warnings"]) > 20:
-            print(f"\n{Bcolors.WARNING}WARNING: There are {len(result['validation_warnings'])} validation warnings in "
-                  f"your data, see {input_path}_validation_results.txt for details.{Bcolors.ENDC}")
+    with open(f"{input_path}_validation_results.json", 'w') as f:
+        json.dump(validation_results, f, indent=4)
+    print(f"Warnings written to {input_path}_validation_results.json.")
+    if len(validation_results["validation_warnings"]) > 0:
+        if len(validation_results["validation_warnings"]) > 20:
+            print(f"\n{Bcolors.WARNING}WARNING: There are {len(validation_results['validation_warnings'])} validation "
+                  f"warnings in your data. It can be ingested but will not be considered complete until the warnings in "
+                  f"{input_path}_validation_results.json are fixed.{Bcolors.ENDC}")
         else:
-            print(f"\n{Bcolors.WARNING}WARNING: Your data is missing required fields from the MoHCCN data model! It "
-                f"can be ingested but will not be considered complete until the following problems are fixed:{Bcolors.ENDC}")
-            print("\n".join(result["validation_warnings"]))
-        with open(f"{input_path}_validation_results.txt", "a") as f:
-            f.write(f"<< VALIDATION WARNINGS START >>\n")
-            f.write("\n".join(result["validation_warnings"]))
-            f.write(f"\n<< VALIDATION WARNINGS END >>\n\n")
-            print(f"Warnings written to {input_path}_validation_results.txt.")
+            print(f"\n{Bcolors.WARNING}WARNING: Your data is missing required fields from the MoHCCN data model! It can"
+                  f" be ingested but will not be considered complete until the following problems are fixed:{Bcolors.ENDC}")
+            print("\n".join(validation_results["validation_warnings"]))
 
-    if len(result["validation_errors"]) > 0:
-        if len(result["validation_errors"]) > 20:
-            print(f"\n{Bcolors.FAIL}FAILURE: Your data has failed validation. There are {len(result['validation_errors'])} validation errors in "
-                  f"your data, it cannot be ingested until the errors in {input_path}_validation_results.txt are corrected. {Bcolors.ENDC}")
+    if len(validation_results["validation_errors"]) > 0:
+        if len(validation_results["validation_errors"]) > 20:
+            print(f"\n{Bcolors.FAIL}FAILURE: Your data has failed validation. There are "
+                  f"{len(validation_results['validation_errors'])} validation errors in your data, it cannot be "
+                  f"ingested until the errors in {input_path}_validation_results.json are corrected. {Bcolors.ENDC}")
         else:
-            print(f"\n{Bcolors.FAIL}FAILURE: Your data has failed validation against the MoHCCN data model! It cannot be ingested until "
-                  f"the following errors are fixed:{Bcolors.ENDC}")
-            print("\n".join(result["validation_errors"]))
-        with open(f"{input_path}_validation_results.txt", "a") as f:
-            f.write(f"<< VALIDATION ERRORS START >>\n")
-            f.write("\n".join(result["validation_errors"]))
-            f.write(f"\n<< VALIDATION ERRORS END >>\n")
-            print(f"Errors written to {input_path}_validation_results.txt.")
+            print(f"\n{Bcolors.FAIL}FAILURE: Your data has failed validation against the MoHCCN data model! It cannot "
+                  f"be ingested until the following errors are fixed:{Bcolors.ENDC}")
+            print("\n".join(validation_results["validation_errors"]))
 
         errors_present = True
     return packets, errors_present
@@ -792,7 +786,9 @@ def main():
                                   verbose=args.verbose)
     print(f"{Bcolors.OKGREEN}\nConverted file written to {mappings.OUTPUT_FILE}_map.json{Bcolors.ENDC}")
     if errors:
-        print(f"{Bcolors.OKGREEN}NOTE: this file cannot be ingested until all errors are fixed.{Bcolors.ENDC}")
+        print(f"{Bcolors.WARNING}WARNING: this file cannot be ingested until all errors are fixed.{Bcolors.ENDC}")
+    else:
+        print(f"{Bcolors.OKGREEN}INFO: this file can be ingested.{Bcolors.ENDC}")
     sys.exit(0)
 
 

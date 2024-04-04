@@ -107,6 +107,7 @@ def test_validation(packets, schema):
     # DONOR_1: PD_1 > TR_1: treatment_start_date cannot be after date_of_death
     # DONOR_2: PD_2 > TR_2: date_of_death cannot be earlier than treatment_end_date
     # DONOR_6 > PD_6 > TR_9 > Surgery 0: submitter_specimen_id SPECIMEN_43 does not correspond to one of the available specimen_ids ['SPECIMEN_3']
+    # Duplicated IDs: in schema followups, FOLLOW_UP_4 occurs 2 times
 
     # there should be an item named DUPLICATE_ID in both followup and sample_registration
     print(json.dumps(schema.identifiers, indent=2))

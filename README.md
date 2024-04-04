@@ -188,7 +188,7 @@ A summarised example of the output is below:
     }
 }
 ```
-`<INPUT_DIR>_validation_results.txt` contains all validation warnings and errors.
+`<INPUT_DIR>_validation_results.json` contains all validation warnings and errors.
 
 `<INPUT_DIR>_indexed.json` contains information about how the ETL is looking up the mappings and can be useful for debugging. It is only generated if the `--index` argument is specified when CSVConvert is run. Note: This file can be very large if the input data is large.
 

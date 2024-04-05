@@ -162,14 +162,6 @@ A summarised example of the output is below:
     "openapi_url": "https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml",
     "katsu_sha": < git sha of the katsu version used for the schema >,
     "donors": < An array of JSON objects, each one representing a DonorWithClinicalData in katsu >,
-    "validation_warnings": [
-        < any validation warnings, e.g. >
-        "DONOR_5: cause_of_death required if is_deceased = Yes"
-    ],
-    "validation_errors": [
-        < any validation errors, e.g. >
-        "DONOR_5 > PD_5 > TR_5 > Radiation 1: Only one radiation is allowed per treatment"
-    ],
     "statistics": {
         "required_but_missing": {
             < for each schema in the model, a list of required fields and how many cases are missing this value (out of the total number of occurrences) >
@@ -196,6 +188,7 @@ A summarised example of the output is below:
     }
 }
 ```
+`<INPUT_DIR>_validation_results.json` contains all validation warnings and errors.
 
 `<INPUT_DIR>_indexed.json` contains information about how the ETL is looking up the mappings and can be useful for debugging. It is only generated if the `--index` argument is specified when CSVConvert is run. Note: This file can be very large if the input data is large.
 

@@ -28,7 +28,8 @@ def packets():
     input_path = f"{REPO_DIR}/raw_data"
     manifest_file = f"{REPO_DIR}/manifest.yml"
     mappings.INDEX_STACK = []
-    return CSVConvert.csv_convert(input_path, manifest_file, verbose=False)
+    return_values = CSVConvert.csv_convert(input_path, manifest_file, verbose=False)
+    return return_values[0]
 
 
 def test_csv_convert(packets):
@@ -100,8 +101,11 @@ def test_validation(packets, schema):
             non_interval_errors.append(e)
     schema.validation_errors = non_interval_errors
 
-    assert len(schema.validation_errors) == 2
-    # should be the following 2 errors:
+    assert len(schema.validation_errors) == 5
+    # should be the following 5 errors:
+    # DONOR_1: PD_1 > TR_1: date_of_death cannot be earlier than treatment_end_date
+    # DONOR_1: PD_1 > TR_1: treatment_start_date cannot be after date_of_death
+    # DONOR_2: PD_2 > TR_2: date_of_death cannot be earlier than treatment_end_date
     # DONOR_6 > PD_6 > TR_9 > Surgery 0: submitter_specimen_id SPECIMEN_43 does not correspond to one of the available specimen_ids ['SPECIMEN_3']
     # Duplicated IDs: in schema followups, FOLLOW_UP_4 occurs 2 times
 

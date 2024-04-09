@@ -11,11 +11,12 @@ import csv
 import re
 import yaml
 import argparse
+from tqdm import tqdm
+from clinical_etl import mappings
 # Include clinical_etl parent directory in the module search path.
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
-from clinical_etl import mappings
 
 
 def verbose_print(message):
@@ -36,6 +37,18 @@ def parse_args():
     parser.add_argument('--minify', action="store_true", help="Remove white space and line breaks from json outputs to reduce file size. Less readable for humans.")
     args = parser.parse_args()
     return args
+
+
+class Bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 
 def map_data_to_scaffold(node, line, rownum):
@@ -311,14 +324,14 @@ def ingest_raw_data(input_path):
     return raw_csv_dfs, output_file
 
 
-def process_data(raw_csv_dfs):
+def process_data(raw_csv_dfs, verbose):
     """Takes a set of raw dataframes with a common identifier and merges into a JSON data structure."""
     final_merged = {}
     cols_index = {}
     individuals = []
-
+    print(f"\n{Bcolors.OKBLUE}Processing sheets: {Bcolors.ENDC}")
     for page in raw_csv_dfs.keys():
-        print(f"Processing sheet {page}...")
+        print(f"{Bcolors.OKBLUE}{page}  {Bcolors.ENDC}", end="")
         df = raw_csv_dfs[page].dropna(axis='index', how='all') \
             .dropna(axis='columns', how='all') \
             .map(str) \
@@ -359,8 +372,8 @@ def process_data(raw_csv_dfs):
                     if val == 'nan':
                         val = None
                     merged_dict[i][k.strip()].append(val)
-                if len(row_to_merge) > 0:
-                    mappings._warn(f"Duplicate row for {merged_dict[i][mappings.IDENTIFIER_FIELD][0]} in {page}")
+                if len(row_to_merge) > 0 and verbose:
+                    mappings._info(f"Duplicate row for {merged_dict[i][mappings.IDENTIFIER_FIELD][0]} in {page}")
 
         # Now we can clean up the dicts: index them by identifier instead of int
         indexed_merged_dict = {}
@@ -548,9 +561,9 @@ def check_for_sheet_inconsistencies(template_sheets, csv_sheets):
     csv_template_diff = csv_sheets.difference(template_sheets)
     if len(template_csv_diff) > 0:
         # Print a warning if verbose enabled, it is possible that the template sheet has more than is required
-        print("WARNING: The following csv/sheet names are in the mapping template but were not found in the input sheets"
-              "/csvs:" + nl + nl.join(template_csv_diff) + nl +
-              "If this is an error please correct it as it may result in errors with mapping your data." + nl)
+        print(nl + f"{Bcolors.WARNING}WARNING: The following csv/sheet names are in the mapping template but were not found in the input sheets/csvs:{Bcolors.ENDC}"
+              + nl + nl.join(template_csv_diff) + nl +
+              f"{Bcolors.WARNING}If this is an error please correct it as it may result in errors with mapping your data.{Bcolors.ENDC}")
     if len(csv_template_diff) > 0:
         # Exit here because if we can't find a mapping for a field we can't properly map the inputs
         sys.exit("The following sheet names are in the input csvs but not found in the mapping template:" + nl +
@@ -624,7 +637,7 @@ def load_manifest(manifest_file):
 def csv_convert(input_path, manifest_file, minify=False, index_output=False, verbose=False):
     mappings.VERBOSE = verbose
     # read manifest data
-    print("Starting conversion")
+    print(f"{Bcolors.OKGREEN}Starting conversion...{Bcolors.ENDC}", end="")
     manifest = load_manifest(manifest_file)
     mappings.IDENTIFIER_FIELD = manifest["identifier"]
     if mappings.IDENTIFIER_FIELD is None:
@@ -633,7 +646,7 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
 
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold
-    print("Loading schema")
+    print(f"{Bcolors.OKGREEN}loading schema...{Bcolors.ENDC}", end="")
     schema = manifest["schema"]
     if schema.json_schema is None:
         sys.exit(f"Could not read an openapi schema at {manifest['schema']};\n"
@@ -644,15 +657,15 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     template_lines = read_mapping_template(manifest["mapping"])
 
     # read the raw data
-    print("Reading raw data")
+    print(f"{Bcolors.OKGREEN}reading raw data...{Bcolors.ENDC}", end="")
     raw_csv_dfs, mappings.OUTPUT_FILE = ingest_raw_data(input_path)
     if not raw_csv_dfs:
         sys.exit(f"No ingestable files (csv or xlsx) were found at {input_path}. Check path and try again.")
     check_for_sheet_inconsistencies(set([re.findall(r"\(([\w\" ]+)", x)[0].replace('"',"") for x in template_lines]),
                                     set(raw_csv_dfs.keys()))
 
-    print("Indexing data")
-    mappings.INDEXED_DATA = process_data(raw_csv_dfs)
+    print(f"{Bcolors.OKGREEN}indexing data{Bcolors.ENDC}")
+    mappings.INDEXED_DATA = process_data(raw_csv_dfs, verbose)
     if index_output:
         with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
             if minify:
@@ -661,10 +674,11 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
                 json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     # if verbose flag is set, warn if column name is present in multiple sheets:
-    for col in mappings.INDEXED_DATA["columns"]:
-        if col != mappings.IDENTIFIER_FIELD and len(mappings.INDEXED_DATA["columns"][col]) > 1:
-            mappings._warn(
-                f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
+    if verbose:
+        for col in mappings.INDEXED_DATA["columns"]:
+            if col != mappings.IDENTIFIER_FIELD and len(mappings.INDEXED_DATA["columns"][col]) > 1:
+                mappings._info(
+                    f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
 
     # warn if any template lines map the same column to multiple lines:
     scan_template_for_duplicate_mappings(template_lines)
@@ -676,8 +690,11 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
 
     packets = []
     # for each identifier's row, make a packet
-    for indiv in mappings.INDEXED_DATA["individuals"]:
-        print(f"Creating packet for {indiv}")
+    print(f"\n{Bcolors.OKGREEN}Creating packets: {Bcolors.ENDC}")
+    progress = tqdm(mappings.INDEXED_DATA["individuals"])
+    for indiv in progress:
+        progress.set_postfix_str(indiv)
+        # print(f"{Bcolors.OKGREEN}{indiv}  {Bcolors.ENDC}", end="\r")
         mappings.IDENTIFIER = indiv
 
         # If there is a reference_date in the manifest, we need to calculate that and add CALCULATED.REFERENCE_DATE to the INDEXED_DATA
@@ -715,6 +732,7 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     }
     if schema.katsu_sha is not None:
         result["katsu_sha"] = schema.katsu_sha
+    print(f"{Bcolors.OKGREEN}Saving packets to file.{Bcolors.ENDC}")
     with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
         if minify:
             json.dump(result, f)
@@ -722,32 +740,56 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
             json.dump(result, f, indent=4)
 
     # add validation data:
+    print(f"\n{Bcolors.OKGREEN}Starting validation...{Bcolors.ENDC}")
     schema.validate_ingest_map(result)
-    result["validation_errors"] = schema.validation_errors
-    result["validation_warnings"] = schema.validation_warnings
+    validation_results = {"validation_errors": schema.validation_errors,
+                          "validation_warnings": schema.validation_warnings}
     result["statistics"] = schema.statistics
     with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
         if minify:
             json.dump(result, f)
         else:
             json.dump(result, f, indent=4)
+    errors_present = False
+    with open(f"{input_path}_validation_results.json", 'w') as f:
+        json.dump(validation_results, f, indent=4)
+    print(f"Warnings written to {input_path}_validation_results.json.")
+    if len(validation_results["validation_warnings"]) > 0:
+        if len(validation_results["validation_warnings"]) > 20:
+            print(f"\n{Bcolors.WARNING}WARNING: There are {len(validation_results['validation_warnings'])} validation "
+                  f"warnings in your data. It can be ingested but will not be considered complete until the warnings in "
+                  f"{input_path}_validation_results.json are fixed.{Bcolors.ENDC}")
+        else:
+            print(f"\n{Bcolors.WARNING}WARNING: Your data is missing required fields from the MoHCCN data model! It can"
+                  f" be ingested but will not be considered complete until the following problems are fixed:{Bcolors.ENDC}")
+            print("\n".join(validation_results["validation_warnings"]))
 
-    if len(result["validation_warnings"]) > 0:
-        print(
-            "\n\nWARNING: Your data is missing required data for the MoHCCN data model! The following problems were found:")
-        print("\n".join(result["validation_warnings"]))
-    if len(result["validation_errors"]) > 0:
-        print("\n\nWARNING: Your data is not valid for the MoHCCN data model! The following errors were found:")
-        print("\n".join(result["validation_errors"]))
+    if len(validation_results["validation_errors"]) > 0:
+        if len(validation_results["validation_errors"]) > 20:
+            print(f"\n{Bcolors.FAIL}FAILURE: Your data has failed validation. There are "
+                  f"{len(validation_results['validation_errors'])} validation errors in your data, it cannot be "
+                  f"ingested until the errors in {input_path}_validation_results.json are corrected. {Bcolors.ENDC}")
+        else:
+            print(f"\n{Bcolors.FAIL}FAILURE: Your data has failed validation against the MoHCCN data model! It cannot "
+                  f"be ingested until the following errors are fixed:{Bcolors.ENDC}")
+            print("\n".join(validation_results["validation_errors"]))
 
-    return packets
+        errors_present = True
+    return packets, errors_present
 
 
 def main():
     args = parse_args()
     input_path = args.input
     manifest_file = args.manifest
-    csv_convert(input_path, manifest_file, minify=args.minify, index_output=args.index, verbose=args.verbose)
+    packets, errors = csv_convert(input_path, manifest_file, minify=args.minify, index_output=args.index,
+                                  verbose=args.verbose)
+    print(f"{Bcolors.OKGREEN}\nConverted file written to {mappings.OUTPUT_FILE}_map.json{Bcolors.ENDC}")
+    if errors:
+        print(f"{Bcolors.WARNING}WARNING: this file cannot be ingested until all errors are fixed.{Bcolors.ENDC}")
+    else:
+        print(f"{Bcolors.OKGREEN}INFO: this file can be ingested.{Bcolors.ENDC}")
+    sys.exit(0)
 
 
 if __name__ == '__main__':

@@ -9,3 +9,4 @@ _local
 .idea
 .~lock*
 build/
+tests/raw_data_*

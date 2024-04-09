@@ -456,6 +456,17 @@ def _warn(message, input_values=None):
             print(f"WARNING: {message}. Input data: {input_values}")
 
 
+def _info(message, input_values=None):
+    """Provides information to a user  when there may be an issue, along with the IDENTIFIER and FIELD."""
+    global IDENTIFIER
+    if IDENTIFIER is not None and input_values is not None:
+        print(f"INFO for {IDENTIFIER_FIELD}={IDENTIFIER}: {message}. Input data: {input_values}")
+    else:
+        print(f"INFO: {message}")
+        if input_values is not None:
+            print(f"INFO: {message}. Input data: {input_values}")
+
+
 def _push_to_stack(sheet, id, rownum):
     INDEX_STACK.append(
         {

@@ -48,7 +48,7 @@ pip install -r requirements.txt
 >[!NOTE]
 > If Python can't find the `clinical_etl` module when running `CSVConvert`, install the depencency manually:
 > ```
-> pip install -e clinical_ETL_code
+> pip install -e clinical_ETL_code/
 > ```
 
 Before running the script, you will need to have your input files, this will be clinical data in a tabular format (`xlsx`/`csv`) that can be read into program and a cohort directory containing the files that define the schema and mapping configurations.
@@ -155,7 +155,7 @@ Validation will automatically be run after the conversion is complete. Any valid
 >[!NOTE]
 > If Python can't find the `clinical_etl` module when running `CSVConvert`, install the depencency manually:
 > ```
-> pip install -e clinical_ETL_code
+> pip install -e clinical_ETL_code/
 > ```
 
 #### Format of the output files

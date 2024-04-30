@@ -203,7 +203,7 @@ Arrays of validation warnings and errors are found in `validation_warnings` & `v
 Summary statistics about the completeness of the objects against the schema are in the `statistics` key. You can create a readable CSV table
 of the summary statistics by running `completeness_table.py`. The table will be saved in `<INPUT_DIR>_completeness.csv`
 ```
-python src/clinical_etl/completeness_table.py <INPUT_DIR>_map.json
+python src/clinical_etl/completeness_table.py --input <INPUT_DIR>_map.json
 ```
 
 `<INPUT_DIR>_validation_results.json` contains all validation warnings and errors.

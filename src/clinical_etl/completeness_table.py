@@ -12,13 +12,13 @@ def parse_args():
 
 
 def generate_csv(input_path):
-    output_path = input_path.replace("json", "csv")
+    output_path = input_path.replace("_map.json", "_completeness.csv")
     print(f"Converting {input_path} to {output_path}")
     with open(input_path) as f:
-        summary_dict = json.load(f)
+        stats_dict = json.load(f)["statistics"]
         with open(output_path, "w") as out:
             out.write("Schema,Field,Total,Missing,Fraction_missing\n")
-            required_but_missing = summary_dict["statistics"]["required_but_missing"]
+            required_but_missing = stats_dict["required_but_missing"]
             for k, v in required_but_missing.items():
                 for field, stats in v.items():
                     total = stats["total"]

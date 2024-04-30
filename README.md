@@ -201,7 +201,7 @@ The mapping and transformation result is found in the `"donors"` key.
 Arrays of validation warnings and errors are found in `validation_warnings` & `validation_errors`.
 
 Summary statistics about the completeness of the objects against the schema are in the `statistics` key. You can create a readable CSV table
-of the summary statistics by running `completeness_table.py`. The table will be saved in `<INPUT_DIR>_completeness.csv`
+of the summary statistics by running `completeness_table.py`. The table will be saved in `<INPUT_DIR>_completeness.csv`.
 ```
 python src/clinical_etl/completeness_table.py --input <INPUT_DIR>_map.json
 ```

@@ -127,7 +127,7 @@ CSVConvert requires two inputs:
 2. a path to a `manifest.yml`, in a directory that also contains the other files defined in [Setting up a cohort directory](#Setting-up-a-cohort-directory)
 
 ```
-$ python src/clinical_etl/CSVConvert.py -h
+python src/clinical_etl/CSVConvert.py -h
 usage: CSVConvert.py [-h] --input INPUT --manifest MANIFEST [--test] [--verbose] [--index] [--minify]
 
 options:
@@ -162,12 +162,6 @@ Validation will automatically be run after the conversion is complete. Any valid
 
 `<INPUT_DIR>_map.json` is the main output and contains the results of the mapping, conversion and validation as well as summary statistics.
 
-The mapping and transformation result is found in the `"donors"` key.
-
-Arrays of validation warnings and errors are found in `validation_warnings` & `validation_errors`.
-
-Summary statistics about the completeness of the objects against the schema are in the `statistics` key.
-
 A summarised example of the output is below:
 
 ```json
@@ -201,6 +195,17 @@ A summarised example of the output is below:
     }
 }
 ```
+
+The mapping and transformation result is found in the `"donors"` key.
+
+Arrays of validation warnings and errors are found in `validation_warnings` & `validation_errors`.
+
+Summary statistics about the completeness of the objects against the schema are in the `statistics` key. You can create a readable CSV table
+of the summary statistics by running `completeness_table.py`. The table will be saved in `<INPUT_DIR>_completeness.csv`
+```
+python src/clinical_etl/completeness_table.py <INPUT_DIR>_map.json
+```
+
 `<INPUT_DIR>_validation_results.json` contains all validation warnings and errors.
 
 `<INPUT_DIR>_indexed.json` contains information about how the ETL is looking up the mappings and can be useful for debugging. It is only generated if the `--index` argument is specified when CSVConvert is run. Note: This file can be very large if the input data is large.

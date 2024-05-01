@@ -262,7 +262,7 @@ class MoHSchema(BaseSchema):
                                     if ('diagnosis_date' in locals() and diagnosis_date not in [None, ''] and
                                             treatment_end not in [None, ''] and 'treatment_end' in locals() and
                                             treatment_end < diagnosis_date):
-                                        self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: date_of_diagnosis must be earlier than treatment_end_date ")
+                                        self.warn(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: date_of_diagnosis should be earlier than treatment_end_date ")
                                     if 'treatment_start' in locals() and treatment_start not in [None, '']:
                                         if 'death' in locals() and death not in [None, ''] and treatment_start > death:
                                             self.fail(
@@ -270,7 +270,7 @@ class MoHSchema(BaseSchema):
                                         if 'birth' in locals() and birth not in [None, ''] and treatment_start < birth and treatment_start is not None:
                                             self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date cannot be before date_of_birth")
                                         if 'diagnosis_date' in locals() and diagnosis_date not in [None, ''] and treatment_start < diagnosis_date:
-                                            self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date cannot be before date_of_diagnosis")
+                                            self.warn(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date should not be before date_of_diagnosis")
                         diagnosis_values_list = list(diagnoses_dates.values())
                         if (len(diagnosis_values_list) > 0 and "int" in str(type(diagnosis_values_list[0])) and
                                 0 not in diagnosis_values_list):

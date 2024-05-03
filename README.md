@@ -195,6 +195,7 @@ A summarised example of the output is below:
     }
 }
 ```
+`<INPUT_DIR>_validation_results.json` contains all validation warnings and errors.
 
 The mapping and transformation result is found in the `"donors"` key.
 

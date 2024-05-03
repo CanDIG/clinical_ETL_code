@@ -9,6 +9,7 @@ src/clinical_ETL.egg-info/requires.txt
 src/clinical_ETL.egg-info/top_level.txt
 src/clinical_etl/CSVConvert.py
 src/clinical_etl/__init__.py
+src/clinical_etl/completeness_table.py
 src/clinical_etl/create_test_mapping.py
 src/clinical_etl/generate_mapping_docs.py
 src/clinical_etl/generate_schema.py

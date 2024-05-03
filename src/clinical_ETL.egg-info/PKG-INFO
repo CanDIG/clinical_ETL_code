@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: clinical_ETL
-Version: 2.2.0
+Version: 2.2.1
 Summary: ETL module for transforming clinical CSV data into properly-formatted packets for ingest into Katsu
 Project-URL: Repository, https://github.com/CanDIG/clinical_ETL_code
 Requires-Python: >=3.10
@@ -50,6 +50,7 @@ Set up and activate a [virtual environment](https://docs.python.org/3/tutorial/v
 python -m venv /path/to/new/virtual/environment
 source /path/to/new/virtual/environment/bin/activate
 ```
+
 [See here for Windows instructions](https://realpython.com/python-virtual-environments-a-primer/)
 
 Clone this repo and enter the repo directory
@@ -62,6 +63,12 @@ Install the repo's requirements in your virtual environment
 ```commandline
 pip install -r requirements.txt
 ```
+
+>[!NOTE]
+> If Python can't find the `clinical_etl` module when running `CSVConvert`, install the depencency manually:
+> ```
+> pip install -e clinical_ETL_code/
+> ```
 
 Before running the script, you will need to have your input files, this will be clinical data in a tabular format (`xlsx`/`csv`) that can be read into program and a cohort directory containing the files that define the schema and mapping configurations.
 
@@ -139,7 +146,7 @@ CSVConvert requires two inputs:
 2. a path to a `manifest.yml`, in a directory that also contains the other files defined in [Setting up a cohort directory](#Setting-up-a-cohort-directory)
 
 ```
-$ python src/clinical_etl/CSVConvert.py -h
+python src/clinical_etl/CSVConvert.py -h
 usage: CSVConvert.py [-h] --input INPUT --manifest MANIFEST [--test] [--verbose] [--index] [--minify]
 
 options:
@@ -164,15 +171,15 @@ The main output `<INPUT_DIR>_map.json` and optional output`<INPUT_DIR>_indexed.j
 
 Validation will automatically be run after the conversion is complete. Any validation errors or warnings will be reported both on the command line and as part of the `<INPUT_DIR>_map.json` file.
 
+>[!NOTE]
+> If Python can't find the `clinical_etl` module when running `CSVConvert`, install the depencency manually:
+> ```
+> pip install -e clinical_ETL_code/
+> ```
+
 #### Format of the output files
 
 `<INPUT_DIR>_map.json` is the main output and contains the results of the mapping, conversion and validation as well as summary statistics.
-
-The mapping and transformation result is found in the `"donors"` key.
-
-Arrays of validation warnings and errors are found in `validation_warnings` & `validation_errors`.
-
-Summary statistics about the completeness of the objects against the schema are in the `statistics` key.
 
 A summarised example of the output is below:
 
@@ -207,6 +214,18 @@ A summarised example of the output is below:
     }
 }
 ```
+`<INPUT_DIR>_validation_results.json` contains all validation warnings and errors.
+
+The mapping and transformation result is found in the `"donors"` key.
+
+Arrays of validation warnings and errors are found in `validation_warnings` & `validation_errors`.
+
+Summary statistics about the completeness of the objects against the schema are in the `statistics` key. You can create a readable CSV table
+of the summary statistics by running `completeness_table.py`. The table will be saved in `<INPUT_DIR>_completeness.csv`.
+```
+python src/clinical_etl/completeness_table.py --input <INPUT_DIR>_map.json
+```
+
 `<INPUT_DIR>_validation_results.json` contains all validation warnings and errors.
 
 `<INPUT_DIR>_indexed.json` contains information about how the ETL is looking up the mappings and can be useful for debugging. It is only generated if the `--index` argument is specified when CSVConvert is run. Note: This file can be very large if the input data is large.

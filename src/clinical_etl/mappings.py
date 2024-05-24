@@ -74,11 +74,12 @@ def earliest_date(data_values):
     }
 
 
-def date_interval(data_values):
+def date_interval(data_values, date_format=None):
     """Calculates a date interval from a given date relative to the reference date specified in the manifest.
 
     Args:
         data_values: a values dict with a date
+        date_format: string with order of day, month and year in date (e.g. "DMY", "YMD", etc.)
 
     Returns:
         A dictionary with calculated month_interval and optionally a day_interval depending on the specified
@@ -91,6 +92,10 @@ def date_interval(data_values):
     endpoint = single_val(data_values)
     if endpoint is None:
         return None
+    if date_format:
+        DEFAULT_DATE_PARSER.dateparser.DateDataParser(
+            settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": date_format}
+        )
     offset = DEFAULT_DATE_PARSER.get_date_data(reference["offset"])["date_obj"]
     date_obj = DEFAULT_DATE_PARSER.get_date_data(endpoint)["date_obj"]
     is_neg = False

@@ -72,6 +72,12 @@ As of version 2.1 of the [MoHCCN Data Model](https://www.marathonofhopecancercen
 DONOR.INDEX.date_of_birth, {date_interval(Donor.date_of_birth)}
 ```
 
+If your data contains ambiguous dates (such as 12-04-11), make sure to specify the date format in the template so the day, month, and year are parsed correctly. The format can be any combination of the characters `DMY`to specify the order (e.g. `DMY`, `MDY`, `YMD`, etc.).
+```commandline
+DONOR.INDEX.date_of_birth, {date_interval(Donor.date_of_birth, date_format="DMY")}
+```
+
+
 If input data has pre-calculated date intervals as integers, the `int_to_date_interval_json()` function can be used to transform the integer into the required DateInterval json object. e.g.:
 
 ```commandline
@@ -196,6 +202,7 @@ Functions
     
     Args:
         data_values: a values dict with a date
+        date_format: string with order of day, month and year in date (e.g. "DMY", "YMD", etc.)
     
     Returns:
         A dictionary with calculated month_interval and optionally a day_interval depending on the specified

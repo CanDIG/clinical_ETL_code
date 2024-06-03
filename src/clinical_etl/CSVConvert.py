@@ -614,6 +614,9 @@ def load_manifest(manifest_file):
     if "reference_date" in manifest:
         result["reference_date"] = manifest["reference_date"]
 
+    if "date_format" in manifest:
+        result["date_format"] = manifest["date_format"]
+
     if "functions" in manifest:
         for mod in manifest["functions"]:
             try:
@@ -642,6 +645,10 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     mappings.IDENTIFIER_FIELD = manifest["identifier"]
     if mappings.IDENTIFIER_FIELD is None:
         sys.exit("Need to specify what the main identifier column name is as 'identifier' in the manifest file, "
+                 "see README for more details.")
+    mappings.DATE_FORMAT = manifest["date_format"]
+    if mappings.IDENTIFIER_FIELD is None:
+        sys.exit("Need to specify what the date format is in the manifest file, "
                  "see README for more details.")
 
     # read the schema (from the url specified in the manifest) and generate

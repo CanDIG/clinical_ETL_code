@@ -89,6 +89,9 @@ def date_interval(data_values, date_format=None):
         reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
     except Exception as e:
         raise MappingError("No reference date found to calculate date_interval: is there a reference_date specified in the manifest?")
+    DEFAULT_DATE_PARSER = dateparser.DateDataParser(
+        settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT}
+    )
     endpoint = single_val(data_values)
     if endpoint is None:
         return None
@@ -99,7 +102,10 @@ def date_interval(data_values, date_format=None):
     offset = DEFAULT_DATE_PARSER.get_date_data(reference["offset"])["date_obj"]
     date_obj = DEFAULT_DATE_PARSER.get_date_data(endpoint)["date_obj"]
     is_neg = False
-    if offset <= date_obj:
+    if offset is None:
+        start = date_obj
+        end = date_obj
+    elif offset <= date_obj:
         start = offset
         end = date_obj
     else:

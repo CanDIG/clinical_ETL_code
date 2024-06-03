@@ -1,9 +1,9 @@
 submitter_donor_id, submitter_primary_diagnosis_id, date_of_diagnosis, cancer_type_code, basis_of_diagnosis, lymph_nodes_examined_status, lymph_nodes_examined_method, number_lymph_nodes_positive, clinical_tumour_staging_system, clinical_t_category, clinical_n_category, clinical_m_category, clinical_stage_group, laterality
-DONOR_1,PD_1,1_2018,C43.1,Cytology,No lymph nodes found in resected specimen,Lymph node dissection/pathological exam,5.0,International Neuroblastoma Staging System,,,,Stage 1,Left
-DONOR_2,PD_2,3/2020,C04.9,Specific tumour markers,Not applicable,Physical palpation of patient,4,Rai staging system,,,,Stage 1A,Bilateral
-DONOR_3,PD_3,5/2018,C43.9,Unknown,Yes,Imaging,5,AJCC 7th edition,T0,N0,M1a,,Left
-DONOR_3,DUPLICATE_ID,5/2018,C43.9,Unknown,Yes,Imaging,5,AJCC 7th edition,T0,N0,M1a,,Left
-DONOR_4,PD_4,1_2018,C64.9,Death certificate only,Not applicable,Physical palpation of patient,67,Revised International staging system (RISS),,,,Stage 1B,"Unilateral, side not specified"
-DONOR_5,PD_5,3/2020,C64.9,Death certificate only,Yes,Lymph node dissection/pathological exam,5.0,Revised International staging system (RISS),T1,N0a,M0,,Left
-DONOR_6,PD_6,5/2018,C02.2,Specific tumour markers,No,Physical palpation of patient,2,International Neuroblastoma Staging System,,,,Stage C,"Unilateral, side not specified"
+DONOR_1,PD_1,1/1/2018,C43.1,Cytology,No lymph nodes found in resected specimen,Lymph node dissection/pathological exam,5.0,International Neuroblastoma Staging System,,,,Stage 1,Left
+DONOR_2,PD_2,1/3/2020,C04.9,Specific tumour markers,Not applicable,Physical palpation of patient,4,Rai staging system,,,,Stage 1A,Bilateral
+DONOR_3,PD_3,1/5/2018,C43.9,Unknown,Yes,Imaging,5,AJCC 7th edition,T0,N0,M1a,,Left
+DONOR_3,DUPLICATE_ID,1/5/2018,C43.9,Unknown,Yes,Imaging,5,AJCC 7th edition,T0,N0,M1a,,Left
+DONOR_4,PD_4,1/5/2018,C64.9,Death certificate only,Not applicable,Physical palpation of patient,67,Revised International staging system (RISS),,,,Stage 1B,"Unilateral, side not specified"
+DONOR_5,PD_5,1/3/2020,C64.9,Death certificate only,Yes,Lymph node dissection/pathological exam,5.0,Revised International staging system (RISS),T1,N0a,M0,,Left
+DONOR_6,PD_6,1/5/2018,C02.2,Specific tumour markers,No,Physical palpation of patient,2,International Neuroblastoma Staging System,,,,Stage C,"Unilateral, side not specified"
 DONOR_2,PD_2_1,6/3/2018,C43.9,Histology of a primary tumour,No lymph nodes found in resected specimen,Physical palpation of patient,1.0,Binet staging system,,,,Stage B,Bilateral

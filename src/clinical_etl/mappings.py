@@ -86,7 +86,7 @@ def earliest_date(data_values):
     }
 
 
-def date_interval(data_values, date_format=None):
+def date_interval(data_values):
     """Calculates a date interval from a given date relative to the reference date specified in the manifest.
 
     Args:

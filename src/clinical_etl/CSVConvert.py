@@ -647,7 +647,7 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
         sys.exit("Need to specify what the main identifier column name is as 'identifier' in the manifest file, "
                  "see README for more details.")
     mappings.DATE_FORMAT = manifest["date_format"]
-    if mappings.IDENTIFIER_FIELD is None:
+    if mappings.DATE_FORMAT is None:
         sys.exit("Need to specify what the date format is in the manifest file, "
                  "see README for more details.")
 

@@ -99,7 +99,7 @@ def date_interval(data_values, date_format=None):
     """
     try:
         reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
-    except Exception as e:
+    except KeyError:
         raise MappingError("No reference date found to calculate date_interval: is there a reference_date specified in the manifest?", field_level=1)
     DEFAULT_DATE_PARSER = dateparser.DateDataParser(
         settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT}
@@ -152,10 +152,8 @@ def int_to_date_interval_json(data_values):
     if integer(data_values) is None:
         return
     # Either month or day date resolutions are permitted.
-    # resolution = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["date_resolution"][0]
     try:
         resolution = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["date_resolution"][0]
-        # resolution in ("month", "day")
     except KeyError:
         raise MappingError("No date_resolution found to specify date interval resolution: is there a date_resolution specified in the donor file?", field_level=2)
     # Format as JSON.  Always include a month_interval.  day_interval is optional.

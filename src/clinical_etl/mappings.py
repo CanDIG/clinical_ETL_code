@@ -107,10 +107,6 @@ def date_interval(data_values):
     endpoint = single_val(data_values)
     if endpoint is None:
         return None
-    if date_format:
-        DEFAULT_DATE_PARSER.dateparser.DateDataParser(
-            settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": date_format}
-        )
     offset = DEFAULT_DATE_PARSER.get_date_data(reference["offset"])["date_obj"]
     date_obj = DEFAULT_DATE_PARSER.get_date_data(endpoint)["date_obj"]
     is_neg = False

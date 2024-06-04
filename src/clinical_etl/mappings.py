@@ -109,6 +109,8 @@ def date_interval(data_values):
         return None
     offset = DEFAULT_DATE_PARSER.get_date_data(reference["offset"])["date_obj"]
     date_obj = DEFAULT_DATE_PARSER.get_date_data(endpoint)["date_obj"]
+    if date_obj is None:
+        raise MappingError(f"Cannot parse date '{endpoint}'", field_level=2)
     is_neg = False
     if offset is None:
         start = date_obj

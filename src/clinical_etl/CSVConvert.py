@@ -658,7 +658,7 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
         if sorted(manifest["date_format"]) != sorted("DMY"):
             raise TypeError
     except KeyError as e:
-        sys.exit("'date_format' in the manifest file cannot be blank, see README for more details.")
+        sys.exit("'date_format' must be specified in the manifest file, see README for more details.")
     except TypeError as e:
         sys.exit("Need to specify a valid value for the date format in the manifest file, "
                  "see README for more details.")

@@ -4,6 +4,7 @@ import json
 import datetime
 import math
 from dateutil.rrule import rrule, MONTHLY, DAILY
+from dateutil import relativedelta
 
 VERBOSE = False
 MODULES = {}
@@ -122,14 +123,15 @@ def date_interval(data_values):
         start = date_obj
         end = offset
         is_neg = True
-    month_interval = len(list(rrule(MONTHLY, dtstart=start, until=end))) - 1
+    time_delta = relativedelta.relativedelta(end, start)
+    month_interval = time_delta.months + (time_delta.years * 12)
     if is_neg:
         month_interval = -month_interval
     result = {
         "month_interval": month_interval
     }
     if reference["period"] == "day":
-        day_interval = len(list(rrule(DAILY, dtstart=start, until=end))) - 1
+        day_interval = (end - start).days
         if is_neg:
             day_interval = -day_interval
         result["day_interval"] = day_interval

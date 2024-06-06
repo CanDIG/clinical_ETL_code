@@ -3,7 +3,6 @@ import dateparser
 import json
 import datetime
 import math
-from dateutil.rrule import rrule, MONTHLY, DAILY
 from dateutil import relativedelta
 
 VERBOSE = False

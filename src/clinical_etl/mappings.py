@@ -13,6 +13,7 @@ INDEX_STACK = []
 INDEXED_DATA = None
 CURRENT_LINE = ""
 OUTPUT_FILE = ""
+DATE_FORMAT = None
 DEFAULT_DATE_PARSER = dateparser.DateDataParser(settings={'PREFER_DAY_OF_MONTH': 'first'})
 
 
@@ -91,7 +92,6 @@ def date_interval(data_values):
 
     Args:
         data_values: a values dict with a date
-        date_format: string with order of day, month and year in date (e.g. "DMY", "YMD", etc.)
 
     Returns:
         A dictionary with calculated month_interval and optionally a day_interval depending on the specified

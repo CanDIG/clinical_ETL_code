@@ -66,7 +66,7 @@ A detailed index of all standard functions can be viewed below in the [Standard 
 
 ### Dealing with Dates
 
-As of version 2.1 of the [MoHCCN Data Model](https://www.marathonofhopecancercentres.ca/docs/default-source/policies-and-guidelines/clinical-data-model-v2.1/mohccn-clinical-data-model-release-notes_sep2023.pdf?Status=Master&sfvrsn=19ece028_3), dates need to be converted into date intervals relative to the earliest date of diagnosis. Support for this has been incorporated into clinical_ETL_code v.2.0.0. In order to convert dates to date intervals, a `reference_date` must be provided in the `manifest.yml`, which should be the patient's first date of diagnosis. You can assign the first age of diagnosis with:
+As of version 2.1 of the [MoHCCN Data Model](https://www.marathonofhopecancercentres.ca/docs/default-source/policies-and-guidelines/clinical-data-model-v2.1/mohccn-clinical-data-model-release-notes_sep2023.pdf?Status=Master&sfvrsn=19ece028_3), dates need to be converted into date intervals relative to the earliest date of diagnosis. Support for this has been incorporated into clinical_ETL_code v.2.0.0. In order to convert dates to date intervals, a `reference_date` must be provided in the `manifest.yml`, which should be the patient's first date of diagnosis. You can assign the first date of diagnosis with:
 ```commandline
 reference_date: earliest_date(Donor.date_resolution, PrimaryDiagnosis.date_of_diagnosis)
 ```

@@ -3,7 +3,7 @@ import dateparser
 import json
 import datetime
 import math
-from dateutil.rrule import rrule, MONTHLY, DAILY
+from dateutil import relativedelta
 
 VERBOSE = False
 MODULES = {}
@@ -13,17 +13,30 @@ INDEX_STACK = []
 INDEXED_DATA = None
 CURRENT_LINE = ""
 OUTPUT_FILE = ""
+DATE_FORMAT = None
 DEFAULT_DATE_PARSER = dateparser.DateDataParser(settings={'PREFER_DAY_OF_MONTH': 'first'})
 
 
 class MappingError(Exception):
-    def __init__(self, value):
+    """Base class for ETL exceptions
+
+    Args:
+        value: message to output
+        field_level: specify how detailed the message will be (1-3)
+    """
+    def __init__(self, value, field_level=3):
         self.value = value
+        self.level = field_level
 
     def __str__(self):
-        with open(f"{OUTPUT_FILE}_indexed.json", 'w') as f:
+        with open(f"{OUTPUT_FILE}_indexed.json", "w") as f:
             json.dump(INDEXED_DATA, f, indent=4)
-        return repr(f"Check the values for {IDENTIFIER} in {IDENTIFIER_FIELD}: {self.value}")
+        if self.level == 1:
+            return repr(f"{self.value}")
+        elif self.level == 2:
+            return repr(f"Check the values for {IDENTIFIER}: {self.value}")
+        elif self.level == 3:
+            return repr(f"Check the values for {IDENTIFIER} in {IDENTIFIER_FIELD}: {self.value}")
 
 
 def date(data_values):
@@ -86,29 +99,38 @@ def date_interval(data_values):
     """
     try:
         reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
-    except Exception as e:
-        raise MappingError("No reference date found to calculate date_interval: is there a reference_date specified in the manifest?")
+    except KeyError:
+        raise MappingError("No reference date found to calculate date_interval: is there a reference_date specified in the manifest?", field_level=1)
+    DEFAULT_DATE_PARSER = dateparser.DateDataParser(
+        settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT}
+    )
     endpoint = single_val(data_values)
     if endpoint is None:
         return None
     offset = DEFAULT_DATE_PARSER.get_date_data(reference["offset"])["date_obj"]
     date_obj = DEFAULT_DATE_PARSER.get_date_data(endpoint)["date_obj"]
+    if date_obj is None:
+        raise MappingError(f"Cannot parse date '{endpoint}'", field_level=2)
     is_neg = False
-    if offset <= date_obj:
+    if offset is None:
+        start = date_obj
+        end = date_obj
+    elif offset <= date_obj:
         start = offset
         end = date_obj
     else:
         start = date_obj
         end = offset
         is_neg = True
-    month_interval = len(list(rrule(MONTHLY, dtstart=start, until=end))) - 1
+    time_delta = relativedelta.relativedelta(end, start)
+    month_interval = time_delta.months + (time_delta.years * 12)
     if is_neg:
         month_interval = -month_interval
     result = {
         "month_interval": month_interval
     }
     if reference["period"] == "day":
-        day_interval = len(list(rrule(DAILY, dtstart=start, until=end))) - 1
+        day_interval = (end - start).days
         if is_neg:
             day_interval = -day_interval
         result["day_interval"] = day_interval
@@ -129,11 +151,10 @@ def int_to_date_interval_json(data_values):
     if integer(data_values) is None:
         return
     # Either month or day date resolutions are permitted.
-    resolution = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["date_resolution"][0]
     try:
-        resolution in ("month", "day")
-    except:
-        raise MappingError("No date_resolution found to specify date interval resolution: is there a date_resolution specified in the donor file?")
+        resolution = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["date_resolution"][0]
+    except KeyError:
+        raise MappingError("No date_resolution found to specify date interval resolution: is there a date_resolution specified in the donor file?", field_level=2)
     # Format as JSON.  Always include a month_interval.  day_interval is optional.
     if resolution == "month":
         return {resolution + "_interval": integer(data_values)}
@@ -201,7 +222,7 @@ def single_val(data_values):
     if len(all_items) == 0:
         return None
     if len(all_items) > 1:
-        raise MappingError(f"More than one value was found for {list(data_values.keys())[0]} in {data_values}")
+        raise MappingError(f"More than one value was found for {list(data_values.keys())[0]} in {data_values}", field_level=3)
     result = list(all_items)[0]
     if result is not None and result.lower() == 'nan':
         result = None
@@ -530,5 +551,5 @@ def _parse_date(date_string):
             d = DEFAULT_DATE_PARSER.get_date_data(date_string)
             return d['date_obj'].strftime("%Y-%m")
         except Exception as e:
-            raise MappingError(f"error in date({date_string}): {type(e)} {e}")
+            raise MappingError(f"error in date({date_string}): {type(e)} {e}", field_level=2)
     return date_string

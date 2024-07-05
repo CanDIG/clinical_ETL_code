@@ -55,11 +55,13 @@ Before running the script, you will need to have your input files, this will be 
 
 ### Input file/s format
 
-The input for `CSVConvert` is either a single xlsx file, a single csv, or a directory of csvs that contain your clinical data. If providing a spreadsheet, there can be multiple sheets (usually one for each sub-schema). Examples of how csvs may look can be found in [test_data/raw_data](test_data/raw_data).
+The input for `CSVConvert` is either a single xlsx file, a single csv, or a directory of csvs that contain your clinical data. If providing a spreadsheet, there can be multiple sheets (usually one for each sub-schema). Examples of how csvs may look can be found in [tests/raw_data](tests/raw_data).
 
 All rows must contain identifiers that allow linkage between the objects in the schema, for example, a row that describes a Treatment must have a link to the Donor / Patient id for that Treatment.
 
 Data should be [tidy](https://r4ds.had.co.nz/tidy-data.html), with each variable in a separate column, each row representing an observation, and a single data entry in each cell. In the case of fields that can accept an array of values, the values within a cell should be delimited such that a mapping function can accurately return an array of permissible values.
+
+If you are working with exports from RedCap, the sample files in the `redcap` folder may be helpful. 
 
 ### Setting up a cohort directory
 

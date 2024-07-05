@@ -65,17 +65,19 @@ If you are working with exports from RedCap, the sample files in the `redcap` fo
 
 ### Setting up a cohort directory
 
-For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `data` repository. This cohort directory should contain the same files as shown in the `sample_inputs` directory, which are:
+For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `data` repository. This cohort directory should contain the same files as shown in the [`sample_inputs/generic_example`](sample_inputs/generic_example) directory, which are:
 
 * a [`manifest.yml`](#Manifest-file) file with configuration settings for the mapping and schema validation
 * a [mapping template](#Mapping-template) csv that lists custom mappings for each field (based on `moh_template.csv`)
 * (if needed) One or more python files that implement any cohort-specific mapping functions (See [mapping functions](mapping_functions.md) for detailed information)
 
+Example files for how to convert a large single csv export, such as those exported from a redcap database can be found in [`sample_inputs/redcap_example`](sample_inputs/redcap_example).
+
 > [!IMPORTANT]
 > If you are placing this directory under version control and the cohort is not sample / synthetic data, do not place raw or processed data files in this directory, to avoid any possibility of committing protected data.
 
 #### Manifest file
-The `manifest.yml` file contains settings for the cohort mapping. There is a sample file in [`sample_inputs/manifest.yml`](sample_inputs/manifest.yml) with documentation and example inputs. The fields are:
+The `manifest.yml` file contains settings for the cohort mapping. There is a sample file in [`sample_inputs/generic_example/manifest.yml`](sample_inputs/generic_example/manifest.yml) with documentation and example inputs. The fields are:
 
 | field         | description                                                                                                                                                                                               |
 |---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

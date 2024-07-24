@@ -311,3 +311,20 @@ class MoHSchemaV3(BaseSchema):
         else:
             if f"{staging_type}_stage_group" not in map_json or map_json[f"{staging_type}_stage_group"] is None:
                 self.warn(f"{staging_type}_stage_group is required for {staging_type}_tumour_staging_system {map_json[f'{staging_type}_tumour_staging_system']}")
+
+    
+    def validate_specimens(self, map_json):
+        if "samples" in map_json:
+            for sample in map_json["samples"]:
+                if "tumour_normal_designation" in sample and sample["tumour_normal_designation"] == "Tumour":
+                    required_fields = [
+                        "reference_pathology_confirmed_diagnosis",
+                        "reference_pathology_confirmed_tumour_presence",
+                        "tumour_grading_system",
+                        "tumour_grade",
+                        "percent_tumour_cells_range",
+                        "percent_tumour_cells_measurement_method"
+                    ]
+                    for f in required_fields:
+                        if f not in map_json:
+                            self.warn(f"Tumour specimens require a {f}")

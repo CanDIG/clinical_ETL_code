@@ -284,3 +284,30 @@ class MoHSchemaV3(BaseSchema):
                     for x in map_json["biomarkers"]:
                         if "test_date" not in x or x["test_date"] is None:
                             self.warn("test_date is required for biomarkers not associated with nested events")
+
+
+    def validate_primary_diagnoses(self, map_json):
+        if "clinical_tumour_staging_system" not in map_json or "pathological_staging_system" not in map_json:
+            self.warn("Either a clinical_tumour_staging_system or a pathological_staging_staging_system is required")
+
+        for prop in map_json:
+            match prop:
+                case "clinical_tumour_staging_system":
+                    self.validate_staging_system(map_json, "clinical")
+                case "pathological_tumour_staging_system":
+                    self.validate_staging_system(map_json, "pathological")
+
+
+    def validate_staging_system(self, map_json, staging_type):
+        if "AJCC" in map_json[f"{staging_type}_tumour_staging_system"]:
+            required_fields = [
+                "t_category",
+                "n_category",
+                "m_category"
+            ]
+            for f in required_fields:
+                if f"{staging_type}_{f}" not in map_json or map_json[f"{staging_type}_{f}"] is None:
+                    self.warn(f"{staging_type}_{f} is required if {staging_type}_tumour_staging_system is AJCC")
+        else:
+            if f"{staging_type}_stage_group" not in map_json or map_json[f"{staging_type}_stage_group"] is None:
+                self.warn(f"{staging_type}_stage_group is required for {staging_type}_tumour_staging_system {map_json[f'{staging_type}_tumour_staging_system']}")

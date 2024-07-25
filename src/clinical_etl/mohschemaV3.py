@@ -287,8 +287,8 @@ class MoHSchemaV3(BaseSchema):
 
 
     def validate_primary_diagnoses(self, map_json):
-        if "clinical_tumour_staging_system" not in map_json or "pathological_staging_system" not in map_json:
-            self.warn("Either a clinical_tumour_staging_system or a pathological_staging_staging_system is required")
+        if "clinical_tumour_staging_system" not in map_json and "pathological_staging_system" not in map_json:
+            self.warn("Either clinical_tumour_staging_system or pathological_staging_system is required")
 
         for prop in map_json:
             match prop:

@@ -357,3 +357,19 @@ class MoHSchemaV3(BaseSchema):
                                 end = dateparser.parse(map_json["treatment_end_date"]).date()
                             if start > end:
                                 self.fail("Treatment start cannot be after treatment end.")
+
+
+    def validate_systemic_therapies(self, map_json):
+        if "drug_dose_units" not in map_json or map_json["drug_dose_units"] is None:
+            for x in ["prescribed_cumulative_drug_dose", "actual_cumulative_drug_dose"]:
+                if x in map_json and map_json[x] is not None:
+                    self.warn(f"drug_dose_units required if {x} is submitted")
+
+
+    def validate_radiations(self, map_json):
+        for prop in map_json:
+            match prop:
+                case "radiation_boost":
+                    if map_json["radiation_boost"]:
+                        if "reference_radiation_treatment_id" not in map_json or map_json["reference_radiation_treatment_id"] is None:
+                            self.warn("reference_radiation_treatment_id required if radiation_boost = Yes")

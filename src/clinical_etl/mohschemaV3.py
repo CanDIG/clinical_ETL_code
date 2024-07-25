@@ -328,3 +328,34 @@ class MoHSchemaV3(BaseSchema):
                     for f in required_fields:
                         if f not in map_json:
                             self.warn(f"Tumour specimens require a {f}")
+
+
+    def validate_treatments(self, map_json):
+        for prop in map_json:
+            match prop:
+                case "treatment_type":
+                    if map_json["treatment_type"] is not None:
+                        for t_type in map_json["treatment_type"]:
+                            match t_type:
+                                case "Systemic therapy":
+                                    if "systemic_therapies" not in map_json or len(map_json["chemotherapies"]) == 0:
+                                        self.warn("treatment type Chemotherapy should have one or more chemotherapies submitted")
+                                case "Radiation therapy":
+                                    if "radiations" not in map_json or len(map_json["radiations"]) == 0:
+                                        self.warn("treatment type Radiation therapy should have one or more radiation submitted")
+                                case "Surgery":
+                                    if "surgeries" not in map_json or len(map_json["surgeries"]) == 0:
+                                        self.warn("treatment type Surgery should have one or more surgery submitted")
+                case "treatment_start_date":
+                    if map_json["treatment_start_date"] is not None:
+                        if "treatment_end_date" in map_json and map_json["treatment_end_date"] is not None:
+                            if "dict" in str(type(map_json["treatment_start_date"])):
+                                start = map_json["treatment_start_date"]["month_interval"]
+                                end = map_json["treatment_end_date"]["month_interval"]
+                            else:
+                                start = dateparser.parse(map_json["treatment_start_date"]).date()
+                                end = dateparser.parse(map_json["treatment_end_date"]).date()
+                            if start > end:
+                                self.fail("Treatment start cannot be after treatment end.")
+
+

@@ -368,8 +368,30 @@ class MoHSchemaV3(BaseSchema):
 
     def validate_radiations(self, map_json):
         for prop in map_json:
+            if prop == "radiation_boost":
+                if map_json["radiation_boost"]:
+                    if "reference_radiation_treatment_id" not in map_json or map_json["reference_radiation_treatment_id"] is None:
+                        self.warn("reference_radiation_treatment_id required if radiation_boost = Yes")
+
+    def validate_followups(self, map_json):
+        for prop in map_json:
             match prop:
-                case "radiation_boost":
-                    if map_json["radiation_boost"]:
-                        if "reference_radiation_treatment_id" not in map_json or map_json["reference_radiation_treatment_id"] is None:
-                            self.warn("reference_radiation_treatment_id required if radiation_boost = Yes")
+                case "disease_status_at_followup":
+                    states = [
+                        "Distant progression",
+                        "Loco-regional progression",
+                        "Progression not otherwise specified",
+                        "Relapse or recurrence"
+                    ]
+                    if map_json["disease_status_at_followup"] in states:
+                        required_fields = [
+                            "relapse_type",
+                            "date_of_relapse",
+                            "method_of_progression_status"
+                        ]
+                        for field in required_fields:
+                            if field not in map_json:
+                                self.warn(f"{field} is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")
+                        if "anatomic_site_progression_or_recurrence" not in map_json:
+                            if "relapse_type" in map_json and map_json["relapse_type"] != "Biochemical progression":
+                                self.warn(f"anatomic_site_progression_or_recurrence is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")

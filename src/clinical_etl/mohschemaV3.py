@@ -338,8 +338,8 @@ class MoHSchemaV3(BaseSchema):
                         for t_type in map_json["treatment_type"]:
                             match t_type:
                                 case "Systemic therapy":
-                                    if "systemic_therapies" not in map_json or len(map_json["chemotherapies"]) == 0:
-                                        self.warn("treatment type Chemotherapy should have one or more chemotherapies submitted")
+                                    if "systemic_therapies" not in map_json or len(map_json["systemic_therapies"]) == 0:
+                                        self.warn("treatment type Systemic therapy should have one or more systemic therapies submitted")
                                 case "Radiation therapy":
                                     if "radiations" not in map_json or len(map_json["radiations"]) == 0:
                                         self.warn("treatment type Radiation therapy should have one or more radiation submitted")
@@ -357,5 +357,3 @@ class MoHSchemaV3(BaseSchema):
                                 end = dateparser.parse(map_json["treatment_end_date"]).date()
                             if start > end:
                                 self.fail("Treatment start cannot be after treatment end.")
-
-

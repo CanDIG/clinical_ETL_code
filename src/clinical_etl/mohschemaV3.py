@@ -291,11 +291,10 @@ class MoHSchemaV3(BaseSchema):
             self.warn("Either clinical_tumour_staging_system or pathological_staging_system is required")
 
         for prop in map_json:
-            match prop:
-                case "clinical_tumour_staging_system":
-                    self.validate_staging_system(map_json, "clinical")
-                case "pathological_tumour_staging_system":
-                    self.validate_staging_system(map_json, "pathological")
+            if prop == "clinical_tumour_staging_system":
+                self.validate_staging_system(map_json, "clinical")
+            elif prop == "pathological_tumour_staging_system":
+                self.validate_staging_system(map_json, "pathological")
 
 
     def validate_staging_system(self, map_json, staging_type):
@@ -332,31 +331,28 @@ class MoHSchemaV3(BaseSchema):
 
     def validate_treatments(self, map_json):
         for prop in map_json:
-            match prop:
-                case "treatment_type":
-                    if map_json["treatment_type"] is not None:
-                        for t_type in map_json["treatment_type"]:
-                            match t_type:
-                                case "Systemic therapy":
-                                    if "systemic_therapies" not in map_json or len(map_json["systemic_therapies"]) == 0:
-                                        self.warn("treatment type Systemic therapy should have one or more systemic therapies submitted")
-                                case "Radiation therapy":
-                                    if "radiations" not in map_json or len(map_json["radiations"]) == 0:
-                                        self.warn("treatment type Radiation therapy should have one or more radiation submitted")
-                                case "Surgery":
-                                    if "surgeries" not in map_json or len(map_json["surgeries"]) == 0:
-                                        self.warn("treatment type Surgery should have one or more surgery submitted")
-                case "treatment_start_date":
-                    if map_json["treatment_start_date"] is not None:
-                        if "treatment_end_date" in map_json and map_json["treatment_end_date"] is not None:
-                            if "dict" in str(type(map_json["treatment_start_date"])):
-                                start = map_json["treatment_start_date"]["month_interval"]
-                                end = map_json["treatment_end_date"]["month_interval"]
-                            else:
-                                start = dateparser.parse(map_json["treatment_start_date"]).date()
-                                end = dateparser.parse(map_json["treatment_end_date"]).date()
-                            if start > end:
-                                self.fail("Treatment start cannot be after treatment end.")
+            if prop == "treatment_type" and map_json["treatment_type"] is not None:
+                    for t_type in map_json["treatment_type"]:
+                        match t_type:
+                            case "Systemic therapy":
+                                if "systemic_therapies" not in map_json or len(map_json["systemic_therapies"]) == 0:
+                                    self.warn("treatment type Systemic therapy should have one or more systemic therapies submitted")
+                            case "Radiation therapy":
+                                if "radiations" not in map_json or len(map_json["radiations"]) == 0:
+                                    self.warn("treatment type Radiation therapy should have one or more radiation submitted")
+                            case "Surgery":
+                                if "surgeries" not in map_json or len(map_json["surgeries"]) == 0:
+                                    self.warn("treatment type Surgery should have one or more surgery submitted")
+            elif prop == "treatment_start_date" and map_json["treatment_start_date"] is not None:
+                if "treatment_end_date" in map_json and map_json["treatment_end_date"] is not None:
+                    if "dict" in str(type(map_json["treatment_start_date"])):
+                        start = map_json["treatment_start_date"]["month_interval"]
+                        end = map_json["treatment_end_date"]["month_interval"]
+                    else:
+                        start = dateparser.parse(map_json["treatment_start_date"]).date()
+                        end = dateparser.parse(map_json["treatment_end_date"]).date()
+                    if start > end:
+                        self.fail("Treatment start cannot be after treatment end.")
 
 
     def validate_systemic_therapies(self, map_json):
@@ -373,25 +369,25 @@ class MoHSchemaV3(BaseSchema):
                     if "reference_radiation_treatment_id" not in map_json or map_json["reference_radiation_treatment_id"] is None:
                         self.warn("reference_radiation_treatment_id required if radiation_boost = Yes")
 
+
     def validate_followups(self, map_json):
         for prop in map_json:
-            match prop:
-                case "disease_status_at_followup":
-                    states = [
-                        "Distant progression",
-                        "Loco-regional progression",
-                        "Progression not otherwise specified",
-                        "Relapse or recurrence"
+            if prop == "disease_status_at_followup":
+                states = [
+                    "Distant progression",
+                    "Loco-regional progression",
+                    "Progression not otherwise specified",
+                    "Relapse or recurrence"
+                ]
+                if map_json["disease_status_at_followup"] in states:
+                    required_fields = [
+                        "relapse_type",
+                        "date_of_relapse",
+                        "method_of_progression_status"
                     ]
-                    if map_json["disease_status_at_followup"] in states:
-                        required_fields = [
-                            "relapse_type",
-                            "date_of_relapse",
-                            "method_of_progression_status"
-                        ]
-                        for field in required_fields:
-                            if field not in map_json:
-                                self.warn(f"{field} is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")
-                        if "anatomic_site_progression_or_recurrence" not in map_json:
-                            if "relapse_type" in map_json and map_json["relapse_type"] != "Biochemical progression":
-                                self.warn(f"anatomic_site_progression_or_recurrence is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")
+                    for field in required_fields:
+                        if field not in map_json:
+                            self.warn(f"{field} is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")
+                    if "anatomic_site_progression_or_recurrence" not in map_json:
+                        if "relapse_type" in map_json and map_json["relapse_type"] != "Biochemical progression":
+                            self.warn(f"anatomic_site_progression_or_recurrence is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")

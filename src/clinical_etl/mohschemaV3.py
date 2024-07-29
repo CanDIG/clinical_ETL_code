@@ -391,3 +391,32 @@ class MoHSchemaV3(BaseSchema):
                     if "anatomic_site_progression_or_recurrence" not in map_json:
                         if "relapse_type" in map_json and map_json["relapse_type"] != "Biochemical progression":
                             self.warn(f"anatomic_site_progression_or_recurrence is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")
+
+
+    def validate_comorbidities(self, map_json):
+        for prop in map_json:
+            if prop == "laterality_of_prior_malignancy":
+                if "prior_malignancy" not in map_json or map_json["prior_malignancy"] != "Yes":
+                    self.fail("laterality_of_prior_malignancy should not be submitted unless prior_malignancy = Yes")
+
+
+    def validate_exposures(self, map_json):
+        is_smoker = False
+        if "tobacco_smoking_status" not in map_json or map_json["tobacco_smoking_status"] is None:
+            self.warn("tobacco_smoking_status required for exposure")
+        else:
+            if map_json["tobacco_smoking_status"] in [
+                "Current reformed smoker for <= 15 years",
+                "Current reformed smoker for > 15 years",
+                "Current reformed smoker, duration not specified",
+                "Current smoker"
+            ]:
+                is_smoker = True
+
+            for prop in map_json:
+                if prop == "tobacco_type":
+                    if not is_smoker:
+                        self.fail(f"tobacco_type cannot be submitted for tobacco_smoking_status = {map_json['tobacco_smoking_status']}")
+                elif prop == "pack_years_smoked":
+                    if not is_smoker:
+                        self.fail(f"pack_years_smoked cannot be submitted for tobacco_smoking_status = {map_json['tobacco_smoking_status']}")

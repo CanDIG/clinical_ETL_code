@@ -329,6 +329,11 @@ class MoHSchemaV3(BaseSchema):
                             self.warn(f"Tumour specimens require a {f}")
 
 
+    def validate_sample_registrations(self, map_json):
+        # there aren't any additional validations here
+        return
+
+
     def validate_treatments(self, map_json):
         for prop in map_json:
             if prop == "treatment_type" and map_json["treatment_type"] is not None:

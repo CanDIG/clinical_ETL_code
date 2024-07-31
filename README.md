@@ -117,6 +117,7 @@ usage: generate_schema.py [-h] --url URL [--out OUT]
 options:
   -h, --help  show this help message and exit
   --url URL   URL to openAPI schema file (raw github link)
+  --schema    Name of schema class. Default is MoHSchemaV3
   --out OUT   name of output file; csv extension will be added. Default is template
 ```
 </details>

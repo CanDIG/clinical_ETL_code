@@ -375,6 +375,11 @@ class MoHSchemaV3(BaseSchema):
                         self.warn("reference_radiation_treatment_id required if radiation_boost = Yes")
 
 
+    def validate_surgeries(self, map_json):
+        # No validations needed (submitter_specimen_id removed in V3)
+        return
+
+
     def validate_followups(self, map_json):
         for prop in map_json:
             if prop == "disease_status_at_followup":

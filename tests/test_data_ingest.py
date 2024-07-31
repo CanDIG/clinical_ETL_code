@@ -9,7 +9,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(os.sep.join([parent_dir, "src"]))
 from clinical_etl import CSVConvert
 from clinical_etl import mappings
-from clinical_etl.mohschema import MoHSchemaV3
+from clinical_etl.mohschemav2 import MoHSchemaV2
 
 # read sheet from given data pathway
 REPO_DIR = os.path.abspath(f"{os.path.dirname(os.path.realpath(__file__))}")
@@ -19,7 +19,7 @@ def schema():
     with open(manifest_file, 'r') as f:
         manifest = yaml.safe_load(f)
     if manifest is not None:
-        return MoHSchemaV3(manifest['schema'])
+        return MoHSchemaV2(manifest['schema'])
     return None
 
 

@@ -87,9 +87,7 @@ class MoHSchemaV3(BaseSchema):
                 "treatment_intent",
             ],
             "nested_schemas": [
-                "chemotherapies",
-                "hormone_therapies",
-                "immunotherapies",
+                "systemic_therapies"
                 "radiations",
                 "surgeries",
                 "followups",

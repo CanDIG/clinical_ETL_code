@@ -10,14 +10,15 @@ import os
 import pandas
 import sys
 import argparse
-from mohschema import MoHSchema
+from mohschemav2 import MoHSchemaV2
+from mohschemav3 import MoHSchemaV3
 import re
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--url', type=str, help="URL to openAPI schema file (raw github link)", default="https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml")
-    parser.add_argument('--schema', type=str, help="Name of schema class", default="MoHSchema")
+    parser.add_argument('--schema', type=str, help="Name of schema class", default="MoHSchemaV3")
     parser.add_argument('--out', type=str, help="name of output file; csv extension will be added. Default is template", default="template")
     args = parser.parse_args()
     return args

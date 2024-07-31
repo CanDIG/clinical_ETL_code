@@ -7,7 +7,7 @@ from clinical_etl.schema import BaseSchema, ValidationError
 A class for the representation of a DonorWithClinicalData (MoHCCN data model v2) object in Katsu.
 """
 
-class MoHSchema(BaseSchema):
+class MoHSchemaV2(BaseSchema):
     schema_name = "DonorWithClinicalDataSchema"
     base_name = "DONOR"
 

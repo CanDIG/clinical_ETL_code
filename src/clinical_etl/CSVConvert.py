@@ -573,7 +573,7 @@ def check_for_sheet_inconsistencies(template_sheets, csv_sheets):
 def load_manifest(manifest_file):
     """Given a manifest file's path, return the data inside it."""
     identifier = None
-    schema_class = "MoHSchemaV3"
+    schema_class = "MoHSchemaV2"
     mapping_path = None
     result = {}
     try:

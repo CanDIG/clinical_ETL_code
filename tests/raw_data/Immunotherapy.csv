@@ -1,3 +1,0 @@
-submitter_donor_id,submitter_treatment_id,immunotherapy_type,drug_name,drug_reference_identifier,drug_reference_database,immunotherapy_drug_dose_units,prescribed_cumulative_drug_dose,actual_cumulative_drug_dose,
-DONOR_4,TR_4,Cell-based,Pembrolizumab,4459876,RxNorm,IU/kg,95,160,
-DONOR_2,TR_8,Other immunomodulatory substances,Pexidartinib,8836851,PubChem,ug/m2,197,183,

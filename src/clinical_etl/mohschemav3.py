@@ -400,6 +400,12 @@ class MoHSchemaV3(BaseSchema):
                         if "relapse_type" in map_json and map_json["relapse_type"] != "Biochemical progression":
                             self.warn(f"anatomic_site_progression_or_recurrence is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")
 
+    def validate_biomarkers(self, map_json):
+        for prop in map_json:
+            match prop:
+                case "hpv_pcr_status":
+                    if map_json["hpv_pcr_status"] == "Positive" and "hpv_strain" not in map_json:
+                        self.warn("If hpv_pcr_status is positive, hpv_strain is required")
 
     def validate_comorbidities(self, map_json):
         for prop in map_json:

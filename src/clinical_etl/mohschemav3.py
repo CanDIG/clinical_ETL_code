@@ -124,7 +124,7 @@ class MoHSchemaV3(BaseSchema):
             "name": "Surgery",
             "required_fields": [
                 "surgery_reference_database",
-                "surgery_refence_identifier",
+                "surgery_reference_identifier",
                 "surgery_type"
             ],
             "nested_schemas": []

@@ -50,6 +50,7 @@ DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.submitter_treatment_id, {sin
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.tumour_grade, {single_val(Specimen.tumour_grade)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.tumour_grading_system, {single_val(Specimen.tumour_grading_system)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.tumour_histological_type, {single_val(Specimen.tumour_histological_type)}
+DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.multisheet, {placeholder(Specimen.submitter_specimen_id, Sample_Registration.submitter_specimen_id, Sample_Registration.extra)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.sample_registrations.INDEX, {indexed_on(Sample_Registration.submitter_specimen_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.sample_registrations.INDEX.sample_type, {single_val(Sample_Registration.sample_type)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.sample_registrations.INDEX.specimen_tissue_source, {single_val(Sample_Registration.specimen_tissue_source)}

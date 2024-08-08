@@ -305,6 +305,9 @@ class MoHSchemaV3(BaseSchema):
             for f in required_fields:
                 if f"{staging_type}_{f}" not in map_json or map_json[f"{staging_type}_{f}"] is None:
                     self.warn(f"{staging_type}_{f} is required if {staging_type}_tumour_staging_system is AJCC")
+        else:
+            if f"{staging_type}_stage_group" not in map_json or map_json[f"{staging_type}_stage_group"] is None:
+                self.warn(f"{staging_type}_stage_group is required for {staging_type}_tumour_staging_system {map_json[f'{staging_type}_tumour_staging_system']}")
     
     def validate_specimens(self, map_json):
         if "samples" in map_json:

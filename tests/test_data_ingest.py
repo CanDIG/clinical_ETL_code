@@ -100,16 +100,19 @@ def test_validation(packets, schema):
             non_interval_errors.append(e)
     schema.validation_errors = non_interval_errors
 
-    assert len(schema.validation_errors) == 8
-    # should be the following 7 errors:
-    # DONOR_1: PD_1 > TR_1: date_of_death cannot be earlier than treatment_end_date 
-    # DONOR_1: PD_1 > TR_1: treatment_start_date cannot be after date_of_death 
-    # DONOR_2: PD_2 > TR_2: date_of_death cannot be earlier than treatment_end_date 
-    # DONOR_2 > PD_2_1 > TR_8: Systemic therapy end date cannot be after its treatment end date.
-    # DONOR_3 > DUPLICATE_ID > primary_site: 'Tongue' is not valid under any of the given schemas
-    # DONOR_3 > PD_3 > TR_3: Systemic therapy start date cannot be earlier than its treatment start date.
-    # DONOR_5: lost_to_followup_after_clinical_event_identifier cannot be present if is_deceased = Yes
-    # Duplicated IDs: in schema followups, FOLLOW_UP_4 occurs 2 times
+    assert len(schema.validation_errors) == 11
+    # should be the following 11 errors:
+    # "DONOR_2 > PD_2 > TR_2: Treatment start cannot be after treatment end.",
+    # "DONOR_2 > PD_2 > TR_2: Systemic therapy end date cannot be after its treatment end date.",
+    # "DONOR_2 > PD_2 > TR_2: Systemic therapy start date cannot be earlier than its treatment start date.",
+    # "DONOR_2 > PD_2 > TR_2: Systemic therapy end date cannot be after its treatment end date.",
+    # "DONOR_2 > PD_2_1 > TR_8: Systemic therapy end date cannot be after its treatment end date.",
+    # "DONOR_3 > DUPLICATE_ID > primary_site: 'Tongue' is not valid under any of the given schemas",
+    # "DONOR_3 > PD_3 > TR_3: Systemic therapy start date cannot be earlier than its treatment start date.",
+    # "DONOR_1: PD_1 > TR_1: date_of_death cannot be earlier than treatment_end_date ",
+    # "DONOR_1: PD_1 > TR_1: treatment_start_date cannot be after date_of_death ",
+    # "DONOR_5: lost_to_followup_after_clinical_event_identifier cannot be present if is_deceased = Yes",
+    # "Duplicated IDs: in schema followups, FOLLOW_UP_4 occurs 2 times"
 
     # there should be an item named DUPLICATE_ID in both followup and sample_registration
     print(json.dumps(schema.identifiers, indent=2))

@@ -353,7 +353,7 @@ class MoHSchemaV3(BaseSchema):
                     
                     if "systemic_therapies" in map_json and len(map_json["systemic_therapies"]) > 0:
                         for therapy in map_json["systemic_therapies"]:
-                            if therapy["start_date"] and therapy["start_date"] not in [None, '']:
+                            if "start_date" in therapy and therapy["start_date"] not in [None, '']:
                                 if "dict" in str(type(therapy["start_date"])):
                                     therapy_start = therapy["start_date"]['month_interval']
                                 else:

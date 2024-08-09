@@ -376,14 +376,18 @@ class MoHSchemaV3(BaseSchema):
                     self.warn(f"drug_dose_units required if {x} is submitted")
         for prop in map_json:
             if prop == "start_date" and map_json["start_date"] is not None:
+                start = None
+                end = None
                 if "end_date" in map_json and map_json["end_date"] is not None:
                     if "dict" in str(type(map_json["start_date"])):
-                        start = map_json["start_date"]["month_interval"]
-                        end = map_json["end_date"]["month_interval"]
+                        if "month_interval" in map_json["start_date"]:
+                            start = map_json["start_date"]["month_interval"]
+                        if "month_interval" in map_json["end_date"]:
+                            end = map_json["end_date"]["month_interval"]
                     else:
                         start = dateparser.parse(map_json["start_date"]).date()
                         end = dateparser.parse(map_json["end_date"]).date()
-                    if start > end:
+                    if start and end and start > end:
                         self.fail("Systemic therapy start cannot be after systemic therapy end.")
 
     def validate_radiations(self, map_json):

@@ -152,7 +152,7 @@ def int_to_date_interval_json(data_values):
         return
     # Either month or day date resolutions are permitted.
     try:
-        resolution = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["date_resolution"][0]
+        resolution = INDEXED_DATA["data"]["Donor"][IDENTIFIER]["date_resolution"][0]
     except KeyError:
         raise MappingError("No date_resolution found to specify date interval resolution: is there a date_resolution specified in the donor file?", field_level=2)
     # Format as JSON.  Always include a month_interval.  day_interval is optional.

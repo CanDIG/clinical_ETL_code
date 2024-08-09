@@ -212,7 +212,7 @@ def validate_coverage(map_json, verbose=False):
     # read the schema and generate a scaffold
     if "openapi_url" not in map_json:
         return {"message": "No openapi_url schema available"}
-    schema_class = "MoHSchema"
+    schema_class = "MoHSchemaV3"
     if "schema_class" in map_json:
         schema_class = map_json["schema_class"]
     schema_mod = importlib.import_module(f"clinical_etl.{schema_class.lower()}")

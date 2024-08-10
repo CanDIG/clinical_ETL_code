@@ -340,7 +340,7 @@ class MoHSchemaV3(BaseSchema):
                         case "Surgery":
                             if "surgeries" not in map_json or len(map_json["surgeries"]) == 0:
                                 self.warn("Treatment type Surgery should have one or more surgery submitted")
-            if prop == "treatment_start_date" and map_json["treatment_start_date"] is not None:
+            elif prop == "treatment_start_date" and map_json["treatment_start_date"] is not None:
                 if "treatment_end_date" in map_json and map_json["treatment_end_date"] is not None:
                     if "dict" in str(type(map_json["treatment_start_date"])):
                         treatment_start = map_json["treatment_start_date"]["month_interval"]

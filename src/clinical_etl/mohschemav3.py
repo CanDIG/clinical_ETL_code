@@ -351,21 +351,23 @@ class MoHSchemaV3(BaseSchema):
                     if treatment_start > treatment_end:
                         self.fail("Treatment start cannot be after treatment end.")
                     
-                    if "systemic_therapies" in map_json and len(map_json["systemic_therapies"])> 0:
+                    if "systemic_therapies" in map_json and len(map_json["systemic_therapies"]) > 0:
                         for therapy in map_json["systemic_therapies"]:
-                            if "dict" in str(type(therapy["start_date"])):
-                                therapy_start = therapy["start_date"]['month_interval']
-                            else:
-                                therapy_start = dateparser.parse(therapy["start_date"]).date()
-                        if "end_date" in therapy and therapy["end_date"] not in [None, '']:
-                            if "dict" in str(type(therapy["end_date"])):
-                                therapy_end = therapy["end_date"]["month_interval"]
-                            else:
-                                therapy_end = dateparser.parse(therapy["treatment_end_date"]).date()
-                        if therapy_start < treatment_start:
-                            self.fail("Systemic therapy start date cannot be earlier than its treatment start date.")
-                        if therapy_end > treatment_end:
-                            self.fail("Systemic therapy end date cannot be after its treatment end date.")
+                            if "start_date" in therapy and therapy["start_date"] not in [None, '']:
+                                if "dict" in str(type(therapy["start_date"])):
+                                    therapy_start = therapy["start_date"]['month_interval']
+                                else:
+                                    therapy_start = dateparser.parse(therapy["start_date"]).date()
+                                if therapy_start < treatment_start:
+                                    self.fail(
+                                        "Systemic therapy start date cannot be earlier than its treatment start date.")
+                            if "end_date" in therapy and therapy["end_date"] not in [None, '']:
+                                if "dict" in str(type(therapy["end_date"])):
+                                    therapy_end = therapy["end_date"]["month_interval"]
+                                else:
+                                    therapy_end = dateparser.parse(therapy["treatment_end_date"]).date()
+                                if therapy_end > treatment_end:
+                                    self.fail("Systemic therapy end date cannot be after its treatment end date.")
 
     def validate_systemic_therapies(self, map_json):
         if "drug_dose_units" not in map_json or map_json["drug_dose_units"] is None:
@@ -374,14 +376,18 @@ class MoHSchemaV3(BaseSchema):
                     self.warn(f"drug_dose_units required if {x} is submitted")
         for prop in map_json:
             if prop == "start_date" and map_json["start_date"] is not None:
+                start = None
+                end = None
                 if "end_date" in map_json and map_json["end_date"] is not None:
                     if "dict" in str(type(map_json["start_date"])):
-                        start = map_json["start_date"]["month_interval"]
-                        end = map_json["end_date"]["month_interval"]
+                        if "month_interval" in map_json["start_date"]:
+                            start = map_json["start_date"]["month_interval"]
+                        if "month_interval" in map_json["end_date"]:
+                            end = map_json["end_date"]["month_interval"]
                     else:
                         start = dateparser.parse(map_json["start_date"]).date()
                         end = dateparser.parse(map_json["end_date"]).date()
-                    if start > end:
+                    if start and end and start > end:
                         self.fail("Systemic therapy start cannot be after systemic therapy end.")
 
     def validate_radiations(self, map_json):

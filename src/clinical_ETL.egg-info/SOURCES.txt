@@ -9,12 +9,14 @@ src/clinical_ETL.egg-info/requires.txt
 src/clinical_ETL.egg-info/top_level.txt
 src/clinical_etl/CSVConvert.py
 src/clinical_etl/__init__.py
+src/clinical_etl/completeness_table.py
 src/clinical_etl/create_test_mapping.py
 src/clinical_etl/generate_mapping_docs.py
 src/clinical_etl/generate_schema.py
 src/clinical_etl/genomicschema.py
 src/clinical_etl/mappings.py
-src/clinical_etl/mohschema.py
+src/clinical_etl/mohschemav2.py
+src/clinical_etl/mohschemav3.py
 src/clinical_etl/schema.py
 src/clinical_etl/validate_coverage.py
 tests/test_data_ingest.py

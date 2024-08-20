@@ -309,7 +309,6 @@ class BaseSchema:
                 result.append(x)
         return result
 
-
     def validate_ingest_map(self, map_json):
         self.statistics["required_but_missing"] = {}
         self.statistics["schemas_used"] = []

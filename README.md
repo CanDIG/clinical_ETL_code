@@ -55,25 +55,29 @@ Before running the script, you will need to have your input files, this will be 
 
 ### Input file/s format
 
-The input for `CSVConvert` is either a single xlsx file, a single csv, or a directory of csvs that contain your clinical data. If providing a spreadsheet, there can be multiple sheets (usually one for each sub-schema). Examples of how csvs may look can be found in [test_data/raw_data](test_data/raw_data).
+The input for `CSVConvert` is either a single xlsx file, a single csv, or a directory of csvs that contain your clinical data. If providing a spreadsheet, there can be multiple sheets (usually one for each sub-schema). Examples of how csvs may look can be found in [tests/raw_data](tests/raw_data).
 
 All rows must contain identifiers that allow linkage between the objects in the schema, for example, a row that describes a Treatment must have a link to the Donor / Patient id for that Treatment.
 
 Data should be [tidy](https://r4ds.had.co.nz/tidy-data.html), with each variable in a separate column, each row representing an observation, and a single data entry in each cell. In the case of fields that can accept an array of values, the values within a cell should be delimited such that a mapping function can accurately return an array of permissible values.
 
+If you are working with exports from RedCap, the sample files in the [`sample_inputs/redcap_example`](sample_inputs/redcap_example) folder may be helpful. 
+
 ### Setting up a cohort directory
 
-For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `data` repository. This cohort directory should contain the same files as shown in the `sample_inputs` directory, which are:
+For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `data` repository. This cohort directory should contain the same files as shown in the [`sample_inputs/generic_example`](sample_inputs/generic_example) directory, which are:
 
 * a [`manifest.yml`](#Manifest-file) file with configuration settings for the mapping and schema validation
 * a [mapping template](#Mapping-template) csv that lists custom mappings for each field (based on `moh_template.csv`)
 * (if needed) One or more python files that implement any cohort-specific mapping functions (See [mapping functions](mapping_functions.md) for detailed information)
 
+Example files for how to convert a large single csv export, such as those exported from a redcap database can be found in [`sample_inputs/redcap_example`](sample_inputs/redcap_example).
+
 > [!IMPORTANT]
 > If you are placing this directory under version control and the cohort is not sample / synthetic data, do not place raw or processed data files in this directory, to avoid any possibility of committing protected data.
 
 #### Manifest file
-The `manifest.yml` file contains settings for the cohort mapping. There is a sample file in [`sample_inputs/manifest.yml`](sample_inputs/manifest.yml) with documentation and example inputs. The fields are:
+The `manifest.yml` file contains settings for the cohort mapping. There is a sample file in [`sample_inputs/generic_example/manifest.yml`](sample_inputs/generic_example/manifest.yml) with documentation and example inputs. The fields are:
 
 | field         | description                                                                                                                                                                                               |
 |---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -81,8 +85,9 @@ The `manifest.yml` file contains settings for the cohort mapping. There is a sam
 | mapping       | the mapping template csv file that lists the mappings for each field based on `moh_template.csv`, assumed to be in the same directory as the `manifest.yml` file                                          |
 | identifier    | the unique identifier for the donor or root node                                                                                                                                                          |
 | schema        | a URL to the openapi schema file                                                                                                                                                                          |
-| schema_class  | The name of the class in the schema used as the model for creating the map.json. Currently supported: `MoHSchema` - for clinical MoH data and `GenomicSchema` for creating a genomic ingest linking file. |
+| schema_class  | The name of the class in the schema used as the model for creating the map.json. Currently supported: `MoHSchemaV2` and `MoHSchemaV3` - for clinical MoH data and `GenomicSchema` for creating a genomic ingest linking file. |
 | reference_date | a reference date used to calculate date intervals, formatted as a mapping entry for the mapping template                                                                                                 |
+| date_format | Specify the format of the dates in your input data. Use any combination of the characters `DMY`to specify the order (e.g. `DMY`, `MDY`, `YMD`, etc).                                                                                    |
 | functions     | A list of one or more filenames containing additional mapping functions, can be omitted if not needed. Assumed to be in the same directory as the `manifest.yml` file                                     |
 
 #### Mapping template
@@ -116,6 +121,7 @@ usage: generate_schema.py [-h] --url URL [--out OUT]
 options:
   -h, --help  show this help message and exit
   --url URL   URL to openAPI schema file (raw github link)
+  --schema    Name of schema class. Default is MoHSchemaV3
   --out OUT   name of output file; csv extension will be added. Default is template
 ```
 </details>

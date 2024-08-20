@@ -15,7 +15,8 @@ src/clinical_etl/generate_mapping_docs.py
 src/clinical_etl/generate_schema.py
 src/clinical_etl/genomicschema.py
 src/clinical_etl/mappings.py
-src/clinical_etl/mohschema.py
+src/clinical_etl/mohschemav2.py
+src/clinical_etl/mohschemav3.py
 src/clinical_etl/schema.py
 src/clinical_etl/validate_coverage.py
 tests/test_data_ingest.py

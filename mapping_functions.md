@@ -66,11 +66,20 @@ A detailed index of all standard functions can be viewed below in the [Standard 
 
 ### Dealing with Dates
 
-As of version 2.1 of the [MoHCCN Data Model](https://www.marathonofhopecancercentres.ca/docs/default-source/policies-and-guidelines/clinical-data-model-v2.1/mohccn-clinical-data-model-release-notes_sep2023.pdf?Status=Master&sfvrsn=19ece028_3), dates need to be converted into date intervals relative to the earliest date of diagnosis. Support for this has been incorporated into clinical_ETL_code v.2.0.0. In order to convert dates to date intervals, a `reference_date` must be provided in the `manifest.yml`. This can be an absolute date, or a function to calculate a date based on the input date, e.g. `earliest_date(Donor.date_resolution, PrimaryDiagnosis.date_of_diagnosis)`. In the mapping csv, the in-built `date_interval()` mapping function can be used to calculate the appropriate date interval information for any date-type field. e.g.:
+As of version 2.1 of the [MoHCCN Data Model](https://www.marathonofhopecancercentres.ca/docs/default-source/policies-and-guidelines/clinical-data-model-v2.1/mohccn-clinical-data-model-release-notes_sep2023.pdf?Status=Master&sfvrsn=19ece028_3), dates need to be converted into date intervals relative to the earliest date of diagnosis. Support for this has been incorporated into clinical_ETL_code v.2.0.0. In order to convert dates to date intervals, a `reference_date` must be provided in the `manifest.yml`, which should be the patient's first date of diagnosis. You can assign the first date of diagnosis with:
+```commandline
+reference_date: earliest_date(Donor.date_resolution, PrimaryDiagnosis.date_of_diagnosis)
+```
+
+In the mapping csv, the in-built `date_interval()mapping function can be used to calculate the appropriate date interval information for any date-type field. e.g.:
 
 ```commandline
 DONOR.INDEX.date_of_birth, {date_interval(Donor.date_of_birth)}
 ```
+
+To avoid issues with ambiguous dates, ensure all the dates in your input date are in the same format, then specify that `date_format` in the manifest file so the day, month, and year are parsed correctly. The format can be any combination of the characters `DMY`to specify the order (e.g. `DMY`, `MDY`, `YMD`, etc).
+
+
 
 If input data has pre-calculated date intervals as integers, the `int_to_date_interval_json()` function can be used to transform the integer into the required DateInterval json object. e.g.:
 

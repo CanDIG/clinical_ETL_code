@@ -18,22 +18,22 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def ingest_redcap_files(file):
-    """Test of ingest of redcap output files"""
+def read_redcap_export(export_path):
+    """Read exported redcap csv from the given input path"""
     raw_csv_dfs = {}
-    file_match = re.match(r"(.+)\.csv$", file)
+    file_match = re.match(r"(.+)\.csv$", export_path)
     if file_match is not None:
-        print(f"Reading input file {file}")
+        print(f"Reading input file {export_path}")
         try:
-            df = pandas.read_csv(file, dtype=str, encoding = "latin-1")
+            df = pandas.read_csv(export_path, dtype=str, encoding ="latin-1")
             #print(f"initial df shape: {df.shape}")
             # find and drop empty columns
             df = drop_empty_columns(df)
-            raw_csv_dfs[file] = df
+            raw_csv_dfs[export_path] = df
         except Exception as e:
-            raise Exception(f"File {file} does not seem to be a valid csv file")
+            raise Exception(f"File {export_path} does not seem to be a valid csv file")
     else:
-        raise Exception(f"File {file} does not seem to be a csv file")
+        raise Exception(f"File {export_path} does not seem to be a csv file")
     return raw_csv_dfs
 
 def extract_repeat_instruments(df):
@@ -88,7 +88,7 @@ def output_dfs(input_path,output_dir,df_list):
 def main(args):
     input_path = args.input
 
-    raw_csv_dfs = ingest_redcap_files(input_path)
+    raw_csv_dfs = read_redcap_export(input_path)
     new_dfs = extract_repeat_instruments(raw_csv_dfs[input_path])
     output_dir = args.output
     output_dfs(input_path,output_dir,new_dfs)

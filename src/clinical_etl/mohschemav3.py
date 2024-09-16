@@ -392,7 +392,7 @@ class MoHSchemaV3(BaseSchema):
 
     def validate_radiations(self, map_json):
         for prop in map_json:
-            if prop == "radiation_boost" and map_json["radiation_boost"]:
+            if prop == "radiation_boost" and map_json["radiation_boost"] == "Yes":
                 if "reference_radiation_treatment_id" not in map_json or map_json["reference_radiation_treatment_id"] is None:
                     self.warn("reference_radiation_treatment_id required if radiation_boost = Yes")
 

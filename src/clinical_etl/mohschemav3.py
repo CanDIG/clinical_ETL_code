@@ -174,7 +174,7 @@ class MoHSchemaV3(BaseSchema):
                             self.warn("date_of_death required if is_deceased = Yes")
                 case "lost_to_followup_after_clinical_event_identifier":
                     if map_json["lost_to_followup_after_clinical_event_identifier"] is not None:
-                        if map_json["is_deceased"]:
+                        if map_json["is_deceased"] == "Yes":
                             self.fail(
                                 "lost_to_followup_after_clinical_event_identifier cannot be present if is_deceased = Yes")
                 case "lost_to_followup_reason":

@@ -167,7 +167,7 @@ class MoHSchemaV3(BaseSchema):
         for prop in map_json:
             match prop:
                 case "is_deceased":
-                    if map_json["is_deceased"]:
+                    if map_json["is_deceased"] == "Yes":
                         if "cause_of_death" not in map_json:
                             self.warn("cause_of_death required if is_deceased = Yes")
                         if "date_of_death" not in map_json:
@@ -189,7 +189,7 @@ class MoHSchemaV3(BaseSchema):
                                 "lost_to_followup_after_clinical_event_identifier is required if date_alive_after_lost_to_followup is submitted")
                 case "cause_of_death":
                     if map_json["cause_of_death"] is not None:
-                        if not map_json["is_deceased"]:
+                        if map_json["is_deceased"] in ["No", "Not available"]:
                             self.fail("cause_of_death should only be submitted if is_deceased = Yes")
                 case "primary_diagnoses":
                     birth = None
@@ -255,7 +255,7 @@ class MoHSchemaV3(BaseSchema):
                                       f"month_intervals: {diagnoses_dates}")
                 case "date_of_death":
                     if map_json["date_of_death"] is not None:
-                        if not map_json["is_deceased"]:
+                        if map_json["is_deceased"] in ["No", "Not available"]:
                             self.fail("date_of_death should only be submitted if is_deceased = Yes")
                     if map_json["date_of_birth"] is not None and map_json["date_of_death"] is not None:
                         if "dict" in str(type(map_json["date_of_birth"])):

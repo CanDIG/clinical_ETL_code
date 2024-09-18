@@ -9,7 +9,7 @@ DONOR.INDEX.date_of_birth, {date_interval(DONOR_SHEET.date_of_birth)}
 DONOR.INDEX.date_of_death, {int_to_date_interval_json(DONOR_SHEET.date_of_death)}
 DONOR.INDEX.date_resolution, {date_interval(DONOR_SHEET.date_resolution)}
 DONOR.INDEX.gender, {single_val(DONOR_SHEET.gender)}
-DONOR.INDEX.is_deceased, {boolean(DONOR_SHEET.is_deceased)}
+DONOR.INDEX.is_deceased, {single_val(DONOR_SHEET.is_deceased)}
 DONOR.INDEX.lost_to_followup_after_clinical_event_identifier, {single_val(DONOR_SHEET.lost_to_followup_after_clinical_event_identifier)}
 DONOR.INDEX.lost_to_followup_reason, {single_val(DONOR_SHEET.lost_to_followup_reason)}
 DONOR.INDEX.program_id, {single_val(DONOR_SHEET.program_id)}
@@ -56,7 +56,7 @@ DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.sample_registrations.INDEX.s
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.sample_registrations.INDEX.submitter_sample_id, {single_val(SAMPLE_REGISTRATIONS_SHEET.submitter_sample_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.specimens.INDEX.sample_registrations.INDEX.tumour_normal_designation, {single_val(SAMPLE_REGISTRATIONS_SHEET.tumour_normal_designation)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX, {indexed_on(TREATMENTS_SHEET.submitter_primary_diagnosis_id)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.is_primary_treatment, {boolean(TREATMENTS_SHEET.is_primary_treatment)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.is_primary_treatment, {single_val(TREATMENTS_SHEET.is_primary_treatment)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.response_to_treatment, {single_val(TREATMENTS_SHEET.response_to_treatment)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.response_to_treatment_criteria_method, {single_val(TREATMENTS_SHEET.response_to_treatment_criteria_method)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.status_of_treatment, {single_val(TREATMENTS_SHEET.status_of_treatment)}
@@ -67,7 +67,7 @@ DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.treatment_start_date, {date
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.treatment_type, {pipe_delim(TREATMENTS_SHEET.treatment_type)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX, {indexed_on(RADIATIONS_SHEET.submitter_treatment_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.anatomical_site_irradiated, {single_val(RADIATIONS_SHEET.anatomical_site_irradiated)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_boost, {boolean(RADIATIONS_SHEET.radiation_boost)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_boost, {single_val(RADIATIONS_SHEET.radiation_boost)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_dosage, {integer(RADIATIONS_SHEET.radiation_therapy_dosage)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_fractions, {integer(RADIATIONS_SHEET.radiation_therapy_fractions)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_modality, {single_val(RADIATIONS_SHEET.radiation_therapy_modality)}

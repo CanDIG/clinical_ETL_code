@@ -9,7 +9,7 @@ DONOR.INDEX.date_of_birth, {date_interval(Donor.date_of_birth)}
 DONOR.INDEX.date_of_death, {int_to_date_interval_json(Donor.date_of_death)}
 DONOR.INDEX.date_resolution, {single_val(Donor.date_resolution)}
 DONOR.INDEX.gender, {single_val(Donor.gender)}
-DONOR.INDEX.is_deceased, {boolean(Donor.is_deceased)}
+DONOR.INDEX.is_deceased, {single_val(Donor.is_deceased)}
 DONOR.INDEX.test_mapping, {testmap.fake_map(Donor.is_deceased)}
 DONOR.INDEX.lost_to_followup_after_clinical_event_identifier, {single_val(Donor.lost_to_followup_after_clinical_event_identifier)}
 DONOR.INDEX.lost_to_followup_reason, {single_val(Donor.lost_to_followup_reason)}
@@ -69,7 +69,7 @@ DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.treatment_start_date, {date
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.treatment_type, {pipe_delim(Treatment.treatment_type)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX, {indexed_on(Radiation.submitter_treatment_id)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.anatomical_site_irradiated, {single_val(Radiation.anatomical_site_irradiated)}
-DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_boost, {boolean(Radiation.radiation_boost)}
+DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_boost, {single_val(Radiation.radiation_boost)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_dosage, {integer(Radiation.radiation_therapy_dosage)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_fractions, {integer(Radiation.radiation_therapy_fractions)}
 DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_modality, {single_val(Radiation.radiation_therapy_modality)}

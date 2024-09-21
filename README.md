@@ -61,7 +61,7 @@ All rows must contain identifiers that allow linkage between the objects in the 
 
 Data should be [tidy](https://r4ds.had.co.nz/tidy-data.html), with each variable in a separate column, each row representing an observation, and a single data entry in each cell. In the case of fields that can accept an array of values, the values within a cell should be delimited such that a mapping function can accurately return an array of permissible values.
 
-If you are working with exports from RedCap, the sample files in the [`sample_inputs/redcap_example`](sample_inputs/redcap_example) folder may be helpful. 
+If you are working with exports from RedCap, the sample files in the [`sample_inputs/redcap_example`](sample_inputs/redcap_example) folder may be helpful.
 
 ### Setting up a cohort directory
 
@@ -172,7 +172,7 @@ A summarised example of the output is below:
 
 ```json
 {
-    "openapi_url": "https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml",
+    "openapi_url": "https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schemas/schema.yml",
     "katsu_sha": < git sha of the katsu version used for the schema >,
     "donors": < An array of JSON objects, each one representing a DonorWithClinicalData in katsu >,
     "statistics": {

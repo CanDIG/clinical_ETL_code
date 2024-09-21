@@ -1,4 +1,4 @@
-## Schema generated from https://raw.githubusercontent.com/CanDIG/katsu/mshadbolt/schema-field-ordering/chord_metadata_service/mohpackets/docs/schema.yml
+## Schema generated from https://raw.githubusercontent.com/CanDIG/katsu/mshadbolt/schema-field-ordering/chord_metadata_service/mohpackets/schemas/schema.yml
 ## Items are comma separated: element, mapping method
 DONOR.INDEX, {indexed_on(Donor.submitter_donor_id)}
 DONOR.INDEX.cause_of_death, {single_val(Donor.cause_of_death)}

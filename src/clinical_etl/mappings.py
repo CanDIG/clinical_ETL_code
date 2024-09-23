@@ -189,6 +189,13 @@ def single_date(data_values):
     return None
 
 
+def numeric_not_available(data_values):
+    """Returns True if -99 used to indicate a value is not available"""
+    val = single_val(data_values)
+    if val == 99 or val == -99.0:
+        return True
+
+
 def has_value(data_values):
     """Returns a boolean based on whether the key in the mapping has a value."""
     if len(data_values.keys()) == 0:

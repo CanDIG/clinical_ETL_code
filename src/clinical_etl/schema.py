@@ -298,12 +298,22 @@ class BaseSchema:
                     else:
                         sheet_stack.pop()
                     x += f" {{indexed_on({sheet_stack[-1]}.{index_value})}}"
+                elif data_value.endswith("day_interval") or data_value.endswith("month_interval"):
+                    continue
+                elif data_value.endswith("_not_available"):
+                    x += f" {{numeric_not_available({sheet_stack[-1]}.{'_'.join(data_value.split('_')[:-2])})}}"
                 elif data_value.endswith("date") or data_value.startswith("date"):
-                    x += f" {{single_date({sheet_stack[-1]}.{data_value})}}"
+                    x += f" {{date_interval({sheet_stack[-1]}.{data_value})}}"
                 elif data_value.startswith("is_") or data_value.startswith("has_"):
-                    x += f" {{boolean({sheet_stack[-1]}.{data_value})}}"
-                elif data_value.startswith("number_") or data_value.startswith("age_") or "_per_" in data_value:
+                    x += f" {{single_val({sheet_stack[-1]}.{data_value})}}"
+                elif data_value.startswith("number_") or data_value.startswith("age_") or "_per_" in data_value \
+                        or data_value in ["ca125", "cea", "psa_level", "radiation_therapy_dosage",
+                                          "radiation_therapy_fractions", "pack_years_smoked"] or \
+                        "cycle" in data_value:
                     x += f" {{integer({sheet_stack[-1]}.{data_value})}}"
+                elif "cumulative" in data_value or "_percent_" in data_value or \
+                        data_value in ["greatest_dimension_tumour", "tumour_length", "tumour_width"]:
+                    x += f" {{floating({sheet_stack[-1]}.{data_value})}}"
                 else:
                     x += f" {{single_val({sheet_stack[-1]}.{data_value})}}"
                 result.append(x)

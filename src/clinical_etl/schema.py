@@ -302,10 +302,8 @@ class BaseSchema:
                     continue
                 elif data_value.endswith("_not_available"):
                     x += f" {{numeric_not_available({sheet_stack[-1]}.{'_'.join(data_value.split('_')[:-2])})}}"
-                elif data_value.endswith("date") or data_value.startswith("date"):
+                elif data_value.endswith("date") or data_value.startswith("date") and data_value != "date_resolution":
                     x += f" {{date_interval({sheet_stack[-1]}.{data_value})}}"
-                elif data_value.startswith("is_") or data_value.startswith("has_"):
-                    x += f" {{single_val({sheet_stack[-1]}.{data_value})}}"
                 elif data_value.startswith("number_") or data_value.startswith("age_") or "_per_" in data_value \
                         or data_value in ["ca125", "cea", "psa_level", "radiation_therapy_dosage",
                                           "radiation_therapy_fractions", "pack_years_smoked"] or \
@@ -314,6 +312,9 @@ class BaseSchema:
                 elif "cumulative" in data_value or "_percent_" in data_value or \
                         data_value in ["greatest_dimension_tumour", "tumour_length", "tumour_width"]:
                     x += f" {{floating({sheet_stack[-1]}.{data_value})}}"
+                elif data_value in ["treatment_type", "hpv_strain", "tobacco_type"] or "progression" in data_value or \
+                        data_value.startswith("margin_types"):
+                    x += f" {{pipe_delim({sheet_stack[-1]}.{data_value})}}"
                 else:
                     x += f" {{single_val({sheet_stack[-1]}.{data_value})}}"
                 result.append(x)
@@ -409,7 +410,7 @@ class BaseSchema:
                     "missing": 0
                 }
             self.statistics["required_but_missing"][schema_name][f]["total"] += 1
-            if f not in map_json:
+            if f not in map_json or map_json[f] == "Not available":
                 # self.warn(f"{f} required for {schema_name}")
                 self.statistics["required_but_missing"][schema_name][f]["missing"] += 1
                 if case not in self.statistics["cases_missing_data"]:

@@ -283,7 +283,7 @@ class MoHSchemaV3(BaseSchema):
                             self.warn("test_date is required for biomarkers not associated with nested events")
 
     def validate_primary_diagnoses(self, map_json):
-        if "clinical_tumour_staging_system" not in map_json and "pathological_staging_system" not in map_json:
+        if "clinical_tumour_staging_system" not in map_json and "pathological_tumour_staging_system" not in map_json:
             self.warn("Either clinical_tumour_staging_system or pathological_staging_system is required")
 
         for prop in map_json:

@@ -17,9 +17,12 @@ import re
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--url', type=str, help="URL to openAPI schema file (raw github link)", default="https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schemas/schema.yml")
+    parser.add_argument('--url', type=str, help="URL to openAPI schema file (raw github link)",
+                        default="https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schemas/schema.json")
     parser.add_argument('--schema', type=str, help="Name of schema class", default="MoHSchemaV3")
-    parser.add_argument('--out', type=str, help="name of output file; csv extension will be added. Default is template", default="template")
+    parser.add_argument('--out', type=str,
+                        help="name of output file; csv extension will be added. Default is template",
+                        default="template")
     args = parser.parse_args()
     return args
 

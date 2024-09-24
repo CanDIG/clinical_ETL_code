@@ -163,7 +163,6 @@ Module mappings
 Functions
 ---------
 
-    
 `boolean(data_values)`
 :   Convert value to boolean.
     
@@ -177,7 +176,6 @@ Functions
         None if value is in [`None`, "nan", "NaN", "NAN"]
         None otherwise
 
-    
 `concat_vals(data_values)`
 :   Concatenate several data values
     
@@ -187,7 +185,6 @@ Functions
     Returns:
         A concatenated string
 
-    
 `date(data_values)`
 :   Format a list of dates to ISO standard YYYY-MM
     
@@ -199,7 +196,6 @@ Functions
     Returns:
         a list of dates in YYYY-MM format or None if blank/empty/unparseable
 
-    
 `date_interval(data_values)`
 :   Calculates a date interval from a given date relative to the reference date specified in the manifest.
     
@@ -210,7 +206,6 @@ Functions
         A dictionary with calculated month_interval and optionally a day_interval depending on the specified
         date_resolution.
 
-    
 `earliest_date(data_values)`
 :   Calculates the earliest date from a set of dates
     
@@ -220,7 +215,6 @@ Functions
     Returns:
         A dictionary containing the earliest date (`offset`) as a date object and the provided `date_resolution`
 
-    
 `flat_list_val(data_values)`
 :   Take a list mapping and break up any stringified lists into multiple values in the list.
     
@@ -231,9 +225,7 @@ Functions
     Returns:
         A parsed list of items in the list, e.g. ['a', 'b', 'c']
 
-
 `floating(data_values)`
-
 :   Convert a value to a float.
     
     Args:
@@ -245,15 +237,12 @@ Functions
     Raises:
         ValueError by float() if it cannot convert to float.
 
-    
 `has_value(data_values)`
 :   Returns a boolean based on whether the key in the mapping has a value.
 
-    
 `index_val(data_values)`
 :   Take a mapping with possibly multiple values from multiple sheets and return an array.
 
-    
 `indexed_on(data_values)`
 :   Default indexing value for arrays.
     
@@ -264,7 +253,6 @@ Functions
         a dict of the format:
         {"field": <identifier_field>,"sheet_name": <sheet_name>,"values": [<identifiers>]}
 
-    
 `int_to_date_interval_json(data_values)`
 :   Converts an integer date interval into JSON format.
     
@@ -274,7 +262,6 @@ Functions
     Returns:
         A dictionary with a calculated month_interval and optionally a day_interval depending on the specified date_resolution in the donor file.
 
-    
 `integer(data_values)`
 :   Convert a value to an integer.
     
@@ -285,7 +272,6 @@ Functions
     Raises:
         ValueError if int() cannot convert the input
 
-    
 `list_val(data_values)`
 :   Takes a mapping with possibly multiple values from multiple sheets and returns an array of values.
     
@@ -294,7 +280,6 @@ Functions
     Returns:
         The list of values
 
-    
 `moh_indexed_on_donor_if_others_absent(data_values)`
 :   Maps an object to a donor if not otherwise linked.
     
@@ -312,7 +297,9 @@ Functions
         Where the 'values' list contains a donor identifier if it should be linked to that donor or None if already
         linked to another object.
 
-    
+`numeric_not_available(data_values)`
+:   Returns True if -99 used to indicate a value is not available
+
 `ontology_placeholder(data_values)`
 :   Placeholder function to make a fake ontology entry.
     
@@ -325,7 +312,6 @@ Functions
         a dict of the format:
         {"id": "placeholder","label": data_values}
 
-    
 `pipe_delim(data_values)`
 :   Takes a string and splits it into an array based on a pipe delimiter.
     
@@ -335,11 +321,15 @@ Functions
     Returns:
         a list of strings split by pipe, e.g. ["a","b","c"]
 
-    
 `placeholder(data_values)`
 :   Return a dict with a placeholder key.
 
-    
+`set_neg_99_blank_float(data_values)`
+:   Sets to blank if -99 used to indicate a value is not available or returns input value
+
+`set_neg_99_blank_int(data_values)`
+:   Sets to blank if -99 used to indicate a value is not available or returns input value
+
 `single_date(data_values)`
 :   Parses a single date to YYYY-MM format.
     
@@ -349,7 +339,6 @@ Functions
     Returns:
         a string of the format YYYY-MM, or None if blank/unparseable
 
-    
 `single_val(data_values)`
 :   Parse a values dict and return the input as a single value.
     
@@ -366,8 +355,12 @@ Functions
 Classes
 -------
 
-`MappingError(value)`
-:   Common base class for all non-exit exceptions.
+`MappingError(value, field_level=3)`
+:   Base class for ETL exceptions
+    
+    Args:
+        value: message to output
+        field_level: specify how detailed the message will be (1-3)
 
     ### Ancestors (in MRO)
 

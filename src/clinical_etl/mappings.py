@@ -189,10 +189,28 @@ def single_date(data_values):
     return None
 
 
+def set_neg_99_blank_int(data_values):
+    """Sets to blank if -99 used to indicate a value is not available or returns input value"""
+    val = single_val(data_values)
+    if float(val) == -99:
+        return None
+    else:
+        return int(val)
+
+
+def set_neg_99_blank_float(data_values):
+    """Sets to blank if -99 used to indicate a value is not available or returns input value"""
+    val = single_val(data_values)
+    if float(val) == -99:
+        return None
+    else:
+        return float(val)
+
+
 def numeric_not_available(data_values):
     """Returns True if -99 used to indicate a value is not available"""
     val = single_val(data_values)
-    if val == 99 or val == -99.0:
+    if float(val) == -99:
         return True
 
 

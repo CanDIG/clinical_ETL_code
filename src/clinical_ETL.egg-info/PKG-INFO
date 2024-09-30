@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: clinical_ETL
-Version: 3.0.0
+Version: 3.1.0
 Summary: ETL module for transforming clinical CSV data into properly-formatted packets for ingest into Katsu
 Project-URL: Repository, https://github.com/CanDIG/clinical_ETL_code
 Requires-Python: >=3.10
@@ -80,7 +80,7 @@ All rows must contain identifiers that allow linkage between the objects in the 
 
 Data should be [tidy](https://r4ds.had.co.nz/tidy-data.html), with each variable in a separate column, each row representing an observation, and a single data entry in each cell. In the case of fields that can accept an array of values, the values within a cell should be delimited such that a mapping function can accurately return an array of permissible values.
 
-If you are working with exports from RedCap, the sample files in the [`sample_inputs/redcap_example`](sample_inputs/redcap_example) folder may be helpful. 
+If you are working with exports from RedCap, the sample files in the [`sample_inputs/redcap_example`](sample_inputs/redcap_example) folder may be helpful.
 
 ### Setting up a cohort directory
 
@@ -191,7 +191,7 @@ A summarised example of the output is below:
 
 ```json
 {
-    "openapi_url": "https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schema.yml",
+    "openapi_url": "https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schemas/schema.yml",
     "katsu_sha": < git sha of the katsu version used for the schema >,
     "donors": < An array of JSON objects, each one representing a DonorWithClinicalData in katsu >,
     "statistics": {
@@ -232,6 +232,16 @@ python src/clinical_etl/completeness_table.py --input <INPUT_DIR>_map.json
 ```
 
 `<INPUT_DIR>_validation_results.json` contains all validation warnings and errors.
+
+The mapping and transformation result is found in the `"donors"` key.
+
+Arrays of validation warnings and errors are found in `validation_warnings` & `validation_errors`.
+
+Summary statistics about the completeness of the objects against the schema are in the `statistics` key. You can create a readable CSV table
+of the summary statistics by running `completeness_table.py`. The table will be saved in `<INPUT_DIR>_completeness.csv`.
+```
+python src/clinical_etl/completeness_table.py --input <INPUT_DIR>_map.json
+```
 
 `<INPUT_DIR>_indexed.json` contains information about how the ETL is looking up the mappings and can be useful for debugging. It is only generated if the `--index` argument is specified when CSVConvert is run. Note: This file can be very large if the input data is large.
 

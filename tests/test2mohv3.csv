@@ -160,7 +160,7 @@ DONOR.INDEX.biomarkers.INDEX.her2_ish_status, {single_val(Biomarker.her2_ish_sta
 DONOR.INDEX.biomarkers.INDEX.hpv_ihc_status, {single_val(Biomarker.hpv_ihc_status)}
 DONOR.INDEX.biomarkers.INDEX.hpv_pcr_status, {single_val(Biomarker.hpv_pcr_status)}
 DONOR.INDEX.biomarkers.INDEX.hpv_strain, {pipe_delim(Biomarker.hpv_strain)}
-DONOR.INDEX.followups.INDEX, {indexed_on(Followup.submitter_donor_id)}
+DONOR.INDEX.followups.INDEX, {moh_indexed_on_donor_if_others_absent(Followup.submitter_donor_id)}
 DONOR.INDEX.followups.INDEX.submitter_follow_up_id, {single_val(Followup.submitter_follow_up_id)}
 DONOR.INDEX.followups.INDEX.date_of_followup, {date_interval(Followup.date_of_followup)}
 DONOR.INDEX.followups.INDEX.disease_status_at_followup, {single_val(Followup.disease_status_at_followup)}

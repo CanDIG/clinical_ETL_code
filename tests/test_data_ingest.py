@@ -84,12 +84,13 @@ def test_donor_2(packets):
 def test_validation(packets, schema):
     schema.validate_ingest_map({"donors": packets})
     print(schema.validation_warnings)
-    assert len(schema.validation_warnings) == 4
+    assert len(schema.validation_warnings) == 5
     # should be the following 4 warnings:
     # "DONOR_5: cause_of_death required if is_deceased = Yes",
     # "DONOR_5: date_of_death required if is_deceased = Yes",
     # "DONOR_5 > PD_5: clinical_stage_group is required for clinical_tumour_staging_system Revised International staging system (RISS)",
     # "DONOR_5 > PD_5 > TR_10: treatment type Systemic therapy should have one or more systemic therapies submitted"
+    # "DONOR_6 > FOLLOW_UP_4: date_of_relapse is required if disease_status_at_followup is Loco-regional progression"
 
     print(schema.validation_errors)
 

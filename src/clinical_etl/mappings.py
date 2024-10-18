@@ -4,6 +4,7 @@ import json
 import datetime
 import math
 from dateutil import relativedelta
+import copy
 
 VERBOSE = False
 MODULES = {}
@@ -70,21 +71,27 @@ def earliest_date(data_values):
     """
     fields = list(data_values.keys())
     date_resolution = list(data_values[fields[0]].values())[0]
-    dates = list(data_values[fields[1]].values())[0]
+    dates = copy.deepcopy(list(data_values[fields[1]].values())[0])
     earliest = DEFAULT_DATE_PARSER.get_date_data(str(datetime.date.today()))
     # Ensure dates is a list, not a string, to allow non-indexed, single value entries.
     if type(dates) is not list:
         dates_list = [dates]
     else:
         dates_list = dates
-    for date in dates_list:
-        d = DEFAULT_DATE_PARSER.get_date_data(date)
-        if d['date_obj'] < earliest['date_obj']:
-            earliest = d
-    return {
-        "offset": earliest['date_obj'].strftime("%Y-%m-%d"),
-        "period": date_resolution
-    }
+    # If there's a None value, ignore it
+    if None in dates_list:
+        dates_list = [x for x in dates_list if x is not None]
+    if len(dates_list) > 0:
+        for date in dates_list:
+            d = DEFAULT_DATE_PARSER.get_date_data(date)
+            if d['date_obj'] < earliest['date_obj']:
+                earliest = d
+        return {
+            "offset": earliest['date_obj'].strftime("%Y-%m-%d"),
+            "period": date_resolution
+        }
+    else:
+        return None
 
 
 def date_interval(data_values):
@@ -100,7 +107,10 @@ def date_interval(data_values):
     try:
         reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
     except KeyError:
-        raise MappingError("No reference date found to calculate date_interval: is there a reference_date specified in the manifest?", field_level=1)
+        _warn(message="No reference date found to calculate date_interval: check the reference_date is specified in the manifest or if it is missing for this donor",
+              input_values=data_values)
+        return None
+        # raise MappingError("No reference date found to calculate date_interval: is there a reference_date specified in the manifest?", field_level=1)
     DEFAULT_DATE_PARSER = dateparser.DateDataParser(
         settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT}
     )

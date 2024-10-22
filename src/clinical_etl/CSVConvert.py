@@ -12,11 +12,11 @@ import re
 import yaml
 import argparse
 from tqdm import tqdm
-from clinical_etl import mappings
 # Include clinical_etl parent directory in the module search path.
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
+from clinical_etl import mappings
 
 
 def verbose_print(message):

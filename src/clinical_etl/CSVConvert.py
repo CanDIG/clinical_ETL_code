@@ -12,11 +12,7 @@ import re
 import yaml
 import argparse
 from tqdm import tqdm
-from clinical_etl import mappings
-# Include clinical_etl parent directory in the module search path.
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
+import mappings
 
 
 def verbose_print(message):
@@ -277,7 +273,7 @@ def eval_mapping(node_name, rownum):
     """
     verbose_print(f"  Evaluating {mappings.IDENTIFIER}: {node_name}")
     if "mappings" not in mappings.MODULES:
-        mappings.MODULES["mappings"] = importlib.import_module("clinical_etl.mappings")
+        mappings.MODULES["mappings"] = importlib.import_module("mappings")
     modulename = "mappings"
 
     method, parameters = parse_mapping_function(node_name)
@@ -596,7 +592,7 @@ def load_manifest(manifest_file):
 
     # programatically load schema class based on manifest value:
     # schema class definition will be in a file named schema_class.lower()
-    schema_mod = importlib.import_module(f"clinical_etl.{schema_class.lower()}")
+    schema_mod = importlib.import_module(f"{schema_class.lower()}")
     schema = getattr(schema_mod, schema_class)(manifest["schema"])
     if schema.json_schema is None:
         sys.exit(f"Could not read an openapi schema at {manifest['schema']};\n"
@@ -633,7 +629,7 @@ def load_manifest(manifest_file):
                     f"{manifest_dir} and has the correct name.\n---")
                 sys.exit(e)
     # mappings is a standard module: add it
-    mappings.MODULES["mappings"] = importlib.import_module("clinical_etl.mappings")
+    mappings.MODULES["mappings"] = importlib.import_module("mappings")
     return result
 
 

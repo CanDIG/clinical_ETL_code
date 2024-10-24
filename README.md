@@ -59,7 +59,7 @@ If you are working with exports from RedCap, the sample files in the [`sample_in
 
 ### Setting up a cohort directory
 
-For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `data` repository. This cohort directory should contain the same files as shown in the [`sample_inputs/generic_example`](sample_inputs/generic_example) directory, which are:
+For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `clinical_ETL_data` repository. This cohort directory should contain the same files as shown in the [`sample_inputs/generic_example`](sample_inputs/generic_example) directory, which are:
 
 * a [`manifest.yml`](#Manifest-file) file with configuration settings for the mapping and schema validation
 * a [mapping template](#Mapping-template) csv that lists custom mappings for each field (based on `moh_template.csv`)
@@ -151,6 +151,12 @@ python src/clinical_etl/CSVConvert.py --input test_data/raw_data --manifest test
 The main output `<INPUT_DIR>_map.json` and optional output`<INPUT_DIR>_indexed.json` will be in the parent of the `INPUT` directory / file. In the example above, this would be in the `test_data` directory.
 
 Validation will automatically be run after the conversion is complete. Any validation errors or warnings will be reported both on the command line and as part of the `<INPUT_DIR>_map.json` file.
+
+>[!NOTE]
+> If Python can't find the `clinical_etl` module when running `CSVConvert`, install the depencency manually:
+> ```
+> pip install -e clinical_ETL_code/
+> ```
 
 #### Format of the output files
 

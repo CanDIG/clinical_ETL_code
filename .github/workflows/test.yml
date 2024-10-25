@@ -22,14 +22,16 @@ jobs:
       - name: Test with pytest
         run: |
           pytest
-      - name: Compare moh_template.csv
+      - name: Compare to moh_v3_template.csv
         shell: bash {0}
+        # Script based largely on update_moh_template.sh
         run: |
-          python generate_schema.py
-          diff template.csv moh_template.csv > curr_diff.txt
-          bytes=$(head -5 curr_diff.txt | wc -c)
-          dd if=curr_diff.txt bs="$bytes" skip=1 conv=notrunc of=new_diff.txt
-          diff new_diff.txt test_data/moh_diffs.txt
+          python src/clinical_etl/generate_schema.py  --out tmp_template
+          diff tmp_template.csv moh_v3_template.csv > tests/moh_diffs.txt
+          rm tmp_template.csv
+          bytes=$(head -5 tests/moh_diffs.txt | wc -c)
+          dd if=tests/moh_diffs.txt bs="$bytes" skip=1 conv=notrunc of=tests/moh_diffs1.txt
+          diff tests/moh_diffs1.txt tests/moh_diffs.txt
           if [[ $? == 1 ]]; then echo MoH template checking needs to be updated! See https://github.com/CanDIG/clinical_ETL_code#mapping-template for information.
           exit 1
           fi

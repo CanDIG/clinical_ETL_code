@@ -90,7 +90,7 @@ You'll need to create a mapping template that defines the mapping between the fi
 
 Each line in the mapping template is composed of comma separated values with two components. The first value is an `element` or field from the target schema and the second value contains a suggested `mapping method` or function to map a field from an input sheet to a valid value for the identified `element`. Each `element`, shows the full object linking path to each field required by the model. These values should not be edited.
 
-If you are generating a mapping for the current CanDIG MoH model, you can use the pre-generated [`moh_template.csv`](moh_template.csv) file. This file is modified from the auto-generated template to update a few fields that require specific handling.
+If you are generating a mapping for the current CanDIG MoH model, you can use the pre-generated [`moh_v3_template.csv`](moh_v3_template.csv) file. This file is modified from the auto-generated template to update a few fields that require specific handling.
 
 You will need to edit the `mapping method` values in each line in the following ways:
 1. Replace the generic sheet names (e.g. `DONOR_SHEET`, `SAMPLE_REGISTRATIONS_SHEET`) with the sheet/csv names you are using as your input to `CSVConvert.py`

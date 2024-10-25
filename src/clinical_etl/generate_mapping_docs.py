@@ -1,3 +1,9 @@
+# Updates the ../../mapping_functions.md
+# Prior to running, set the PYTHONPATH for use by the subprocess with:
+# export PYTHONPATH="$PWD"
+# Then run:
+# python generate_mapping_docs.py
+
 import subprocess
 
 

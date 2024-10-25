@@ -45,12 +45,6 @@ Install the repo's requirements in your virtual environment
 pip install -r requirements.txt
 ```
 
->[!NOTE]
-> If Python can't find the `clinical_etl` module when running `CSVConvert`, install the depencency manually:
-> ```
-> pip install -e clinical_ETL_code/
-> ```
-
 Before running the script, you will need to have your input files, this will be clinical data in a tabular format (`xlsx`/`csv`) that can be read into program and a cohort directory containing the files that define the schema and mapping configurations.
 
 ### Input file/s format
@@ -65,7 +59,7 @@ If you are working with exports from RedCap, the sample files in the [`sample_in
 
 ### Setting up a cohort directory
 
-For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `data` repository. This cohort directory should contain the same files as shown in the [`sample_inputs/generic_example`](sample_inputs/generic_example) directory, which are:
+For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `clinical_ETL_data` repository. This cohort directory should contain the same files as shown in the [`sample_inputs/generic_example`](sample_inputs/generic_example) directory, which are:
 
 * a [`manifest.yml`](#Manifest-file) file with configuration settings for the mapping and schema validation
 * a [mapping template](#Mapping-template) csv that lists custom mappings for each field (based on `moh_template.csv`)

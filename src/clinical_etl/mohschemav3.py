@@ -1,6 +1,6 @@
 import json
 import dateparser
-from clinical_etl.schema import BaseSchema, ValidationError
+from schema import BaseSchema, ValidationError
 
 
 """

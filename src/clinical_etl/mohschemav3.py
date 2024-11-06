@@ -4,7 +4,7 @@ from clinical_etl.schema import BaseSchema, ValidationError
 
 
 """
-A class for the representation of a DonorWithClinicalData (MoHCCN data model v2) object in Katsu.
+A class for the representation of a DonorWithClinicalData (MoHCCN data model v3) object in Katsu.
 """
 
 class MoHSchemaV3(BaseSchema):
@@ -208,6 +208,8 @@ class MoHSchemaV3(BaseSchema):
                         diagnoses_dates = {}
                         for diagnosis in map_json["primary_diagnoses"]:
                             diagnosis_date = None
+                            # if "date_of_diagnosis" not in diagnosis: #and diagnosis["date_of_diagnosis"] in [None, '']:
+                            #     self.warn('There is no date of diagnosis mmg, cannot calculate any intervals')
                             if "date_of_diagnosis" in diagnosis and diagnosis["date_of_diagnosis"] not in [None, '']:
                                 if "dict" in str(type(diagnosis["date_of_diagnosis"])):
                                     diagnosis_date = diagnosis["date_of_diagnosis"]["month_interval"]
@@ -307,8 +309,8 @@ class MoHSchemaV3(BaseSchema):
                 self.warn(f"{staging_type}_stage_group is required for {staging_type}_tumour_staging_system {map_json[f'{staging_type}_tumour_staging_system']}")
 
     def validate_specimens(self, map_json):
-        if "samples" in map_json:
-            for sample in map_json["samples"]:
+        if "sample_registrations" in map_json:
+            for sample in map_json["sample_registrations"]:
                 if "tumour_normal_designation" in sample and sample["tumour_normal_designation"] == "Tumour":
                     required_fields = [
                         "reference_pathology_confirmed_diagnosis",

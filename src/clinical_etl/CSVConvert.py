@@ -770,9 +770,12 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
         else:
             json.dump(result, f, indent=4)
     errors_present = False
-    with open(f"{input_path}_validation_results.json", 'w') as f:
-        json.dump(validation_results, f, indent=4)
-    print(f"Warnings written to {input_path}_validation_results.json.")
+    if len(validation_results["validation_errors"]) == 0 and len(validation_results["validation_warnings"]) == 0:
+           print(f"{Bcolors.OKGREEN}Validation passed!{Bcolors.ENDC}")
+    else:
+        with open(f"{input_path}_validation_results.json", 'w') as f:
+            json.dump(validation_results, f, indent=4)
+        print(f"Warnings written to {input_path}_validation_results.json.")
     if len(validation_results["validation_warnings"]) > 0:
         if len(validation_results["validation_warnings"]) > 20:
             print(f"\n{Bcolors.WARNING}WARNING: There are {len(validation_results['validation_warnings'])} validation "

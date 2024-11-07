@@ -290,12 +290,14 @@ class MoHSchemaV3(BaseSchema):
 
     def validate_primary_diagnoses(self, map_json):
         missing = {field for field, val in map_json.items() if val is None}
+        if "date_of_diagnosis" in missing:
+            self.warn("date_of_diagnosis is required. NOTE: cannot calculate any date intervals for this patient")
+            missing.remove("date_of_diagnosis")
         for f in missing:
             if f in self.validation_schema["primary_diagnoses"]["required_fields"]:
                 self.warn(f"{f} is a required field")
         if "clinical_tumour_staging_system" not in map_json and "pathological_tumour_staging_system" not in map_json:
             self.warn("Either clinical_tumour_staging_system or pathological_staging_system is required")
-
         for prop in map_json:
             if prop == "clinical_tumour_staging_system":
                 self.validate_staging_system(map_json, "clinical")

@@ -110,7 +110,6 @@ def date_interval(data_values):
         _warn(message="No reference date found to calculate date_interval: check the reference_date is specified in the manifest or if it is missing for this donor",
               input_values=data_values)
         return None
-        # raise MappingError("No reference date found to calculate date_interval: is there a reference_date specified in the manifest?", field_level=1)
     DEFAULT_DATE_PARSER = dateparser.DateDataParser(
         settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT}
     )
@@ -588,3 +587,4 @@ def _parse_date(date_string):
         except Exception as e:
             raise MappingError(f"error in date({date_string}): {type(e)} {e}", field_level=2)
     return date_string
+    

@@ -212,8 +212,6 @@ class MoHSchemaV3(BaseSchema):
                         diagnoses_dates = {}
                         for diagnosis in map_json["primary_diagnoses"]:
                             diagnosis_date = None
-                            # if "date_of_diagnosis" not in diagnosis: #and diagnosis["date_of_diagnosis"] in [None, '']:
-                            #     self.warn('There is no date of diagnosis, cannot calculate any date intervals')
                             if "date_of_diagnosis" in diagnosis and diagnosis["date_of_diagnosis"] not in [None, '']:
                                 if "dict" in str(type(diagnosis["date_of_diagnosis"])):
                                     diagnosis_date = diagnosis["date_of_diagnosis"]["month_interval"]

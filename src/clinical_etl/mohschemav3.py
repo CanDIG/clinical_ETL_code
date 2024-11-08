@@ -4,7 +4,7 @@ from schema import BaseSchema, ValidationError
 
 
 """
-A class for the representation of a DonorWithClinicalData (MoHCCN data model v2) object in Katsu.
+A class for the representation of a DonorWithClinicalData (MoHCCN data model v3) object in Katsu.
 """
 
 class MoHSchemaV3(BaseSchema):
@@ -164,6 +164,10 @@ class MoHSchemaV3(BaseSchema):
     }
 
     def validate_donors(self, map_json):
+        missing = {field for field, val in map_json.items() if val is None}
+        for f in missing:
+            if f in self.validation_schema["donors"]["required_fields"]:
+                self.warn(f"{f} is a required field")
         for prop in map_json:
             match prop:
                 case "is_deceased":
@@ -283,9 +287,15 @@ class MoHSchemaV3(BaseSchema):
                             self.warn("test_date is required for biomarkers not associated with nested events")
 
     def validate_primary_diagnoses(self, map_json):
+        missing = {field for field, val in map_json.items() if val is None}
+        if "date_of_diagnosis" in missing:
+            self.warn("date_of_diagnosis is required. NOTE: cannot calculate any date intervals for this patient")
+            missing.remove("date_of_diagnosis")
+        for f in missing:
+            if f in self.validation_schema["primary_diagnoses"]["required_fields"]:
+                self.warn(f"{f} is a required field")
         if "clinical_tumour_staging_system" not in map_json and "pathological_tumour_staging_system" not in map_json:
             self.warn("Either clinical_tumour_staging_system or pathological_staging_system is required")
-
         for prop in map_json:
             if prop == "clinical_tumour_staging_system":
                 self.validate_staging_system(map_json, "clinical")
@@ -307,8 +317,12 @@ class MoHSchemaV3(BaseSchema):
                 self.warn(f"{staging_type}_stage_group is required for {staging_type}_tumour_staging_system {map_json[f'{staging_type}_tumour_staging_system']}")
 
     def validate_specimens(self, map_json):
-        if "samples" in map_json:
-            for sample in map_json["samples"]:
+        missing = {field for field, val in map_json.items() if val is None}
+        for f in missing:
+            if f in self.validation_schema["specimens"]["required_fields"]:
+                self.warn(f"{f} is a required field")
+        if "sample_registrations" in map_json:
+            for sample in map_json["sample_registrations"]:
                 if "tumour_normal_designation" in sample and sample["tumour_normal_designation"] == "Tumour":
                     required_fields = [
                         "reference_pathology_confirmed_diagnosis",
@@ -323,10 +337,16 @@ class MoHSchemaV3(BaseSchema):
                             self.warn(f"Tumour specimens require a {f}")
 
     def validate_sample_registrations(self, map_json):
-        # there aren't any additional validations here
-        return
+        missing = {field for field, val in map_json.items() if val is None}
+        for f in missing:
+            if f in self.validation_schema["sample_registrations"]["required_fields"]:
+                self.warn(f"{f} is a required field")
 
     def validate_treatments(self, map_json):
+        missing = {field for field, val in map_json.items() if val is None}
+        for f in missing:
+            if f in self.validation_schema["treatments"]["required_fields"]:
+                self.warn(f"{f} is a required field")
         for prop in map_json:
             if prop == "treatment_type" and map_json["treatment_type"] is not None:
                 for t_type in map_json["treatment_type"]:
@@ -370,6 +390,10 @@ class MoHSchemaV3(BaseSchema):
                                     self.fail("Systemic therapy end date cannot be after its treatment end date.")
 
     def validate_systemic_therapies(self, map_json):
+        missing = {field for field, val in map_json.items() if val is None}
+        for f in missing:
+            if f in self.validation_schema["systemic_therapies"]["required_fields"]:
+                self.warn(f"{f} is a required field")
         if "drug_dose_units" not in map_json or map_json["drug_dose_units"] is None:
             for x in ["prescribed_cumulative_drug_dose", "actual_cumulative_drug_dose"]:
                 if x in map_json and map_json[x] is not None:
@@ -391,16 +415,26 @@ class MoHSchemaV3(BaseSchema):
                         self.fail("Systemic therapy start cannot be after systemic therapy end.")
 
     def validate_radiations(self, map_json):
+        missing = {field for field, val in map_json.items() if val is None}
+        for f in missing:
+            if f in self.validation_schema["radiations"]["required_fields"]:
+                self.warn(f"{f} is a required field")
         for prop in map_json:
             if prop == "radiation_boost" and map_json["radiation_boost"] == "Yes":
                 if "reference_radiation_treatment_id" not in map_json or map_json["reference_radiation_treatment_id"] is None:
                     self.warn("reference_radiation_treatment_id required if radiation_boost = Yes")
 
     def validate_surgeries(self, map_json):
-        # No validations needed (submitter_specimen_id removed in V3)
-        return
+        missing = {field for field, val in map_json.items() if val is None}
+        for f in missing:
+            if f in self.validation_schema["surgeries"]["required_fields"]:
+                self.warn(f"{f} is a required field")
 
     def validate_followups(self, map_json):
+        missing = {field for field, val in map_json.items() if val is None}
+        for f in missing:
+            if f in self.validation_schema["followups"]["required_fields"]:
+                self.warn(f"{f} is a required field")
         for prop in map_json:
             if prop == "disease_status_at_followup":
                 states = [
@@ -423,6 +457,10 @@ class MoHSchemaV3(BaseSchema):
                             self.warn(f"anatomic_site_progression_or_recurrence is required if disease_status_at_followup is {map_json['disease_status_at_followup']}")
 
     def validate_biomarkers(self, map_json):
+        missing = {field for field, val in map_json.items() if val is None}
+        for f in missing:
+            if f in self.validation_schema["biomarkers"]["required_fields"]:
+                self.warn(f"{f} is a required field")
         for prop in map_json:
             match prop:
                 case "hpv_pcr_status":
@@ -430,12 +468,20 @@ class MoHSchemaV3(BaseSchema):
                         self.warn("If hpv_pcr_status is positive, hpv_strain is required")
 
     def validate_comorbidities(self, map_json):
+        missing = {field for field, val in map_json.items() if val is None}
+        for f in missing:
+            if f in self.validation_schema["comorbities"]["required_fields"]:
+                self.warn(f"{f} is a required field")
         for prop in map_json:
             if prop == "laterality_of_prior_malignancy":
                 if "prior_malignancy" not in map_json or map_json["prior_malignancy"] != "Yes":
                     self.fail("laterality_of_prior_malignancy should not be submitted unless prior_malignancy = Yes")
 
     def validate_exposures(self, map_json):
+        missing = {field for field, val in map_json.items() if val is None}
+        for f in missing:
+            if f in self.validation_schema["exposures"]["required_fields"]:
+                self.warn(f"{f} is a required field")
         is_smoker = False
         if "tobacco_smoking_status" not in map_json or map_json["tobacco_smoking_status"] is None:
             self.warn("tobacco_smoking_status required for exposure")

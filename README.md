@@ -181,9 +181,6 @@ A summarised example of the output is below:
         "schemas_used": [
             "donors"
         ],
-        "cases_missing_data": [
-            "DONOR_5"
-        ],
         "schemas_not_used": [
             "exposures",
             "biomarkers"

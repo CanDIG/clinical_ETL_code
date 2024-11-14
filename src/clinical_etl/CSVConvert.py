@@ -758,8 +758,10 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     print(f"\n{Bcolors.OKGREEN}Starting validation...{Bcolors.ENDC}")
     schema.validate_ingest_map(result)
     validation_results = {"validation_errors": schema.validation_errors,
-                          "validation_warnings": schema.validation_warnings}
+                          "validation_warnings": schema.validation_warnings,
+                          "cases_missing_data": schema.statistics["cases_missing_data"]}
     result["statistics"] = schema.statistics
+    result["statistics"].pop("cases_missing_data")  # remove donor IDs from _map.json file
     with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
         if minify:
             json.dump(result, f)

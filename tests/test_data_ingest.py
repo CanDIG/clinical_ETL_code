@@ -85,17 +85,18 @@ def test_validation(packets, schema):
     schema.validate_ingest_map({"donors": packets})
     print(schema.validation_warnings)
     warnings = [
-        "DONOR_2 > PD_2: date_of_diagnosis is required. NOTE: cannot calculate any date intervals for this patient",
-        "DONOR_3 > PD_3: basis_of_diagnosis is a required field",
+        "DONOR_2 > PD_2: date_of_diagnosis required for primary_diagnoses",
+        "DONOR_2 > PD_2: NOTE: cannot calculate any date intervals for this patient without date_of_diagnosis",
+        "DONOR_3 > PD_3: basis_of_diagnosis required for primary_diagnoses",
         "DONOR_5: cause_of_death required if is_deceased = Yes",
         "DONOR_5: date_of_death required if is_deceased = Yes",
-        "DONOR_5 > PD_5: basis_of_diagnosis is a required field",
+        "DONOR_5 > PD_5: basis_of_diagnosis required for primary_diagnoses",
         "DONOR_5 > PD_5: clinical_stage_group is required for clinical_tumour_staging_system Revised International staging system (R-ISS)",
-        "DONOR_5 > PD_5 > TR_5 > Radiation 0: radiation_therapy_dosage is a required field",
+        "DONOR_5 > PD_5 > TR_5 > Radiation 0: radiation_therapy_dosage required for radiations",
         "DONOR_5 > PD_5 > TR_10: Treatment type Systemic therapy should have one or more systemic therapies submitted",
     ]
     assert (sorted(schema.validation_warnings) == sorted(warnings))
-    assert len(schema.validation_warnings) == 8
+    assert len(schema.validation_warnings) == 9
 
     
     # temporary: remove 'month_interval' errors:

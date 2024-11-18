@@ -739,7 +739,6 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
                 json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     result_key = list(schema.validation_schema.keys()).pop(0)
-
     result = {
         "openapi_url": schema.openapi_url,
         "schema_class": type(schema).__name__,
@@ -747,20 +746,19 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     }
     if schema.katsu_sha is not None:
         result["katsu_sha"] = schema.katsu_sha
-    print(f"{Bcolors.OKGREEN}Saving packets to file.{Bcolors.ENDC}")
-    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
-        if minify:
-            json.dump(result, f)
-        else:
-            json.dump(result, f, indent=4)
 
     # add validation data:
     print(f"\n{Bcolors.OKGREEN}Starting validation...{Bcolors.ENDC}")
     schema.validate_ingest_map(result)
     validation_results = {"validation_errors": schema.validation_errors,
-                          "validation_warnings": schema.validation_warnings}
+                          "validation_warnings": schema.validation_warnings,
+                          "cases_missing_data": schema.statistics["cases_missing_data"]}
     result["statistics"] = schema.statistics
-    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
+    result["statistics"].pop("cases_missing_data")  # remove donor IDs from _map.json file
+    
+    # write ingestion and validation json files
+    print(f"{Bcolors.OKGREEN}Saving packets to file.{Bcolors.ENDC}")
+    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:
         if minify:
             json.dump(result, f)
         else:

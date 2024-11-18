@@ -285,6 +285,8 @@ class MoHSchemaV3(BaseSchema):
     def validate_primary_diagnoses(self, map_json):
         if map_json["date_of_diagnosis"] is None:
             self.warn("NOTE: cannot calculate any date intervals for this patient without date_of_diagnosis")
+        if "clinical_tumour_staging_system" not in map_json and "pathological_tumour_staging_system" not in map_json:
+                    self.warn("Either clinical_tumour_staging_system or pathological_staging_system is required")
         for prop in map_json:
             if prop == "clinical_tumour_staging_system":
                 self.validate_staging_system(map_json, "clinical")

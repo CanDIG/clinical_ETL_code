@@ -21,8 +21,8 @@ def parse_args():
                         default="https://raw.githubusercontent.com/CanDIG/katsu/develop/chord_metadata_service/mohpackets/docs/schemas/schema.json")
     parser.add_argument('--schema', type=str, help="Name of schema class", default="MoHSchemaV3")
     parser.add_argument('--out', type=str,
-                        help="name of output file; csv extension will be added. Default is template",
-                        default="template")
+                        help="name of output file; csv extension will be added. Default is moh_template",
+                        default="moh_template")
     args = parser.parse_args()
     return args
 

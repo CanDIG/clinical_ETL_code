@@ -1,10 +1,10 @@
 import json
 import dateparser
-from clinical_etl.schema import BaseSchema, ValidationError
+from schema import BaseSchema, ValidationError
 
 
 """
-A class for the representation of a DonorWithClinicalData (MoHCCN data model v2) object in Katsu.
+A class for the representation of a DonorWithClinicalData (MoHCCN data model v3) object in Katsu.
 """
 
 class MoHSchemaV3(BaseSchema):
@@ -283,9 +283,10 @@ class MoHSchemaV3(BaseSchema):
                             self.warn("test_date is required for biomarkers not associated with nested events")
 
     def validate_primary_diagnoses(self, map_json):
+        if map_json["date_of_diagnosis"] is None:
+            self.warn("NOTE: cannot calculate any date intervals for this patient without date_of_diagnosis")
         if "clinical_tumour_staging_system" not in map_json and "pathological_tumour_staging_system" not in map_json:
-            self.warn("Either clinical_tumour_staging_system or pathological_staging_system is required")
-
+                    self.warn("Either clinical_tumour_staging_system or pathological_staging_system is required")
         for prop in map_json:
             if prop == "clinical_tumour_staging_system":
                 self.validate_staging_system(map_json, "clinical")
@@ -307,8 +308,8 @@ class MoHSchemaV3(BaseSchema):
                 self.warn(f"{staging_type}_stage_group is required for {staging_type}_tumour_staging_system {map_json[f'{staging_type}_tumour_staging_system']}")
 
     def validate_specimens(self, map_json):
-        if "samples" in map_json:
-            for sample in map_json["samples"]:
+        if "sample_registrations" in map_json:
+            for sample in map_json["sample_registrations"]:
                 if "tumour_normal_designation" in sample and sample["tumour_normal_designation"] == "Tumour":
                     required_fields = [
                         "reference_pathology_confirmed_diagnosis",
@@ -323,7 +324,6 @@ class MoHSchemaV3(BaseSchema):
                             self.warn(f"Tumour specimens require a {f}")
 
     def validate_sample_registrations(self, map_json):
-        # there aren't any additional validations here
         return
 
     def validate_treatments(self, map_json):
@@ -397,7 +397,6 @@ class MoHSchemaV3(BaseSchema):
                     self.warn("reference_radiation_treatment_id required if radiation_boost = Yes")
 
     def validate_surgeries(self, map_json):
-        # No validations needed (submitter_specimen_id removed in V3)
         return
 
     def validate_followups(self, map_json):

@@ -37,3 +37,7 @@
 < DONOR.INDEX.biomarkers.INDEX.pr_percent_positive, {floating(BIOMARKERS_SHEET.pr_percent_positive)}
 ---
 > DONOR.INDEX.biomarkers.INDEX.pr_percent_positive, {set_neg_99_blank_float(BIOMARKERS_SHEET.pr_percent_positive)}
+161c161
+< DONOR.INDEX.followups.INDEX, {indexed_on(FOLLOWUPS_SHEET.submitter_donor_id)}
+---
+> DONOR.INDEX.followups.INDEX, {moh_indexed_on_donor_if_others_absent(FOLLOWUPS_SHEET.submitter_donor_id)}

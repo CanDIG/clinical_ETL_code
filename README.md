@@ -45,12 +45,6 @@ Install the repo's requirements in your virtual environment
 pip install -r requirements.txt
 ```
 
->[!NOTE]
-> If Python can't find the `clinical_etl` module when running `CSVConvert`, install the depencency manually:
-> ```
-> pip install -e clinical_ETL_code/
-> ```
-
 Before running the script, you will need to have your input files, this will be clinical data in a tabular format (`xlsx`/`csv`) that can be read into program and a cohort directory containing the files that define the schema and mapping configurations.
 
 ### Input file/s format
@@ -65,7 +59,7 @@ If you are working with exports from RedCap, the sample files in the [`sample_in
 
 ### Setting up a cohort directory
 
-For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `data` repository. This cohort directory should contain the same files as shown in the [`sample_inputs/generic_example`](sample_inputs/generic_example) directory, which are:
+For each dataset (cohort) that you want to convert, create a directory outside of this repository. For CanDIG devs, this will be in the private `clinical_ETL_data` repository. This cohort directory should contain the same files as shown in the [`sample_inputs/generic_example`](sample_inputs/generic_example) directory, which are:
 
 * a [`manifest.yml`](#Manifest-file) file with configuration settings for the mapping and schema validation
 * a [mapping template](#Mapping-template) csv that lists custom mappings for each field (based on `moh_template.csv`)
@@ -96,7 +90,7 @@ You'll need to create a mapping template that defines the mapping between the fi
 
 Each line in the mapping template is composed of comma separated values with two components. The first value is an `element` or field from the target schema and the second value contains a suggested `mapping method` or function to map a field from an input sheet to a valid value for the identified `element`. Each `element`, shows the full object linking path to each field required by the model. These values should not be edited.
 
-If you are generating a mapping for the current CanDIG MoH model, you can use the pre-generated [`moh_template.csv`](moh_template.csv) file. This file is modified from the auto-generated template to update a few fields that require specific handling.
+If you are generating a mapping for the current CanDIG MoH model, you can use the pre-generated [`moh_v3_template.csv`](moh_v3_template.csv) file. This file is modified from the auto-generated template to update a few fields that require specific handling.
 
 You will need to edit the `mapping method` values in each line in the following ways:
 1. Replace the generic sheet names (e.g. `DONOR_SHEET`, `SAMPLE_REGISTRATIONS_SHEET`) with the sheet/csv names you are using as your input to `CSVConvert.py`
@@ -158,12 +152,6 @@ The main output `<INPUT_DIR>_map.json` and optional output`<INPUT_DIR>_indexed.j
 
 Validation will automatically be run after the conversion is complete. Any validation errors or warnings will be reported both on the command line and as part of the `<INPUT_DIR>_map.json` file.
 
->[!NOTE]
-> If Python can't find the `clinical_etl` module when running `CSVConvert`, install the depencency manually:
-> ```
-> pip install -e clinical_ETL_code/
-> ```
-
 #### Format of the output files
 
 `<INPUT_DIR>_map.json` is the main output and contains the results of the mapping, conversion and validation as well as summary statistics.
@@ -186,9 +174,6 @@ A summarised example of the output is below:
         },
         "schemas_used": [
             "donors"
-        ],
-        "cases_missing_data": [
-            "DONOR_5"
         ],
         "schemas_not_used": [
             "exposures",

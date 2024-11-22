@@ -12,11 +12,7 @@ import re
 import yaml
 import argparse
 from tqdm import tqdm
-from clinical_etl import mappings
-# Include clinical_etl parent directory in the module search path.
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
+import mappings
 
 
 def verbose_print(message):
@@ -277,7 +273,7 @@ def eval_mapping(node_name, rownum):
     """
     verbose_print(f"  Evaluating {mappings.IDENTIFIER}: {node_name}")
     if "mappings" not in mappings.MODULES:
-        mappings.MODULES["mappings"] = importlib.import_module("clinical_etl.mappings")
+        mappings.MODULES["mappings"] = importlib.import_module("mappings")
     modulename = "mappings"
 
     method, parameters = parse_mapping_function(node_name)
@@ -596,7 +592,7 @@ def load_manifest(manifest_file):
 
     # programatically load schema class based on manifest value:
     # schema class definition will be in a file named schema_class.lower()
-    schema_mod = importlib.import_module(f"clinical_etl.{schema_class.lower()}")
+    schema_mod = importlib.import_module(f"{schema_class.lower()}")
     schema = getattr(schema_mod, schema_class)(manifest["schema"])
     if schema.json_schema is None:
         sys.exit(f"Could not read an openapi schema at {manifest['schema']};\n"
@@ -633,7 +629,7 @@ def load_manifest(manifest_file):
                     f"{manifest_dir} and has the correct name.\n---")
                 sys.exit(e)
     # mappings is a standard module: add it
-    mappings.MODULES["mappings"] = importlib.import_module("clinical_etl.mappings")
+    mappings.MODULES["mappings"] = importlib.import_module("mappings")
     return result
 
 
@@ -743,7 +739,6 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
                 json.dump(mappings.INDEXED_DATA, f, indent=4)
 
     result_key = list(schema.validation_schema.keys()).pop(0)
-
     result = {
         "openapi_url": schema.openapi_url,
         "schema_class": type(schema).__name__,
@@ -751,28 +746,30 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     }
     if schema.katsu_sha is not None:
         result["katsu_sha"] = schema.katsu_sha
-    print(f"{Bcolors.OKGREEN}Saving packets to file.{Bcolors.ENDC}")
-    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
-        if minify:
-            json.dump(result, f)
-        else:
-            json.dump(result, f, indent=4)
 
     # add validation data:
     print(f"\n{Bcolors.OKGREEN}Starting validation...{Bcolors.ENDC}")
     schema.validate_ingest_map(result)
     validation_results = {"validation_errors": schema.validation_errors,
-                          "validation_warnings": schema.validation_warnings}
+                          "validation_warnings": schema.validation_warnings,
+                          "cases_missing_data": schema.statistics["cases_missing_data"]}
     result["statistics"] = schema.statistics
-    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:  # write to json file for ingestion
+    result["statistics"].pop("cases_missing_data")  # remove donor IDs from _map.json file
+    
+    # write ingestion and validation json files
+    print(f"{Bcolors.OKGREEN}Saving packets to file.{Bcolors.ENDC}")
+    with open(f"{mappings.OUTPUT_FILE}_map.json", 'w') as f:
         if minify:
             json.dump(result, f)
         else:
             json.dump(result, f, indent=4)
     errors_present = False
-    with open(f"{input_path}_validation_results.json", 'w') as f:
-        json.dump(validation_results, f, indent=4)
-    print(f"Warnings written to {input_path}_validation_results.json.")
+    if len(validation_results["validation_errors"]) == 0 and len(validation_results["validation_warnings"]) == 0:
+           print(f"{Bcolors.OKGREEN}Validation passed!{Bcolors.ENDC}")
+    else:
+        with open(f"{input_path}_validation_results.json", 'w') as f:
+            json.dump(validation_results, f, indent=4)
+        print(f"Warnings written to {input_path}_validation_results.json.")
     if len(validation_results["validation_warnings"]) > 0:
         if len(validation_results["validation_warnings"]) > 20:
             print(f"\n{Bcolors.WARNING}WARNING: There are {len(validation_results['validation_warnings'])} validation "

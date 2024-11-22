@@ -152,12 +152,6 @@ The main output `<INPUT_DIR>_map.json` and optional output`<INPUT_DIR>_indexed.j
 
 Validation will automatically be run after the conversion is complete. Any validation errors or warnings will be reported both on the command line and as part of the `<INPUT_DIR>_map.json` file.
 
->[!NOTE]
-> If Python can't find the `clinical_etl` module when running `CSVConvert`, install the depencency manually:
-> ```
-> pip install -e clinical_ETL_code/
-> ```
-
 #### Format of the output files
 
 `<INPUT_DIR>_map.json` is the main output and contains the results of the mapping, conversion and validation as well as summary statistics.

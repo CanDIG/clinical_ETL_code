@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: clinical_ETL
-Version: 3.1.0
+Version: 3.1.1
 Summary: ETL module for transforming clinical CSV data into properly-formatted packets for ingest into Katsu
 Project-URL: Repository, https://github.com/CanDIG/clinical_ETL_code
 Requires-Python: >=3.10
@@ -63,12 +63,6 @@ Install the repo's requirements in your virtual environment
 ```commandline
 pip install -r requirements.txt
 ```
-
->[!NOTE]
-> If Python can't find the `clinical_etl` module when running `CSVConvert`, install the depencency manually:
-> ```
-> pip install -e clinical_ETL_code/
-> ```
 
 Before running the script, you will need to have your input files, this will be clinical data in a tabular format (`xlsx`/`csv`) that can be read into program and a cohort directory containing the files that define the schema and mapping configurations.
 
@@ -177,12 +171,6 @@ The main output `<INPUT_DIR>_map.json` and optional output`<INPUT_DIR>_indexed.j
 
 Validation will automatically be run after the conversion is complete. Any validation errors or warnings will be reported both on the command line and as part of the `<INPUT_DIR>_map.json` file.
 
->[!NOTE]
-> If Python can't find the `clinical_etl` module when running `CSVConvert`, install the depencency manually:
-> ```
-> pip install -e clinical_ETL_code/
-> ```
-
 #### Format of the output files
 
 `<INPUT_DIR>_map.json` is the main output and contains the results of the mapping, conversion and validation as well as summary statistics.
@@ -206,9 +194,6 @@ A summarised example of the output is below:
         "schemas_used": [
             "donors"
         ],
-        "cases_missing_data": [
-            "DONOR_5"
-        ],
         "schemas_not_used": [
             "exposures",
             "biomarkers"
@@ -220,6 +205,7 @@ A summarised example of the output is below:
     }
 }
 ```
+`<INPUT_DIR>_validation_results.json` contains all validation warnings and errors.
 
 The mapping and transformation result is found in the `"donors"` key.
 

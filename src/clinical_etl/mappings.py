@@ -116,7 +116,7 @@ def date_interval(data_values):
     endpoint = single_val(data_values)
     if endpoint is None:
         return None
-    offset = DEFAULT_DATE_PARSER.get_date_data(reference["offset"])["date_obj"]
+    offset = dateparser.parse(reference["offset"], ["%Y-%m-%d"])
     date_obj = DEFAULT_DATE_PARSER.get_date_data(endpoint)["date_obj"]
     if date_obj is None:
         raise MappingError(f"Cannot parse date '{endpoint}'", field_level=2)

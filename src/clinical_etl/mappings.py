@@ -5,6 +5,8 @@ import datetime
 import math
 from dateutil import relativedelta
 import copy
+import requests as rq
+import pprint
 
 VERBOSE = False
 MODULES = {}
@@ -460,6 +462,62 @@ def indexed_on(data_values):
         "sheet": sheet,
         "values": data_values[field][sheet]
     }
+
+
+def lookup_drug_identifier(drug_name: str, drug_database):
+    """Given a drug name and database, retrieve the correct identifier or return none
+
+    Args:
+        drug_name: The name of the drug
+        drug_database: the database to lookup the identifier, one of RxNorm, PubChem, NCI Thesaurus
+
+    Returns:
+        A string value identifier from the given database or None if not found
+    """
+    if drug_database == "RxNorm":
+        rx_domain = "https://rxnav.nlm.nih.gov"
+        search_url = f"{rx_domain}/REST/rxcui.json?name={drug_name}&allsrc=0&search=1"
+        response = rq.get(search_url).json()
+        try:
+            return response['idGroup']['rxnormId']
+        except KeyError:
+            print(f"No drug {drug_name} found in database {drug_database}, returning None")
+            return None
+    elif drug_database == "PubChem":
+        pug_domain = "https://pubchem.ncbi.nlm.nih.gov"
+        search_url = f"{pug_domain}/rest/pug/substance/name/{drug_name}/JSON?sourcename=ChemIDplus"
+        response = rq.get(search_url).json()
+        if len(response['PC_Substances']) > 1:
+            view_next = True
+            while view_next:
+                this_substance = response['PC_Substances'].pop(0)
+                pprint.pprint(this_substance)
+                correct = input(f"Does this substance match the drug name {drug_name} in your data? (y/n)")
+                if correct in ["Y", "y", "yes", "Yes", "YES"]:
+                    return this_substance['sid']['id']
+                else:
+                    continue
+        else:
+            return response['PC_Substances'][0]['sid']['id']
+    elif drug_database == "NCI Thesaurus":
+        ols_domain = "http://www.ebi.ac.uk/ols4/api"
+        search_url = f"{ols_domain}/search?q={drug_name.capitalize()}&queryFields=label&ontology=ncit"
+        response = rq.get(search_url).json()
+        if len(response['response']['docs']) > 1:
+            view_next = True
+            while view_next:
+                this_ontology = response['response']['docs'].pop(0)
+                pprint.pprint(this_ontology)
+                correct = input(f"Does this ontology match the drug name {drug_name} in your data? (y/n)")
+                if correct.strip() in ["Y", "y", "yes", "Yes", "YES"]:
+                    return this_ontology['short_form'].split("_")[1]
+                else:
+                    continue
+        print(drug_name)
+    else:
+        print(f"Drug database {drug_database} not found, please ensure the drug database is one of the permissible "
+              f"values.")
+        return None
 
 
 def moh_indexed_on_donor_if_others_absent(data_values):

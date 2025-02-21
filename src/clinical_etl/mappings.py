@@ -72,7 +72,7 @@ def earliest_date(data_values):
     fields = list(data_values.keys())
     date_resolution = list(data_values[fields[0]].values())[0]
     dates = copy.deepcopy(list(data_values[fields[1]].values())[0])
-    earliest = DEFAULT_DATE_PARSER.get_date_data(str(datetime.date.today()))
+    earliest = dateparser.parse(str(datetime.date.today()))
     # Ensure dates is a list, not a string, to allow non-indexed, single value entries.
     if type(dates) is not list:
         dates_list = [dates]
@@ -83,11 +83,11 @@ def earliest_date(data_values):
         dates_list = [x for x in dates_list if x is not None]
     if len(dates_list) > 0:
         for date in dates_list:
-            d = DEFAULT_DATE_PARSER.get_date_data(date)
-            if d['date_obj'] < earliest['date_obj']:
+            d = dateparser.parse(date, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT})
+            if d < earliest:
                 earliest = d
         return {
-            "offset": earliest['date_obj'].strftime("%Y-%m-%d"),
+            "offset": earliest.strftime("%Y-%m-%d"),
             "period": date_resolution
         }
     else:
@@ -110,14 +110,11 @@ def date_interval(data_values):
         _warn(message="No reference date found to calculate date_interval: check the reference_date is specified in the manifest or if it is missing for this donor",
               input_values=data_values)
         return None
-    DEFAULT_DATE_PARSER = dateparser.DateDataParser(
-        settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT}
-    )
     endpoint = single_val(data_values)
     if endpoint is None:
         return None
-    offset = dateparser.parse(reference["offset"], ["%Y-%m-%d"])
-    date_obj = DEFAULT_DATE_PARSER.get_date_data(endpoint)["date_obj"]
+    offset = datetime.datetime.strptime(reference["offset"], "%Y-%m-%d")
+    date_obj = dateparser.parse(endpoint, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT})
     if date_obj is None:
         raise MappingError(f"Cannot parse date '{endpoint}'", field_level=2)
     is_neg = False

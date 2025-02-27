@@ -93,6 +93,52 @@ def earliest_date(data_values):
         return None
 
 
+def _date_interval(data_values, reference, date_format):
+    """Calculates a date interval from a given date relative to the reference date specified in the manifest.
+
+    Args:
+        data_values: a values dict with a date
+        reference: date reference specified in the manifest
+        date_format: date format specified in the manifest
+
+    Returns:
+        A dictionary with calculated month_interval and optionally a day_interval depending on the specified
+        date_resolution.
+    """
+    endpoint = single_val(data_values)
+    if endpoint is None:
+        return None
+    offset = datetime.datetime.strptime(reference["offset"], "%Y-%m-%d")
+    date = dateparser.parse(endpoint, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": date_format})
+    if date is None:
+        raise MappingError(f"Cannot parse date '{endpoint}'", field_level=2)
+    is_neg = False
+    if offset is None:
+        start = date
+        end = date
+    elif offset <= date:
+        start = offset
+        end = date
+    else:
+        start = date
+        end = offset
+        is_neg = True
+        
+    time_delta = relativedelta.relativedelta(end, start)
+    month_interval = time_delta.months + (time_delta.years * 12)
+    if is_neg:
+        month_interval = -month_interval
+    result = {
+        "month_interval": month_interval
+    }
+    if reference["period"] == "day":
+        day_interval = (end - start).days
+        if is_neg:
+            day_interval = -day_interval
+        result["day_interval"] = day_interval
+    return result
+
+
 def date_interval(data_values):
     """Calculates a date interval from a given date relative to the reference date specified in the manifest.
 
@@ -109,37 +155,7 @@ def date_interval(data_values):
         _warn(message="No reference date found to calculate date_interval: check the reference_date is specified in the manifest or if it is missing for this donor",
               input_values=data_values)
         return None
-    endpoint = single_val(data_values)
-    if endpoint is None:
-        return None
-    offset = datetime.datetime.strptime(reference["offset"], "%Y-%m-%d")
-    date_obj = dateparser.parse(endpoint, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT})
-    if date_obj is None:
-        raise MappingError(f"Cannot parse date '{endpoint}'", field_level=2)
-    is_neg = False
-    if offset is None:
-        start = date_obj
-        end = date_obj
-    elif offset <= date_obj:
-        start = offset
-        end = date_obj
-    else:
-        start = date_obj
-        end = offset
-        is_neg = True
-    time_delta = relativedelta.relativedelta(end, start)
-    month_interval = time_delta.months + (time_delta.years * 12)
-    if is_neg:
-        month_interval = -month_interval
-    result = {
-        "month_interval": month_interval
-    }
-    if reference["period"] == "day":
-        day_interval = (end - start).days
-        if is_neg:
-            day_interval = -day_interval
-        result["day_interval"] = day_interval
-    return result
+    return _date_interval(data_values, reference, DATE_FORMAT)
 
 
 def int_to_date_interval_json(data_values):
@@ -151,7 +167,6 @@ def int_to_date_interval_json(data_values):
     Returns:
         A dictionary with a calculated month_interval and optionally a day_interval depending on the specified date_resolution in the donor file.
     """
-
     # Dates are by nature messy.  This function does not account for leap years and February's 28 days, but is close enough.
     if integer(data_values) is None:
         return

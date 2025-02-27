@@ -4,7 +4,7 @@ from clinical_etl import mappings
 
 
 @pytest.mark.parametrize(
-    "data_values, reference, format, expected",
+    "data_values, reference, date_format, expected",
     [
         (
             {"date_of_birth": {"Donor": "5/1/1995"}},
@@ -81,5 +81,5 @@ from clinical_etl import mappings
         # TODO: exception when date doesn't match date order
     ],
 )
-def test_date_intervals(data_values, reference, format, expected):
-    assert mappings.date_interval(data_values, reference, format) == expected
+def test_date_interval(data_values, reference, date_format, expected):
+    assert mappings._date_interval(data_values, reference, date_format) == expected

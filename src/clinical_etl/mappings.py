@@ -110,8 +110,59 @@ def _date_interval(data_values, reference, date_format):
         return None
     offset = datetime.datetime.strptime(reference["offset"], "%Y-%m-%d")
     date = dateparser.parse(endpoint, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": date_format})
+    format_strs = {
+        "DMY": ["%d-%m-%y", "%d-%m-%Y", "%d/%m/%y", "%d/%m/%Y"],
+        "MDY": ["%m-%d-%y", "%m-%d-%Y", "%m/%d/%y", "%m/%d/%Y"],
+        "YMD": ["%y-%m-%d", "%Y-%m-%d", "%y/%m/%d", "%Y/%m/%d"],
+        "YDM": ["%y-%d-%m", "%Y-%d-%m", "%y/%d/%m", "%Y/%d/%m"],
+        "MY": ["%m-%y", "%m-%Y", "%m/%y", "%m/%Y"],
+        "YM": ["%y-%m", "%Y-m%", "%y/%m", "%Y/%m"],
+    }
+    format_success = False
+     
+    for d_f in format_strs[date_format]:
+        try:
+            # print(format_strs[date_format][i])
+            datetime.datetime.strptime(endpoint, d_f)
+            print(d_f)
+            format_success = True
+            break
+        except ValueError:
+            continue
+
+    # while format_success is False or i < len(format_strs[date_format]):
+    # while i < len(format_strs[date_format]):
+    #     try:
+    #         print(format_strs[date_format][i])
+    #         datetime.datetime.strptime(endpoint, format_strs[date_format][i])
+    #         format_sucess = True
+    #     except ValueError:
+    #         i += 1
+    
+    if format_success is False:
+        raise MappingError("tu maldita madre mmg")
+    # for format in format_strs:
+    #     try:
+            
+
+
+    # format_strs = {
+    #     "DMY": "%d/%m/%Y",
+    #     "MDY": "%m %d %Y",
+    #     "YMD": "%Y %m %d",
+    #     "YDM": "%Y %d %m",
+    # }
+    # datetime.datetime.strptime(endpoint, format_strs[date_format])
+    # try:
+    #     print("\n\n")
+    #     print(endpoint)
+    #     print(format_strs[date_format])
+    #     datetime.datetime.strptime(endpoint, format_strs[date_format])
+    # except ValueError:
+    #     ValueError(f"{date} is not does not match the format '{date_format}' specified in the manifest. ")
     if date is None:
         raise MappingError(f"Cannot parse date '{endpoint}'", field_level=2)
+
     is_neg = False
     if offset is None:
         start = date
@@ -123,7 +174,7 @@ def _date_interval(data_values, reference, date_format):
         start = date
         end = offset
         is_neg = True
-        
+
     time_delta = relativedelta.relativedelta(end, start)
     month_interval = time_delta.months + (time_delta.years * 12)
     if is_neg:
@@ -598,4 +649,3 @@ def _parse_date(date_string):
         except Exception as e:
             raise MappingError(f"error in date({date_string}): {type(e)} {e}", field_level=2)
     return date_string
-    

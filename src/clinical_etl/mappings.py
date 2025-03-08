@@ -39,6 +39,28 @@ class MappingError(Exception):
             return repr(f"Check the values for {IDENTIFIER} in {IDENTIFIER_FIELD}: {self.value}")
 
 
+def _validate_date_format(date_str, date_format):
+    """Ensure parsed date format follows manifest format"""
+    format_strs = {
+        "DMY": ["%d-%m-%y", "%d-%m-%Y", "%d/%m/%y", "%d/%m/%Y", 
+                "%m-%y", "%m-%Y", "%m/%y", "%m/%Y"],
+        "MDY": ["%m-%d-%y", "%m-%d-%Y", "%m/%d/%y", "%m/%d/%Y"],
+        "YMD": ["%y-%m-%d", "%Y-%m-%d", "%y/%m/%d", "%Y/%m/%d", 
+                "%y-%m", "%Y-%m", "%y/%m", "%Y/%m"],
+        "YDM": ["%y-%d-%m", "%Y-%d-%m", "%y/%d/%m", "%Y/%d/%m"],
+    }
+    format_success = False
+    for d_f in format_strs[date_format]:
+        try:
+            datetime.datetime.strptime(date_str, d_f)
+            format_success = True
+            break
+        except ValueError:
+            continue
+    if format_success is False:
+        raise MappingError(f"Could not parse {date_str}, it doesn't follow the manifest format {date_format}", field_level=1)
+
+
 def date(data_values):
     """Format a list of dates to ISO standard YYYY-MM
 
@@ -92,7 +114,6 @@ def earliest_date(data_values):
     else:
         return None
 
-
 def _date_interval(data_values, reference, date_format):
     """Calculates a date interval from a given date relative to the reference date specified in the manifest.
 
@@ -110,58 +131,7 @@ def _date_interval(data_values, reference, date_format):
         return None
     offset = datetime.datetime.strptime(reference["offset"], "%Y-%m-%d")
     date = dateparser.parse(endpoint, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": date_format})
-    format_strs = {
-        "DMY": ["%d-%m-%y", "%d-%m-%Y", "%d/%m/%y", "%d/%m/%Y"],
-        "MDY": ["%m-%d-%y", "%m-%d-%Y", "%m/%d/%y", "%m/%d/%Y"],
-        "YMD": ["%y-%m-%d", "%Y-%m-%d", "%y/%m/%d", "%Y/%m/%d"],
-        "YDM": ["%y-%d-%m", "%Y-%d-%m", "%y/%d/%m", "%Y/%d/%m"],
-        "MY": ["%m-%y", "%m-%Y", "%m/%y", "%m/%Y"],
-        "YM": ["%y-%m", "%Y-m%", "%y/%m", "%Y/%m"],
-    }
-    format_success = False
-     
-    for d_f in format_strs[date_format]:
-        try:
-            # print(format_strs[date_format][i])
-            datetime.datetime.strptime(endpoint, d_f)
-            print(d_f)
-            format_success = True
-            break
-        except ValueError:
-            continue
-
-    # while format_success is False or i < len(format_strs[date_format]):
-    # while i < len(format_strs[date_format]):
-    #     try:
-    #         print(format_strs[date_format][i])
-    #         datetime.datetime.strptime(endpoint, format_strs[date_format][i])
-    #         format_sucess = True
-    #     except ValueError:
-    #         i += 1
-    
-    if format_success is False:
-        raise MappingError("tu maldita madre mmg")
-    # for format in format_strs:
-    #     try:
-            
-
-
-    # format_strs = {
-    #     "DMY": "%d/%m/%Y",
-    #     "MDY": "%m %d %Y",
-    #     "YMD": "%Y %m %d",
-    #     "YDM": "%Y %d %m",
-    # }
-    # datetime.datetime.strptime(endpoint, format_strs[date_format])
-    # try:
-    #     print("\n\n")
-    #     print(endpoint)
-    #     print(format_strs[date_format])
-    #     datetime.datetime.strptime(endpoint, format_strs[date_format])
-    # except ValueError:
-    #     ValueError(f"{date} is not does not match the format '{date_format}' specified in the manifest. ")
-    if date is None:
-        raise MappingError(f"Cannot parse date '{endpoint}'", field_level=2)
+    _validate_date_format(endpoint, date_format)
 
     is_neg = False
     if offset is None:

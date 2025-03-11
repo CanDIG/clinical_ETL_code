@@ -81,7 +81,7 @@ The `manifest.yml` file contains settings for the cohort mapping. There is a sam
 | schema        | a URL to the openapi schema file                                                                                                                                                                          |
 | schema_class  | The name of the class in the schema used as the model for creating the map.json. Currently supported: `MoHSchemaV2` and `MoHSchemaV3` - for clinical MoH data and `GenomicSchema` for creating a genomic ingest linking file. |
 | reference_date | a reference date used to calculate date intervals, formatted as a mapping entry for the mapping template                                                                                                 |
-| date_format | Specify the format of the dates in your input data. Use any combination of the characters `DMY`to specify the order (e.g. `DMY`, `MDY`, `YMD`, etc).                                                                                    |
+| date_format | Specify the format of the dates in your input data. Use any combination of the characters `DMY`to specify the order (e.g. `DMY`, `MDY`, `YMD`, etc). Refer to [this section](https://github.com/CanDIG/clinical_ETL_code/blob/develop/mapping_functions.md#dealing-with-dates) for details.                                                                                    |
 | functions     | A list of one or more filenames containing additional mapping functions, can be omitted if not needed. Assumed to be in the same directory as the `manifest.yml` file                                     |
 
 #### Mapping template

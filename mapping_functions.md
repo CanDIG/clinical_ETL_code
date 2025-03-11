@@ -77,8 +77,7 @@ In the mapping csv, the in-built `date_interval()mapping function can be used to
 DONOR.INDEX.date_of_birth, {date_interval(Donor.date_of_birth)}
 ```
 
-To avoid issues with ambiguous dates, ensure all the dates in your input date are in the same format, then specify that `date_format` in the manifest file so the day, month, and year are parsed correctly. The format can be any combination of the characters `DMY`to specify the order (e.g. `DMY`, `MDY`, `YMD`, etc).
-
+To avoid issues with ambiguous dates, ensure all the dates in your input date are in the same format, then specify that `date_format` in the manifest file so the day, month, and year are parsed correctly. The format can be any combination of the characters `DMY`to specify the order (e.g. `DMY`, `MDY`, `YMD`, etc). If your dates don't include days,  use `MYD` for month-year or `YMD` for year-month, and make sure to specify `month` in `Donor.date_resolution`. The mapping will fail unless all dates match the `date_format` in the manifest.
 
 
 If input data has pre-calculated date intervals as integers, the `int_to_date_interval_json()` function can be used to transform the integer into the required DateInterval json object. e.g.:

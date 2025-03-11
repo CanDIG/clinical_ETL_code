@@ -59,7 +59,7 @@ def _validate_date_format(date_str, date_format):
         except ValueError:
             continue
     if format_success is False:
-        raise MappingError(f"Could not parse {date_str}, it doesn't follow the manifest format {date_format}", field_level=1)
+        raise MappingError(f"Could not parse date '{date_str}', it doesn't follow the manifest format '{date_format}'", field_level=1)
 
 
 def date(data_values):
@@ -115,6 +115,7 @@ def earliest_date(data_values):
         }
     else:
         return None
+
 
 def _date_interval(data_values, reference, date_format):
     """Calculates a date interval from a given date.

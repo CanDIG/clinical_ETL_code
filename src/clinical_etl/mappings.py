@@ -15,7 +15,6 @@ INDEXED_DATA = None
 CURRENT_LINE = ""
 OUTPUT_FILE = ""
 DATE_FORMAT = None
-DEFAULT_DATE_PARSER = dateparser.DateDataParser(settings={'PREFER_DAY_OF_MONTH': 'first'})
 
 
 class MappingError(Exception):
@@ -40,6 +39,65 @@ class MappingError(Exception):
             return repr(f"Check the values for {IDENTIFIER} in {IDENTIFIER_FIELD}: {self.value}")
 
 
+def _validate_date_format(date_str, date_format):
+    """Ensure input date matches the date format in the manifest.
+    
+    Args:
+        date_str: A string with a date
+        date_format: A string with a dateparser date format ("DMY", "YMD", etc.)
+        
+    Raises:
+        MappingError if date_str doesn't match the date format.
+    """
+    format_strs = {
+        "DMY": ["%d-%m-%y", "%d-%m-%Y", "%d/%m/%y", "%d/%m/%Y"],
+        "MDY": ["%m-%d-%y", "%m-%d-%Y", "%m/%d/%y", "%m/%d/%Y"],
+        "YDM": ["%y-%d-%m", "%Y-%d-%m", "%y/%d/%m", "%Y/%d/%m"],
+        "MYD": ["%m-%y-%d", "%m-%Y-%d", "%m/%y/%d", "%m/%Y/%d", 
+                "%m-%y", "%m-%Y", "%m/%y", "%m/%Y"],
+        "YMD": ["%y-%m-%d", "%Y-%m-%d", "%y/%m/%d", "%Y/%m/%d", 
+                "%y-%m", "%Y-%m", "%y/%m", "%Y/%m"],
+    }
+    format_success = False
+    for d_f in format_strs[date_format]:
+        try:
+            datetime.datetime.strptime(date_str, d_f)
+            format_success = True
+            break
+        except ValueError:
+            continue
+    if format_success is False:
+        raise MappingError(f"Could not parse date '{date_str}', it doesn't follow the manifest format '{date_format}'", field_level=1)
+
+
+def _parse_date(date_string):
+    """
+    Parses any date-like string into YYYY-MM format.
+
+    Args:
+        date_string: A string in various date formats
+
+    Returns:
+        A string in year, month ISO format: YYYY-MM
+
+    Raises:
+        MappingError if dateparser cannot recognise the date format.
+    """
+    if any(char in "0123456789" for char in date_string):
+        try:
+            _validate_date_format(date_string, DATE_FORMAT)
+            d = dateparser.parse(
+                date_string,
+                settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT},
+            )
+            return d.strftime("%Y-%m")
+        except Exception as e:
+            raise MappingError(
+                f"error in date({date_string}): {type(e)} {e}", field_level=2
+            )
+    return date_string
+
+
 def date(data_values):
     """Format a list of dates to ISO standard YYYY-MM
 
@@ -60,6 +118,21 @@ def date(data_values):
     return dates
 
 
+def single_date(data_values):
+    """Parses a single date to YYYY-MM format.
+
+    Args:
+        data_values: a value dict with a date
+
+    Returns:
+        a string of the format YYYY-MM, or None if blank/unparseable
+    """
+    val = single_val(data_values)
+    if val is not None:
+        return _parse_date(val)
+    return None
+
+
 def earliest_date(data_values):
     """Calculates the earliest date from a set of dates
 
@@ -72,7 +145,7 @@ def earliest_date(data_values):
     fields = list(data_values.keys())
     date_resolution = list(data_values[fields[0]].values())[0]
     dates = copy.deepcopy(list(data_values[fields[1]].values())[0])
-    earliest = DEFAULT_DATE_PARSER.get_date_data(str(datetime.date.today()))
+    earliest = dateparser.parse(str(datetime.date.today()))
     # Ensure dates is a list, not a string, to allow non-indexed, single value entries.
     if type(dates) is not list:
         dates_list = [dates]
@@ -83,54 +156,49 @@ def earliest_date(data_values):
         dates_list = [x for x in dates_list if x is not None]
     if len(dates_list) > 0:
         for date in dates_list:
-            d = DEFAULT_DATE_PARSER.get_date_data(date)
-            if d['date_obj'] < earliest['date_obj']:
+            _validate_date_format(date, DATE_FORMAT)
+            d = dateparser.parse(date, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT})
+            if d < earliest:
                 earliest = d
         return {
-            "offset": earliest['date_obj'].strftime("%Y-%m-%d"),
+            "offset": earliest.strftime("%Y-%m-%d"),
             "period": date_resolution
         }
     else:
         return None
 
 
-def date_interval(data_values):
-    """Calculates a date interval from a given date relative to the reference date specified in the manifest.
+def _date_interval(data_values, reference, date_format):
+    """Calculates a date interval from a given date.
 
     Args:
         data_values: a values dict with a date
+        reference: date reference to calculate interval
+        date_format: date format specified for parsing
 
     Returns:
         A dictionary with calculated month_interval and optionally a day_interval depending on the specified
         date_resolution.
     """
-    try:
-        reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
-    except KeyError:
-        _warn(message="No reference date found to calculate date_interval: check the reference_date is specified in the manifest or if it is missing for this donor",
-              input_values=data_values)
-        return None
-    DEFAULT_DATE_PARSER = dateparser.DateDataParser(
-        settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT}
-    )
     endpoint = single_val(data_values)
     if endpoint is None:
         return None
-    offset = DEFAULT_DATE_PARSER.get_date_data(reference["offset"])["date_obj"]
-    date_obj = DEFAULT_DATE_PARSER.get_date_data(endpoint)["date_obj"]
-    if date_obj is None:
-        raise MappingError(f"Cannot parse date '{endpoint}'", field_level=2)
+    offset = datetime.datetime.strptime(reference["offset"], "%Y-%m-%d")
+    date = dateparser.parse(endpoint, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": date_format})
+    _validate_date_format(endpoint, date_format)
+
     is_neg = False
     if offset is None:
-        start = date_obj
-        end = date_obj
-    elif offset <= date_obj:
+        start = date
+        end = date
+    elif offset <= date:
         start = offset
-        end = date_obj
+        end = date
     else:
-        start = date_obj
+        start = date
         end = offset
         is_neg = True
+
     time_delta = relativedelta.relativedelta(end, start)
     month_interval = time_delta.months + (time_delta.years * 12)
     if is_neg:
@@ -146,6 +214,25 @@ def date_interval(data_values):
     return result
 
 
+def date_interval(data_values):
+    """Calculates a date interval from a given date relative to the reference date and format specified in the manifest.
+
+    Args:
+        data_values: a values dict with a date
+
+    Returns:
+        A dictionary with calculated month_interval and optionally a day_interval depending on the specified
+        date_resolution.
+    """
+    try:
+        reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
+    except KeyError:
+        _warn(message="No reference date found to calculate date_interval: check the reference_date is specified in the manifest or if it is missing for this donor",
+              input_values=data_values)
+        return None
+    return _date_interval(data_values, reference, DATE_FORMAT)
+
+
 def int_to_date_interval_json(data_values):
     """Converts an integer date interval into JSON format.
 
@@ -155,7 +242,6 @@ def int_to_date_interval_json(data_values):
     Returns:
         A dictionary with a calculated month_interval and optionally a day_interval depending on the specified date_resolution in the donor file.
     """
-
     # Dates are by nature messy.  This function does not account for leap years and February's 28 days, but is close enough.
     if integer(data_values) is None:
         return
@@ -180,22 +266,6 @@ def int_to_date_interval_json(data_values):
         else: # Calculate 12 months per year and remaining months.
             date_interval["month_interval"] = sign * (12 * math.floor(sign * day_integer / 365) + math.floor((sign * day_integer % 365) / 30))
     return date_interval
-
-
-# Single date
-def single_date(data_values):
-    """Parses a single date to YYYY-MM format.
-
-    Args:
-        data_values: a value dict with a date
-
-    Returns:
-        a string of the format YYYY-MM, or None if blank/unparseable
-    """
-    val = single_val(data_values)
-    if val is not None:
-        return _parse_date(val)
-    return None
 
 
 def set_neg_99_blank_int(data_values):
@@ -564,27 +634,3 @@ def _is_null(cell):
 def _single_map(mapping, field):
     """Parse the contents for the specified field from the template."""
     return single_val({field: mapping[field]})
-
-
-# Convenience function to parse dates to ISO format
-def _parse_date(date_string):
-    """
-    Parses any date-like string into YYYY-MM format.
-
-    Args:
-        date_string: A string in various date formats
-
-    Returns:
-        A string in year, month ISO format: YYYY-MM
-
-    Raises:
-        MappingError if dateparser cannot recognise the date format.
-    """
-    if any(char in '0123456789' for char in date_string):
-        try:
-            d = DEFAULT_DATE_PARSER.get_date_data(date_string)
-            return d['date_obj'].strftime("%Y-%m")
-        except Exception as e:
-            raise MappingError(f"error in date({date_string}): {type(e)} {e}", field_level=2)
-    return date_string
-    

@@ -78,7 +78,18 @@ from clinical_etl import mappings
             "YMD",
             {"month_interval": 36},
         ),
-        # TODO: exception when date doesn't match date order
+        (
+            {"specimen_collection_date": {"Specimens": "2021/5"}},
+            {"offset": "2018-05-15", "period": "month"},
+            "YMD",
+            {"month_interval": 35},
+        ),
+        (
+            {"specimen_collection_date": {"Specimens": "5/2021"}},
+            {"offset": "2018-05-15", "period": "month"},
+            "MYD",
+            {"month_interval": 35},
+        ),
     ],
 )
 def test_date_interval(data_values, reference, date_format, expected):

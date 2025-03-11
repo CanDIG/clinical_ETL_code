@@ -42,12 +42,13 @@ class MappingError(Exception):
 def _validate_date_format(date_str, date_format):
     """Ensure parsed date format follows manifest format"""
     format_strs = {
-        "DMY": ["%d-%m-%y", "%d-%m-%Y", "%d/%m/%y", "%d/%m/%Y", 
-                "%m-%y", "%m-%Y", "%m/%y", "%m/%Y"],
+        "DMY": ["%d-%m-%y", "%d-%m-%Y", "%d/%m/%y", "%d/%m/%Y"],
         "MDY": ["%m-%d-%y", "%m-%d-%Y", "%m/%d/%y", "%m/%d/%Y"],
+        "YDM": ["%y-%d-%m", "%Y-%d-%m", "%y/%d/%m", "%Y/%d/%m"],
+        "MYD": ["%m-%y-%d", "%m-%Y-%d", "%m/%y/%d", "%m/%Y/%d", 
+                "%m-%y", "%m-%Y", "%m/%y", "%m/%Y"],
         "YMD": ["%y-%m-%d", "%Y-%m-%d", "%y/%m/%d", "%Y/%m/%d", 
                 "%y-%m", "%Y-%m", "%y/%m", "%Y/%m"],
-        "YDM": ["%y-%d-%m", "%Y-%d-%m", "%y/%d/%m", "%Y/%d/%m"],
     }
     format_success = False
     for d_f in format_strs[date_format]:
@@ -104,6 +105,7 @@ def earliest_date(data_values):
         dates_list = [x for x in dates_list if x is not None]
     if len(dates_list) > 0:
         for date in dates_list:
+            _validate_date_format(date, DATE_FORMAT)
             d = dateparser.parse(date, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT})
             if d < earliest:
                 earliest = d
@@ -115,12 +117,12 @@ def earliest_date(data_values):
         return None
 
 def _date_interval(data_values, reference, date_format):
-    """Calculates a date interval from a given date relative to the reference date specified in the manifest.
+    """Calculates a date interval from a given date.
 
     Args:
         data_values: a values dict with a date
-        reference: date reference specified in the manifest
-        date_format: date format specified in the manifest
+        reference: date reference to calculate interval
+        date_format: date format specified for parsing
 
     Returns:
         A dictionary with calculated month_interval and optionally a day_interval depending on the specified
@@ -161,7 +163,7 @@ def _date_interval(data_values, reference, date_format):
 
 
 def date_interval(data_values):
-    """Calculates a date interval from a given date relative to the reference date specified in the manifest.
+    """Calculates a date interval from a given date relative to the reference date and format specified in the manifest.
 
     Args:
         data_values: a values dict with a date
@@ -614,6 +616,7 @@ def _parse_date(date_string):
     """
     if any(char in '0123456789' for char in date_string):
         try:
+            _validate_date_format(date_string, DATE_FORMAT)
             d = dateparser.parse(date_string, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT})
             return d.strftime("%Y-%m")
         except Exception as e:

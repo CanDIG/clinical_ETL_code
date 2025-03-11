@@ -40,7 +40,15 @@ class MappingError(Exception):
 
 
 def _validate_date_format(date_str, date_format):
-    """Ensure parsed date format follows manifest format"""
+    """Ensure input date matches the date format in the manifest.
+    
+    Args:
+        date_str: A string with a date
+        date_format: A string with a dateparser date format ("DMY", "YMD", etc.)
+        
+    Raises:
+        MappingError if date_str doesn't match the date format.
+    """
     format_strs = {
         "DMY": ["%d-%m-%y", "%d-%m-%Y", "%d/%m/%y", "%d/%m/%Y"],
         "MDY": ["%m-%d-%y", "%m-%d-%Y", "%m/%d/%y", "%m/%d/%Y"],
@@ -62,6 +70,34 @@ def _validate_date_format(date_str, date_format):
         raise MappingError(f"Could not parse date '{date_str}', it doesn't follow the manifest format '{date_format}'", field_level=1)
 
 
+def _parse_date(date_string):
+    """
+    Parses any date-like string into YYYY-MM format.
+
+    Args:
+        date_string: A string in various date formats
+
+    Returns:
+        A string in year, month ISO format: YYYY-MM
+
+    Raises:
+        MappingError if dateparser cannot recognise the date format.
+    """
+    if any(char in "0123456789" for char in date_string):
+        try:
+            _validate_date_format(date_string, DATE_FORMAT)
+            d = dateparser.parse(
+                date_string,
+                settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT},
+            )
+            return d.strftime("%Y-%m")
+        except Exception as e:
+            raise MappingError(
+                f"error in date({date_string}): {type(e)} {e}", field_level=2
+            )
+    return date_string
+
+
 def date(data_values):
     """Format a list of dates to ISO standard YYYY-MM
 
@@ -80,6 +116,21 @@ def date(data_values):
     for date in raw_date:
         dates.append(_parse_date(date))
     return dates
+
+
+def single_date(data_values):
+    """Parses a single date to YYYY-MM format.
+
+    Args:
+        data_values: a value dict with a date
+
+    Returns:
+        a string of the format YYYY-MM, or None if blank/unparseable
+    """
+    val = single_val(data_values)
+    if val is not None:
+        return _parse_date(val)
+    return None
 
 
 def earliest_date(data_values):
@@ -215,22 +266,6 @@ def int_to_date_interval_json(data_values):
         else: # Calculate 12 months per year and remaining months.
             date_interval["month_interval"] = sign * (12 * math.floor(sign * day_integer / 365) + math.floor((sign * day_integer % 365) / 30))
     return date_interval
-
-
-# Single date
-def single_date(data_values):
-    """Parses a single date to YYYY-MM format.
-
-    Args:
-        data_values: a value dict with a date
-
-    Returns:
-        a string of the format YYYY-MM, or None if blank/unparseable
-    """
-    val = single_val(data_values)
-    if val is not None:
-        return _parse_date(val)
-    return None
 
 
 def set_neg_99_blank_int(data_values):
@@ -599,27 +634,3 @@ def _is_null(cell):
 def _single_map(mapping, field):
     """Parse the contents for the specified field from the template."""
     return single_val({field: mapping[field]})
-
-
-# Convenience function to parse dates to ISO format
-def _parse_date(date_string):
-    """
-    Parses any date-like string into YYYY-MM format.
-
-    Args:
-        date_string: A string in various date formats
-
-    Returns:
-        A string in year, month ISO format: YYYY-MM
-
-    Raises:
-        MappingError if dateparser cannot recognise the date format.
-    """
-    if any(char in '0123456789' for char in date_string):
-        try:
-            _validate_date_format(date_string, DATE_FORMAT)
-            d = dateparser.parse(date_string, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT})
-            return d.strftime("%Y-%m")
-        except Exception as e:
-            raise MappingError(f"error in date({date_string}): {type(e)} {e}", field_level=2)
-    return date_string

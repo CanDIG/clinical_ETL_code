@@ -3,10 +3,7 @@ import yaml
 import os
 import sys
 import json
-# Include src/clinical_etl directory in the module search path.
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(os.sep.join([parent_dir, "src"]))
+
 from clinical_etl import CSVConvert
 from clinical_etl import mappings
 from clinical_etl.mohschemav3 import MoHSchemaV3
@@ -95,8 +92,8 @@ def test_validation(packets, schema):
         "DONOR_5 > PD_5 > TR_5 > Radiation 0: radiation_therapy_dosage required for radiations",
         "DONOR_5 > PD_5 > TR_10: Treatment type Systemic therapy should have one or more systemic therapies submitted",
     ]
-    assert (sorted(schema.validation_warnings) == sorted(warnings))
     assert len(schema.validation_warnings) == 9
+    assert (sorted(schema.validation_warnings) == sorted(warnings))
 
     
     # temporary: remove 'month_interval' errors:
@@ -116,8 +113,8 @@ def test_validation(packets, schema):
         "DONOR_5: lost_to_followup_after_clinical_event_identifier cannot be present if is_deceased = Yes",
         "Duplicated IDs: in schema followups, FOLLOW_UP_4 occurs 2 times"
     ]
-    assert (sorted(schema.validation_errors) == sorted(errors))
     assert len(schema.validation_errors) == 11
+    assert (sorted(schema.validation_errors) == sorted(errors))
 
 
     # there should be an item named DUPLICATE_ID in both followup and sample_registration

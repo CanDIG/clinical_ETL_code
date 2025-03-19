@@ -301,7 +301,7 @@ def numeric_not_available(data_values):
         if float(val) == -99:
             return True
     else:
-        return False
+        return None
 
 
 def has_value(data_values):

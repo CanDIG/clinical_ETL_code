@@ -151,7 +151,6 @@ def earliest_date(data_values):
         dates_list = [dates]
     else:
         dates_list = dates
-    print(dates)
     # If there's a None value, ignore it
     if None in dates_list:
         dates_list = [x for x in dates_list if x is not None]

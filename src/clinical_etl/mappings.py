@@ -161,7 +161,7 @@ def earliest_date(data_values):
             d = dateparser.parse(date, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT})
             if d < earliest:
                 earliest = d
-        print(f"The calculated earliest date is: {earliest.strftime("%Y-%m-%d")}")
+        #print(f"The calculated earliest date is: {earliest.strftime("%Y-%m-%d")}")
         return {
             "offset": earliest.strftime("%Y-%m-%d"),
             "period": date_resolution
@@ -342,7 +342,6 @@ def single_val(data_values):
     if result is not None and result.lower() == 'nan':
         result = None
     return result
-
 
 def list_val(data_values):
     """

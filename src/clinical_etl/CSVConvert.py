@@ -228,6 +228,8 @@ def populate_data_for_params(params, rownum):
     Given a list of params, return a dictionary of the
     values for each parameter.
     """
+    print(params)
+    print(rownum)
     data_values = {}
     for param in params:
         param, sheet = parse_sheet_from_field(param)

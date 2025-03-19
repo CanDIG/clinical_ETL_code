@@ -273,26 +273,35 @@ def int_to_date_interval_json(data_values):
 def set_neg_99_blank_int(data_values):
     """Sets to blank if -99 used to indicate a value is not available or returns input value"""
     val = single_val(data_values)
-    if float(val) == -99:
-        return None
+    if val:
+        if float(val) == -99:
+            return None
+        else:
+            return int(val)
     else:
-        return int(val)
+        return None
 
 
 def set_neg_99_blank_float(data_values):
     """Sets to blank if -99 used to indicate a value is not available or returns input value"""
     val = single_val(data_values)
-    if float(val) == -99:
-        return None
+    if val:
+        if float(val) == -99:
+            return None
+        else:
+            return float(val)
     else:
-        return float(val)
+        return None
 
 
 def numeric_not_available(data_values):
     """Returns True if -99 used to indicate a value is not available"""
     val = single_val(data_values)
-    if float(val) == -99:
-        return True
+    if val:
+        if float(val) == -99:
+            return True
+    else:
+        return False
 
 
 def has_value(data_values):

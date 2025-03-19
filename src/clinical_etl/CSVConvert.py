@@ -279,6 +279,8 @@ def eval_mapping(node_name, rownum):
     modulename = "mappings"
 
     method, parameters = parse_mapping_function(node_name)
+    print(node_name)
+    print(rownum)
     data_values = populate_data_for_params(parameters, rownum)
     if data_values is None:
         return None

@@ -228,8 +228,6 @@ def populate_data_for_params(params, rownum):
     Given a list of params, return a dictionary of the
     values for each parameter.
     """
-    print(params)
-    print(rownum)
     data_values = {}
     try:
         for param in params:
@@ -267,8 +265,6 @@ def populate_data_for_params(params, rownum):
                     data_values[param][sheet] = []
     except TypeError as e:
         print(e)
-        print(params)
-        print(rownum)
 
     return data_values
 

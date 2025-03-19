@@ -151,6 +151,7 @@ def earliest_date(data_values):
         dates_list = [dates]
     else:
         dates_list = dates
+    print(dates)
     # If there's a None value, ignore it
     if None in dates_list:
         dates_list = [x for x in dates_list if x is not None]
@@ -160,6 +161,7 @@ def earliest_date(data_values):
             d = dateparser.parse(date, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT})
             if d < earliest:
                 earliest = d
+        print(f"The calculated earliest date is: {earliest.strftime("%Y-%m-%d")}")
         return {
             "offset": earliest.strftime("%Y-%m-%d"),
             "period": date_resolution

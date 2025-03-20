@@ -680,7 +680,7 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     check_for_sheet_inconsistencies(set([re.findall(r"\(([\w\" ]+)", x)[0].replace('"',"") for x in template_lines]),
                                     set(raw_csv_dfs.keys()))
 
-    print(f"{Bcolors.OKGREEN}indexing data{Bcolors.ENDC}")
+    print(f"{Bcolors.OKGREEN}Indexing data...{Bcolors.ENDC}")
     mappings.INDEXED_DATA = process_data(raw_csv_dfs, verbose)
     if index_output:
         with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
@@ -771,12 +771,13 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
         with open(f"{input_path}_validation_results.json", 'w') as f:
             json.dump(validation_results, f, indent=4)
         print(f"Warnings written to {input_path}_validation_results.json.")
-    # NOTE: cannot calculate any date intervals for this patient without date_of_diagnosis
     if len(validation_results["validation_warnings"]) > 0:
-        num_no_dod = len([i for i in validation_results['validation_warnings'] if 'NOTE:' in i])
+        num_no_dod = len([i for i in validation_results['validation_warnings'] if
+                          'NOTE: cannot calculate any date intervals' in i])
         if num_no_dod > 0:
-            print(f"\n{Bcolors.WARNING}WARNING: A total of {num_no_dod} donors do not have a date_of_diagnosis populated "
-                  f"so date intervals could not be calculated{Bcolors.ENDC}")
+            print(f"\n{Bcolors.WARNING}WARNING: A total of {num_no_dod} donors do not have a date_of_diagnosis populated"
+                  f" so date intervals could not be calculated. See {input_path}_validation_results.json for full "
+                  f"details.{Bcolors.ENDC}")
         if len(validation_results["validation_warnings"]) > 20:
             print(f"\n{Bcolors.WARNING}WARNING: There are {len(validation_results['validation_warnings'])} validation "
                   f"warnings in your data. It can be ingested but will not be considered complete until the warnings in "

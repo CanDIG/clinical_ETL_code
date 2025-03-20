@@ -228,8 +228,8 @@ def date_interval(data_values):
     try:
         reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
     except KeyError:
-        _warn(message="No reference date found to calculate date_interval: check the reference_date is specified in the manifest or if it is missing for this donor",
-              input_values=data_values)
+        #_warn(message="No reference date found to calculate date_interval: check the reference_date is specified in the manifest or if it is missing for this donor",
+        #      input_values=data_values)
         return None
     return _date_interval(data_values, reference, DATE_FORMAT)
 

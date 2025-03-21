@@ -160,6 +160,7 @@ def earliest_date(data_values):
             d = dateparser.parse(date, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT})
             if d < earliest:
                 earliest = d
+        #print(f"The calculated earliest date is: {earliest.strftime("%Y-%m-%d")}")
         return {
             "offset": earliest.strftime("%Y-%m-%d"),
             "period": date_resolution
@@ -227,8 +228,8 @@ def date_interval(data_values):
     try:
         reference = INDEXED_DATA["data"]["CALCULATED"][IDENTIFIER]["REFERENCE_DATE"][0]
     except KeyError:
-        _warn(message="No reference date found to calculate date_interval: check the reference_date is specified in the manifest or if it is missing for this donor",
-              input_values=data_values)
+        #_warn(message="No reference date found to calculate date_interval: check the reference_date is specified in the manifest or if it is missing for this donor",
+        #      input_values=data_values)
         return None
     return _date_interval(data_values, reference, DATE_FORMAT)
 
@@ -271,26 +272,35 @@ def int_to_date_interval_json(data_values):
 def set_neg_99_blank_int(data_values):
     """Sets to blank if -99 used to indicate a value is not available or returns input value"""
     val = single_val(data_values)
-    if float(val) == -99:
+    try:
+        if float(val) == -99:
+            return None
+        else:
+            return int(val)
+    except TypeError:
         return None
-    else:
-        return int(val)
 
 
 def set_neg_99_blank_float(data_values):
     """Sets to blank if -99 used to indicate a value is not available or returns input value"""
     val = single_val(data_values)
-    if float(val) == -99:
-        return None
+    if val:
+        if float(val) == -99:
+            return None
+        else:
+            return float(val)
     else:
-        return float(val)
+        return None
 
 
 def numeric_not_available(data_values):
     """Returns True if -99 used to indicate a value is not available"""
     val = single_val(data_values)
-    if float(val) == -99:
-        return True
+    if val:
+        if float(val) == -99:
+            return True
+    else:
+        return None
 
 
 def has_value(data_values):
@@ -331,7 +341,6 @@ def single_val(data_values):
     if result is not None and result.lower() == 'nan':
         result = None
     return result
-
 
 def list_val(data_values):
     """

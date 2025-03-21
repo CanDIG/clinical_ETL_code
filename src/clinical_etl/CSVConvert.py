@@ -772,12 +772,11 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
             json.dump(validation_results, f, indent=4)
         print(f"Warnings written to {input_path}_validation_results.json.")
     if len(validation_results["validation_warnings"]) > 0:
-        num_no_dod = len([i for i in validation_results['validation_warnings'] if
+        num_no_ref = len([i for i in validation_results['validation_warnings'] if
                           'NOTE: cannot calculate any date intervals' in i])
-        if num_no_dod > 0:
-            print(f"\n{Bcolors.WARNING}WARNING: A total of {num_no_dod} donors do not have a date_of_diagnosis populated"
-                  f" so date intervals could not be calculated. See {input_path}_validation_results.json for full "
-                  f"details.{Bcolors.ENDC}")
+        if num_no_ref > 0:
+            print(f"\n{Bcolors.WARNING}WARNING: Date intervals for {num_no_ref} donors could not be calculated. See "
+                  f"{input_path}_validation_results.json for full details.{Bcolors.ENDC}")
         if len(validation_results["validation_warnings"]) > 20:
             print(f"\n{Bcolors.WARNING}WARNING: There are {len(validation_results['validation_warnings'])} validation "
                   f"warnings in your data. It can be ingested but will not be considered complete until the warnings in "

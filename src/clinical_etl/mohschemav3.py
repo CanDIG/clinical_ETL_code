@@ -180,7 +180,7 @@ class MoHSchemaV3(BaseSchema):
                 case "lost_to_followup_reason":
                     if map_json["lost_to_followup_reason"] is not None:
                         if "lost_to_followup_after_clinical_event_identifier" not in map_json:
-                            self.fail(
+                            self.warn(
                                 "lost_to_followup_reason should only be submitted if lost_to_followup_after_clinical_event_identifier is submitted")
                 case "date_alive_after_lost_to_followup":
                     if map_json["date_alive_after_lost_to_followup"] is not None:

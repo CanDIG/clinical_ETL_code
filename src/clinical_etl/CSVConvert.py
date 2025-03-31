@@ -582,14 +582,35 @@ def load_manifest(manifest_file):
     except FileNotFoundError as e:
         print(e)
         sys.exit(f"Manifest file not found at provided path: {manifest_file}")
-
-    if "identifier" in manifest:
+    try:
         result["identifier"] = manifest["identifier"]
+        if manifest["identifier"] is None:
+            raise TypeError
+    except KeyError as e:
+        sys.exit("Need to specify what the main identifier column name is as 'identifier' in the manifest file, "
+                 "see README for more details.")
+    except TypeError as e:
+        sys.exit("'identifier' in the manifest file cannot be blank, see README for more details.")
+
     if "schema" not in manifest:
         sys.exit("Need to specify an OpenAPI schema as 'schema' in the manifest file, "
                  "see README for more details.")
+
     if "schema_class" in manifest:
         schema_class = manifest["schema_class"]
+
+    if schema_class.startswith("MoH"):
+        try:
+            result["date_format"] = manifest['date_format']
+            if result["date_format"] is None:
+                raise TypeError
+            if sorted(manifest["date_format"]) != sorted("DMY"):
+                raise TypeError
+        except KeyError as e:
+            sys.exit("'date_format' must be specified in the manifest file, see README for more details.")
+        except TypeError as e:
+            sys.exit("Need to specify a valid value for the date format in the manifest file, "
+                     "see README for more details.")
 
     # programatically load schema class based on manifest value:
     # schema class definition will be in a file named schema_class.lower()
@@ -610,9 +631,6 @@ def load_manifest(manifest_file):
 
     if "reference_date" in manifest:
         result["reference_date"] = manifest["reference_date"]
-
-    if "date_format" in manifest:
-        result["date_format"] = manifest["date_format"]
 
     if "functions" in manifest:
         for mod in manifest["functions"]:
@@ -639,27 +657,9 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     # read manifest data
     print(f"{Bcolors.OKGREEN}Starting conversion...{Bcolors.ENDC}", end="")
     manifest = load_manifest(manifest_file)
-    try:
-        mappings.IDENTIFIER_FIELD = manifest["identifier"]
-        if manifest["identifier"] is None:
-            raise TypeError
-    except KeyError as e:
-        sys.exit("Need to specify what the main identifier column name is as 'identifier' in the manifest file, "
-                 "see README for more details.")
-    except TypeError as e:
-        sys.exit("'identifier' in the manifest file cannot be blank, see README for more details.")
-    try:
+    mappings.IDENTIFIER_FIELD = manifest["identifier"]
+    if 'date_format' in manifest:
         mappings.DATE_FORMAT = manifest["date_format"]
-        if manifest["date_format"] is None:
-            raise TypeError
-        if sorted(manifest["date_format"]) != sorted("DMY"):
-            raise TypeError
-    except KeyError as e:
-        sys.exit("'date_format' must be specified in the manifest file, see README for more details.")
-    except TypeError as e:
-        sys.exit("Need to specify a valid value for the date format in the manifest file, "
-                 "see README for more details.")
-
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold
     print(f"{Bcolors.OKGREEN}loading schema...{Bcolors.ENDC}", end="")

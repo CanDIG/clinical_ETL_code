@@ -10,6 +10,7 @@ Some caveats:
     - If 'month' is `Unk`, returns a None value 
   - Censors dates if they don't make sense (see method `remove_problem_dates`)
     - uses an output file from validation during CSVConvert remove some dates if they don't make sense. The method here may not suit everyone's preferred logic for dealing with dates that don't make sense
+    - This is optional, will not be run if you don't include the `--error-dates` arg
   - Performs censoring of drug names (see `censor_drug_names` method)
     - Replaces any drug names in `systemic_therapy.drug_name` with `Investigational agent` if it does not appear in the `drug_allow_list`
   - Assumes that all specific treatment types linked to a treatment are nested as numbered columns within the treatment table (see lines 239-521 and `melt_dataframe` method)

@@ -1,0 +1,9 @@
+description: Test mapping of redcap v2 export to model3 candig
+mapping: redcap2mohv3.csv
+identifier: submitter_donor_id
+schema: https://raw.githubusercontent.com/CanDIG/katsu/stable/chord_metadata_service/mohpackets/docs/schemas/schema.yml
+schema_class: MoHSchemaV3
+reference_date: earliest_date(singleton.date_resolution, singleton.date_of_diagnosis)
+date_format: YMD
+functions:
+    - redcap

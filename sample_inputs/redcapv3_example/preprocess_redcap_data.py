@@ -23,7 +23,7 @@ pd.options.mode.chained_assignment = None
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, required=True, help="Path to raw csv output from Redcap")
-    parser.add_argument('--labels', type=str, required=True, help="Path to labels csv output from Redcap")
+    parser.add_argument('--labels', type=str, required=False, help="Path to labels csv output from Redcap if present")
     parser.add_argument('--verbose', '--v', action="store_true", help="Print extra information")
     parser.add_argument('--output', type=str, default="tmp_out",
                         help="Optional name of output directory in same directory as input; default tmp_out")
@@ -547,7 +547,10 @@ def main(args):
     input_path = args.input
     output_dir = args.output
     output_dir = make_output_dir(input_path, output_dir)
-    redcap_csv = read_csv(args.input, args.labels)
+    if args.labels:
+        redcap_csv = read_csv(args.input, args.labels)
+    else:
+        redcap_csv = pd.read_csv(args.input)
     new_dfs = extract_repeat_instruments(redcap_csv)
     if args.error_dates:
         new_dfs = remove_problem_dates(new_dfs, args.error_dates)

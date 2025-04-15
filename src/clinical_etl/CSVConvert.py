@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument('--verbose', '--v', action="store_true", help="Print extra information, useful for debugging and understanding how the code runs.")
     parser.add_argument('--index', '--i', action="store_true", help="Output 'indexed' file, useful for debugging and seeing relationships.")
     parser.add_argument('--minify', action="store_true", help="Remove white space and line breaks from json outputs to reduce file size. Less readable for humans.")
+    parser.add_argument('--filter', type=str, required=False, help="Restrict to include only this program_id")
     args = parser.parse_args()
     return args
 
@@ -298,7 +299,7 @@ def eval_mapping(node_name, rownum):
     return None
 
 
-def ingest_raw_data(input_path):
+def ingest_raw_data(input_path, filter):
     """Ingest the csvs or xlsx and create dataframes for processing."""
     raw_csv_dfs = {}
     output_file = "mCodePacket"
@@ -309,7 +310,12 @@ def ingest_raw_data(input_path):
             output_file = file_match.group(1)
             df = pandas.read_excel(input_path, sheet_name=None, dtype=str)
             for page in df:
-                raw_csv_dfs[page] = df[page]  # append all processed mcode dataframes to a list
+                if filter: # filter by program_id
+                    unfiltered_df = df[page]
+                    filtered_df = unfiltered_df[unfiltered_df["program_id"] == filter]
+                    raw_csv_dfs[page] = filtered_df
+                else:
+                    raw_csv_dfs[page] = df[page]  # append all processed mcode dataframes to a list
     elif os.path.isdir(input_path):
         output_file = os.path.normpath(input_path)
         files = os.listdir(input_path)
@@ -317,6 +323,8 @@ def ingest_raw_data(input_path):
             file_match = re.match(r"(.+)\.csv$", file)
             if file_match is not None:
                 df = pandas.read_csv(os.path.join(input_path, file), dtype=str)
+                if filter: # filter by program_id
+                    df = df[df["program_id"] == filter]
                 raw_csv_dfs[file_match.group(1)] = df
     return raw_csv_dfs, output_file
 
@@ -634,7 +642,7 @@ def load_manifest(manifest_file):
     return result
 
 
-def csv_convert(input_path, manifest_file, minify=False, index_output=False, verbose=False):
+def csv_convert(input_path, manifest_file, filter="", minify=False, index_output=False, verbose=False):
     mappings.VERBOSE = verbose
     # read manifest data
     print(f"{Bcolors.OKGREEN}Starting conversion...{Bcolors.ENDC}", end="")
@@ -674,7 +682,7 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
 
     # read the raw data
     print(f"{Bcolors.OKGREEN}reading raw data...{Bcolors.ENDC}", end="")
-    raw_csv_dfs, mappings.OUTPUT_FILE = ingest_raw_data(input_path)
+    raw_csv_dfs, mappings.OUTPUT_FILE = ingest_raw_data(input_path, filter)
     if not raw_csv_dfs:
         sys.exit(f"No ingestable files (csv or xlsx) were found at {input_path}. Check path and try again.")
     check_for_sheet_inconsistencies(set([re.findall(r"\(([\w\" ]+)", x)[0].replace('"',"") for x in template_lines]),
@@ -804,7 +812,7 @@ def main():
     args = parse_args()
     input_path = args.input
     manifest_file = args.manifest
-    packets, errors = csv_convert(input_path, manifest_file, minify=args.minify, index_output=args.index,
+    packets, errors = csv_convert(input_path, manifest_file, filter=args.filter, minify=args.minify, index_output=args.index,
                                   verbose=args.verbose)
     print(f"{Bcolors.OKGREEN}\nConverted file written to {mappings.OUTPUT_FILE}_map.json{Bcolors.ENDC}")
     if errors:

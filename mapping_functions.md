@@ -77,7 +77,7 @@ In the mapping csv, the in-built `date_interval()mapping function can be used to
 DONOR.INDEX.date_of_birth, {date_interval(Donor.date_of_birth)}
 ```
 
-To avoid issues with ambiguous dates, ensure all the dates in your input data are in the same format, then specify that `date_format` in the manifest file so the day, month, and year are parsed correctly. The format can be any combination of the characters `DMY`to specify the order (e.g. `DMY`, `MDY`, `YMD`, etc). If your dates don't include days, use `MYD` for month-year or `YMD` for year-month, and make sure to specify `month` in `Donor.date_resolution`. The mapping will fail unless all dates match the `date_format` in the manifest. Dates can be separated with `-` or `/` and must be in a numbered format.
+To avoid issues with ambiguous dates, ensure all the dates in your input data are in the same format, then specify that `date_format` in the manifest file so the day, month, and year are parsed correctly. The format can be any combination of the characters `DMY`to specify the order (e.g. `DMY`, `MDY`, `YMD`, etc). If your dates don't include days, use `MYD` for month-year or `YMD` for year-month, and make sure to specify `month` in `Donor.date_resolution`. For year-only dates, use `YMD` and use the full year. The mapping will fail unless all dates match the `date_format` in the manifest. Dates can be separated with `-` or `/` and must be in a numbered format.
 
 
 Examples:
@@ -85,8 +85,10 @@ Format | Valid | Invalid |
 | ----- | ----- | ----- |
 | DMY | 5-1-2005 | 5-Jan-2005 |
 | MDY | 01-05-05 | January-5-05 |
-| YMD | 2005/01/05 | 2005/Jan/05 |
 | MYD | 01-2005 | Jan-2005 |
+| YMD | 2005/01/05 | 2005/Jan/05 |
+| YMD | 2005/01 | 2005/Jan |
+| YMD | 2005 | 05 |
 
 If input data has pre-calculated date intervals as integers, the `int_to_date_interval_json()` function can be used to transform the integer into the required DateInterval json object. e.g.:
 

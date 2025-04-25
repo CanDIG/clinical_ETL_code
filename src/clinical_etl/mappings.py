@@ -56,7 +56,7 @@ def _validate_date_format(date_str, date_format):
         "MYD": ["%m-%y-%d", "%m-%Y-%d", "%m/%y/%d", "%m/%Y/%d", 
                 "%m-%y", "%m-%Y", "%m/%y", "%m/%Y"],
         "YMD": ["%y-%m-%d", "%Y-%m-%d", "%y/%m/%d", "%Y/%m/%d", 
-                "%y-%m", "%Y-%m", "%y/%m", "%Y/%m"],
+                "%y-%m", "%Y-%m", "%y/%m", "%Y/%m", "%Y"],
     }
     format_success = False
     for d_f in format_strs[date_format]:

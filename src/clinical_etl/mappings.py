@@ -50,11 +50,11 @@ def _validate_date_format(date_str, date_format):
         MappingError if date_str doesn't match the date format.
     """
     format_strs = {
-        "DMY": ["%d-%m-%y", "%d-%m-%Y", "%d/%m/%y", "%d/%m/%Y"],
-        "MDY": ["%m-%d-%y", "%m-%d-%Y", "%m/%d/%y", "%m/%d/%Y"],
-        "YDM": ["%y-%d-%m", "%Y-%d-%m", "%y/%d/%m", "%Y/%d/%m"],
+        "DMY": ["%d-%m-%y", "%d-%m-%Y", "%d/%m/%y", "%d/%m/%Y", "%Y"],
+        "MDY": ["%m-%d-%y", "%m-%d-%Y", "%m/%d/%y", "%m/%d/%Y", "%Y"],
+        "YDM": ["%y-%d-%m", "%Y-%d-%m", "%y/%d/%m", "%Y/%d/%m", "%Y"],
         "MYD": ["%m-%y-%d", "%m-%Y-%d", "%m/%y/%d", "%m/%Y/%d", 
-                "%m-%y", "%m-%Y", "%m/%y", "%m/%Y"],
+                "%m-%y", "%m-%Y", "%m/%y", "%m/%Y", "%Y"],
         "YMD": ["%y-%m-%d", "%Y-%m-%d", "%y/%m/%d", "%Y/%m/%d", 
                 "%y-%m", "%Y-%m", "%y/%m", "%Y/%m", "%Y"],
     }

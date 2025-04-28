@@ -77,7 +77,7 @@ In the mapping csv, the in-built `date_interval()mapping function can be used to
 DONOR.INDEX.date_of_birth, {date_interval(Donor.date_of_birth)}
 ```
 
-To avoid issues with ambiguous dates, ensure all the dates in your input data are in the same format, then specify that `date_format` in the manifest file so the day, month, and year are parsed correctly. The format can be any combination of the characters `DMY`to specify the order (e.g. `DMY`, `MDY`, `YMD`, etc). If your dates don't include days, use `MYD` for month-year or `YMD` for year-month, and make sure to specify `month` in `Donor.date_resolution`. For year-only dates, use `YMD` and use the full year. The mapping will fail unless all dates match the `date_format` in the manifest. Dates can be separated with `-` or `/` and must be in a numbered format.
+To avoid issues with ambiguous dates, ensure all the dates in your input data are in the same format, then specify that `date_format` in the manifest file so the day, month, and year are parsed correctly. The format can be any combination of the characters `DMY`to specify the order (e.g. `DMY`, `MDY`, `YMD`, etc). If your dates don't include days, use `MYD` for month-year or `YMD` for year-month, and make sure to specify `month` in `Donor.date_resolution`. For year-only dates, specify the full 4 digit number. The mapping will fail unless all dates match the `date_format` in the manifest. Dates can be separated with `-` or `/` and must be in a numbered format.
 
 
 Examples:

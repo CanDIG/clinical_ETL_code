@@ -90,6 +90,12 @@ from clinical_etl.mappings import _date_interval, MappingError
             "MYD",
             {"month_interval": 35},
         ),
+        (
+            {"specimen_collection_date": {"Specimens": "2021"}},
+            {"offset": "2018-05-15", "period": "month"},
+            "MYD",
+            {"month_interval": 34},
+        ),
     ],
 )
 def test_valid_date_intervals(data_values, reference, date_format, expected):
@@ -135,8 +141,14 @@ def test_valid_date_intervals(data_values, reference, date_format, expected):
             "MYD",
             pytest.raises(MappingError),
         ),
+        (
+            {"specimen_collection_date": {"Specimens": "21"}},
+            {"offset": "2018-05-15", "period": "month"},
+            "MYD",
+            pytest.raises(MappingError),
+        ),
     ],
 )
 def test_invalid_date_intervals(data_values, reference, date_format, expected):
-    with expected as e: 
+    with expected as e:
         assert _date_interval(data_values, reference, date_format) == e

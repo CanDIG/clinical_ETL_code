@@ -88,7 +88,11 @@ def _parse_date(date_string):
             _validate_date_format(date_string, DATE_FORMAT)
             d = dateparser.parse(
                 date_string,
-                settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT},
+                settings={
+                    "PREFER_DAY_OF_MONTH": "first", 
+                    "PREFER_MONTH_OF_YEAR": "first",
+                    "DATE_ORDER": DATE_FORMAT
+                },
             )
             return d.strftime("%Y-%m")
         except Exception as e:
@@ -157,7 +161,14 @@ def earliest_date(data_values):
     if len(dates_list) > 0:
         for date in dates_list:
             _validate_date_format(date, DATE_FORMAT)
-            d = dateparser.parse(date, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": DATE_FORMAT})
+            d = dateparser.parse(
+                date, 
+                settings={
+                    "PREFER_DAY_OF_MONTH": "first",
+                    "PREFER_MONTH_OF_YEAR": "first",
+                    "DATE_ORDER": DATE_FORMAT
+                    }
+            )
             if d < earliest:
                 earliest = d
         #print(f"The calculated earliest date is: {earliest.strftime("%Y-%m-%d")}")
@@ -185,7 +196,14 @@ def _date_interval(data_values, reference, date_format):
     if endpoint is None:
         return None
     offset = datetime.datetime.strptime(reference["offset"], "%Y-%m-%d")
-    date = dateparser.parse(endpoint, settings={"PREFER_DAY_OF_MONTH": "first", "DATE_ORDER": date_format})
+    date = dateparser.parse(
+        endpoint, 
+        settings={
+            "PREFER_DAY_OF_MONTH": "first",
+            "PREFER_MONTH_OF_YEAR": "first",
+            "DATE_ORDER": date_format,
+        }
+    )
     _validate_date_format(endpoint, date_format)
 
     is_neg = False

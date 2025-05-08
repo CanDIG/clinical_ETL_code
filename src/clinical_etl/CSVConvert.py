@@ -649,7 +649,7 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
                  "see README for more details.")
     except TypeError as e:
         sys.exit("'identifier' in the manifest file cannot be blank, see README for more details.")
-    if manifest["schema_class_name"].starts_with("MoHSchema"):
+    if manifest["schema_class_name"].startswith("MoHSchema"):
         try:
             mappings.DATE_FORMAT = manifest["date_format"]
 

@@ -12,6 +12,7 @@ import sys
 import argparse
 from mohschemav2 import MoHSchemaV2
 from mohschemav3 import MoHSchemaV3
+from sequencingingestschema import SequencingIngestSchema
 import re
 
 

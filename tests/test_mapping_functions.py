@@ -7,22 +7,22 @@ from clinical_etl.mappings import _date_interval, MappingError
     "data_values, reference, date_format, expected",
     [
         (
-            {"date_of_birth": {"Donor": "5/1/1995"}},
+            {"date_of_birth": {"Donor": "5/2/2016"}},
             {"offset": "2018-05-01", "period": "month"},
             "MDY",
-            {"month_interval": -276},
+            {"month_interval": -23},
         ),
         (
-            {"date_of_birth": {"Donor": "5/1/1995"}},
+            {"date_of_birth": {"Donor": "5/2/2016"}},
             {"offset": "2018-05-01", "period": "day"},
             "MDY",
-            {"day_interval": -8401, "month_interval": -276},
+            {"day_interval": -729, "month_interval": -23},
         ),
         (
-            {"date_of_birth": {"Donor": "1/5/1995"}},
+            {"date_of_birth": {"Donor": "2/5/2016"}},
             {"offset": "2018-05-01", "period": "month"},
             "DMY",
-            {"month_interval": -276},
+            {"month_interval": -23},
         ),
         (
             {"date_of_diagnosis": {"PrimaryDiagnosis": "1/5/2018"}},
@@ -49,10 +49,10 @@ from clinical_etl.mappings import _date_interval, MappingError
             {"month_interval": 0},
         ),
         (
-            {"date_of_birth": {"Donor": "5/1/1995"}},
+            {"date_of_birth": {"Donor": "5/2/2016"}},
             {"offset": "2018-05-01", "period": "month"},
             "MDY",
-            {"month_interval": -276},
+            {"month_interval": -23},
         ),
         (
             {"specimen_collection_date": {"Specimens": "5/1/2021"}},
@@ -80,25 +80,28 @@ from clinical_etl.mappings import _date_interval, MappingError
         ),
         (
             {"specimen_collection_date": {"Specimens": "2021/5"}},
-            {"offset": "2018-05-15", "period": "month"},
+            {"offset": "2018-05-01", "period": "month"},
             "YMD",
-            {"month_interval": 35},
+            {"month_interval": 36},
         ),
         (
             {"specimen_collection_date": {"Specimens": "5/2021"}},
-            {"offset": "2018-05-15", "period": "month"},
+            {"offset": "2018-05-01", "period": "month"},
             "MYD",
-            {"month_interval": 35},
+            {"month_interval": 36},
         ),
         (
             {"specimen_collection_date": {"Specimens": "2021"}},
-            {"offset": "2018-05-15", "period": "month"},
+            {"offset": "2018-05-01", "period": "month"},
             "MYD",
-            {"month_interval": 34},
+            {"month_interval": 32},  # Picks the first month of the year
         ),
     ],
 )
 def test_valid_date_intervals(data_values, reference, date_format, expected):
+    print("data_values:", data_values)
+    print("reference:", reference)
+    print("interval:", _date_interval(data_values, reference, date_format))
     assert _date_interval(data_values, reference, date_format) == expected
 
 

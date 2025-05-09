@@ -1,0 +1,35 @@
+## Schema generated from https://raw.githubusercontent.com/CanDIG/candigv2-ingest/refs/heads/develop/ingest_openapi.yaml
+## Items are comma separated: element, mapping method
+EXPERIMENT.INDEX, {indexed_on(EXPERIMENT_SHEET.experiment_id)}
+EXPERIMENT.INDEX.experiments.INDEX, {indexed_on(EXPERIMENTS_SHEET.experiment_id)}
+EXPERIMENT.INDEX.experiments.INDEX.program_id, {single_val(EXPERIMENTS_SHEET.program_id)}
+EXPERIMENT.INDEX.experiments.INDEX.experiment_id, {single_val(EXPERIMENTS_SHEET.experiment_id)}
+EXPERIMENT.INDEX.experiments.INDEX.submitter_sample_id, {single_val(EXPERIMENTS_SHEET.submitter_sample_id)}
+EXPERIMENT.INDEX.experiments.INDEX.metadata, {single_val(EXPERIMENTS_SHEET.metadata)}
+EXPERIMENT.INDEX.experiments.INDEX.metadata.library_description, {single_val(EXPERIMENTS_SHEET.library_description)}
+EXPERIMENT.INDEX.experiments.INDEX.metadata.instrument, {single_val(EXPERIMENTS_SHEET.instrument)}
+EXPERIMENT.INDEX.experiments.INDEX.metadata.library_selection, {single_val(EXPERIMENTS_SHEET.library_selection)}
+EXPERIMENT.INDEX.experiments.INDEX.metadata.protocol, {single_val(EXPERIMENTS_SHEET.protocol)}
+EXPERIMENT.INDEX.experiments.INDEX.metadata.library_source, {single_val(EXPERIMENTS_SHEET.library_source)}
+EXPERIMENT.INDEX.experiments.INDEX.metadata.library_strategy, {single_val(EXPERIMENTS_SHEET.library_strategy)}
+EXPERIMENT.INDEX.experiments.INDEX.metadata.library_layout, {single_val(EXPERIMENTS_SHEET.library_layout)}
+EXPERIMENT.INDEX.analyses.INDEX, {indexed_on(ANALYSES_SHEET.experiment_id)}
+EXPERIMENT.INDEX.analyses.INDEX.program_id, {single_val(ANALYSES_SHEET.program_id)}
+EXPERIMENT.INDEX.analyses.INDEX.analysis_id, {single_val(ANALYSES_SHEET.analysis_id)}
+EXPERIMENT.INDEX.analyses.INDEX.metadata, {single_val(ANALYSES_SHEET.metadata)}
+EXPERIMENT.INDEX.analyses.INDEX.metadata.analysis_type, {single_val(ANALYSES_SHEET.analysis_type)}
+EXPERIMENT.INDEX.analyses.INDEX.metadata.analysis_attribute, {single_val(ANALYSES_SHEET.analysis_attribute)}
+EXPERIMENT.INDEX.analyses.INDEX.metadata.analysis_attribute.subtype, {single_val(ANALYSES_SHEET.subtype)}
+EXPERIMENT.INDEX.analyses.INDEX.metadata.reference, {single_val(ANALYSES_SHEET.reference)}
+EXPERIMENT.INDEX.analyses.INDEX.metadata.reference_sequence_type, {single_val(ANALYSES_SHEET.reference_sequence_type)}
+EXPERIMENT.INDEX.analyses.INDEX.metadata.reference_assembly_id, {single_val(ANALYSES_SHEET.reference_assembly_id)}
+EXPERIMENT.INDEX.analyses.INDEX.metadata.analysis_centre, {single_val(ANALYSES_SHEET.analysis_centre)}
+EXPERIMENT.INDEX.analyses.INDEX.main, {single_val(ANALYSES_SHEET.main)}
+EXPERIMENT.INDEX.analyses.INDEX.main.name, {single_val(ANALYSES_SHEET.name)}
+EXPERIMENT.INDEX.analyses.INDEX.main.access_method, {single_val(ANALYSES_SHEET.access_method)}
+EXPERIMENT.INDEX.analyses.INDEX.index, {single_val(ANALYSES_SHEET.index)}
+EXPERIMENT.INDEX.analyses.INDEX.index.name, {single_val(ANALYSES_SHEET.name)}
+EXPERIMENT.INDEX.analyses.INDEX.index.access_method, {single_val(ANALYSES_SHEET.access_method)}
+EXPERIMENT.INDEX.analyses.INDEX.samples.INDEX, {indexed_on(SAMPLES_SHEET.analysis_id)}
+EXPERIMENT.INDEX.analyses.INDEX.samples.INDEX.experiment_id, {single_val(SAMPLES_SHEET.experiment_id)}
+EXPERIMENT.INDEX.analyses.INDEX.samples.INDEX.analysis_sample_id, {single_val(SAMPLES_SHEET.analysis_sample_id)}

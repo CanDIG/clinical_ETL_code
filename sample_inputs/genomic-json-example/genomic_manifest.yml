@@ -1,0 +1,8 @@
+description: Test mapping from oicr test file to genomic json ingest file
+mapping: genomic-mapping-template.csv
+identifier: genomic_file_id
+schema: https://raw.githubusercontent.com/CanDIG/candigv2-ingest/refs/heads/stable/ingest_openapi.yaml
+schema_class: GenomicSchema
+date_format: DMY
+functions:
+  - genomic_mapping

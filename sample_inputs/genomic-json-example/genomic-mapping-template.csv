@@ -1,0 +1,15 @@
+## Schema generated from https://raw.githubusercontent.com/CanDIG/candigv2-ingest/develop/ingest_openapi.yaml,
+## Items are comma separated: element, mapping method
+GENOMIC_ID.INDEX, {indexed_on(main.genomic_file_id)}
+GENOMIC_ID.INDEX.program_id, {single_val(main.PROGRAM_ID)}
+GENOMIC_ID.INDEX.genomic_file_id, {single_val(main.genomic_file_id)}
+GENOMIC_ID.INDEX.metadata.sequence_type, {single_val(main.sequence_type)}
+GENOMIC_ID.INDEX.metadata.data_type, {single_val(main.data_type)}
+GENOMIC_ID.INDEX.metadata.reference, {single_val(main.reference)}
+GENOMIC_ID.INDEX.main.name, {single_val(main.main_name)}
+GENOMIC_ID.INDEX.main.access_method, {genomic_mapping.convert_s3_url(main.ECS_Path)}
+GENOMIC_ID.INDEX.index.name, {single_val(index.index_name)}
+GENOMIC_ID.INDEX.index.access_method, {genomic_mapping.convert_s3_url(index.index_path)}
+GENOMIC_ID.INDEX.samples.INDEX, {indexed_on(samples.PATIENT_ID)}
+GENOMIC_ID.INDEX.samples.INDEX.submitter_sample_id, {single_val(samples.sample_submitter_id)}
+GENOMIC_ID.INDEX.samples.INDEX.genomic_file_sample_id, {single_val(samples.genomic_file_sample_id)}

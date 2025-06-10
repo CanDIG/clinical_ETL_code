@@ -281,6 +281,8 @@ class MoHSchemaV3(BaseSchema):
                     for x in map_json["biomarkers"]:
                         if "test_date" not in x or x["test_date"] is None:
                             self.warn("test_date is required for biomarkers not associated with nested events")
+        if "primary_diagnoses" not in map_json:
+            self.warn("A primary_diagnosis is required for donors")
 
     def validate_primary_diagnoses(self, map_json):
         if map_json["date_of_diagnosis"] is None:

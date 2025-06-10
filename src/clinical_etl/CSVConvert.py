@@ -589,6 +589,7 @@ def load_manifest(manifest_file):
         sys.exit("Need to specify an OpenAPI schema as 'schema' in the manifest file, "
                  "see README for more details.")
     if "schema_class" in manifest:
+        result["schema_class_name"]= manifest["schema_class"]
         schema_class = manifest["schema_class"]
 
     # programatically load schema class based on manifest value:
@@ -648,17 +649,19 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
                  "see README for more details.")
     except TypeError as e:
         sys.exit("'identifier' in the manifest file cannot be blank, see README for more details.")
-    try:
-        mappings.DATE_FORMAT = manifest["date_format"]
-        if manifest["date_format"] is None:
-            raise TypeError
-        if sorted(manifest["date_format"]) != sorted("DMY"):
-            raise TypeError
-    except KeyError as e:
-        sys.exit("'date_format' must be specified in the manifest file, see README for more details.")
-    except TypeError as e:
-        sys.exit("Need to specify a valid value for the date format in the manifest file, "
-                 "see README for more details.")
+    if manifest["schema_class_name"].startswith("MoHSchema"):
+        try:
+            mappings.DATE_FORMAT = manifest["date_format"]
+
+            if manifest["date_format"] is None:
+                raise TypeError
+            if sorted(manifest["date_format"]) != sorted("DMY"):
+                raise TypeError
+        except KeyError as e:
+            sys.exit("'date_format' must be specified in the manifest file for MoHSchema, see README for more details.")
+        except TypeError as e:
+            sys.exit("Need to specify a valid value for the date format in the manifest file, "
+                     "see README for more details.")
 
     # read the schema (from the url specified in the manifest) and generate
     # a scaffold

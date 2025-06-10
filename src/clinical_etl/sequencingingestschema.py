@@ -6,10 +6,10 @@ from schema import BaseSchema, ValidationError
 A class for the representation of a SequencingIngest object for candigv2-ingest.
 """
 
+
 class SequencingIngestSchema(BaseSchema):
     schema_name = "SequencingIngest"
     base_name = "EXPERIMENT"
-
 
     ## Following are specific checks for required fields in the MoH data model, as well as checks for conditionals specified in the model.
     validation_schema = \

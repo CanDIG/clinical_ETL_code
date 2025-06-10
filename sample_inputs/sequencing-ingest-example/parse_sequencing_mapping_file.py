@@ -30,6 +30,20 @@ def create_csvs(mapping_df):
     tumour_df = (copy.deepcopy(mapping_df).drop(['NORMAL_SAMPLE_ID', 'VCF_NORMAL_ID'], axis=1).
                  rename(columns={'TUMOUR_SAMPLE_ID': 'sample_submitter_id',
                                  'VCF_TUMOUR_ID': 'genomic_file_sample_id'}))
+    experiments_df = pd.concat([normals_df, tumour_df]).sort_values(by=['PATIENT_ID'])
+    experiments_df['experiment_id'] = experiments_df['sample_submitter_id'] + "-EXP"
+    experiments_df['library_description'] = "DNA sequencing library"
+    experiments_df['instrument'] = "Illumina HiSeq 4000"
+    experiments_df['library_selection'] = "size fractionation"
+    experiments_df['protocol'] = "https://dx.doi.org/10.17504/protocols.io.bjdxki7n"
+    experiments_df['library_source'] = "genomic"
+    experiments_df['library_strategy'] = "WGS"
+    experiments_df['library_layout'] = "paired"
+
+    analyses_df = pd.concat([normals_df, tumour_df]).sort_values(by=['PATIENT_ID'])
+    analyses_df['analysis_id'] = analyses_df['ECS_Path'].apply(lambda x: Path(Path(x).stem).stem)
+
+
     samples_df = pd.concat([normals_df, tumour_df]).sort_values(by=['PATIENT_ID'])
     samples_df['genomic_file_id'] = samples_df['ECS_Path'].apply(lambda x: Path(Path(x).stem).stem)
 

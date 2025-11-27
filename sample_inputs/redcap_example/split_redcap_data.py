@@ -33,14 +33,11 @@ def read_redcap_export(export_path):
     """Read exported redcap csv from the given input path.
     Assign column names."""
     files = [f for f in os.listdir(export_path) if ".csv" in f]
-    if not any(".csv" in f for f in files):
-        raise Exception(f"No csv files in {export_path}")
     value_file = [f for f in files if "value" in f]
     label_file = [f for f in files if "label" in f]
     assert (
         len(value_file) == 1 and len(label_file) == 1
-    ), f"""Missing value or label csv files in {export_path}.
-            Check the file names include 'value' and 'label'"""
+    ), f"Missing value or label csv files in {export_path}. Check the file names include 'value' and 'label'"
     try:
         value_df = pd.read_csv(os.path.join(export_path, value_file[0]), dtype=str)
         label_df = pd.read_csv(os.path.join(export_path, label_file[0]), dtype=str)

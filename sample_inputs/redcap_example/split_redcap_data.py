@@ -5,10 +5,9 @@ CSVConvert.py
 
 import os
 import argparse
-import re
-import pandas as pd
-import json
 from pathlib import Path
+
+import pandas as pd
 
 
 def parse_args():
@@ -19,9 +18,6 @@ def parse_args():
         required=True,
         help="""Directory containing raw 
         csv value and label exports from Redcap""",
-    )
-    parser.add_argument(
-        "--verbose", "--v", action="store_true", help="Print extra information"
     )
     parser.add_argument(
         "--output",

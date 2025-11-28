@@ -30,7 +30,7 @@ def parse_args():
 
 
 def read_redcap_export(export_path):
-    """Read exported redcap csv from the given input path.
+    """Read exported redcap label and value csvs from the given input path.
     Assign column names."""
     files = [f for f in os.listdir(export_path) if ".csv" in f]
     value_file = [f for f in files if "value" in f]
@@ -38,6 +38,9 @@ def read_redcap_export(export_path):
     assert (
         len(value_file) == 1 and len(label_file) == 1
     ), f"Missing value or label csv files in {export_path}. Check the file names include 'value' and 'label'"
+    assert (
+        len(value_file) < 2 or len(label_file) < 2
+    ), f"There is more than one value or label csv file in {export_path}. Ensure there is only one of each."
     try:
         value_df = pd.read_csv(os.path.join(export_path, value_file[0]), dtype=str)
         label_df = pd.read_csv(os.path.join(export_path, label_file[0]), dtype=str)
@@ -80,6 +83,65 @@ def extract_repeat_instruments(df):
     return new_dfs
 
 
+def split_singleton(new_dfs):
+    """Split singleton df into donor, primary diagnois and exposures."""
+    columns = {
+        "Donor": [
+            "program_id",
+            "submitter_donor_id",
+            "sex_at_birth",
+            "is_deceased",
+            "cause_of_death",
+            "date_of_birth",
+            "date_of_death",
+            "lost_to_followup",
+            "lost_to_followup_reason",
+            "date_alive_after_lost_to_followup",
+            "lost_to_followup_after_clinical_event_identifier",
+        ],
+        "Primary Diagnosis": [
+            "submitter_donor_id",
+            "submitter_primary_diagnosis_id",
+            "date_of_diagnosis",
+            "primary_site",
+            "cancer_type_code",
+            "basis_of_diagnosis",
+            "laterality",
+            "clinical_t_category",
+            "clinical_n_category",
+            "clinical_m_category",
+            "clinical_stage_group",
+            "t_category_clin",  # These names
+            "n_category_clin",  # are used in
+            "m_category_clin",  # redcap template
+            "pathological_t_category",
+            "pathological_n_category",
+            "pathological_m_category",
+            "pathological_stage_group",
+            "lymph_nodes_examined_status",  # These three
+            "lymph_nodes_examined_method",  # were removed
+            "number_lymph_nodes_positive",  # in MoH model 3.0
+        ],
+        "Exposures": [
+            "submitter_donor_id",
+            "tobacco_smoking_status",
+            "tobacco_type",
+            "years_smoking",
+            "r_years_smoking",  # redcap template name
+            "pack_years_smoked",
+        ],
+    }
+    # Remove columns not in template
+    for table, cols in columns.items():
+        cols = [col for col in cols if col in new_dfs["Singleton"].columns]
+        columns.update({table: cols})
+    new_dfs["Donor"] = new_dfs["Singleton"][columns["Donor"]]
+    new_dfs["Primary Diagnosis"] = new_dfs["Singleton"][columns["Primary Diagnosis"]]
+    new_dfs["Exposures"] = new_dfs["Singleton"][columns["Exposures"]]
+    del new_dfs["Singleton"]
+    return new_dfs
+
+
 def drop_empty_columns(df):
     empty_cols = [col for col in df if df[col].isnull().all()]
     df = df.drop(empty_cols, axis=1)
@@ -100,6 +162,7 @@ def main(args):
     input_path = args.input
     redcap_df = read_redcap_export(input_path)
     new_dfs = extract_repeat_instruments(redcap_df)
+    new_dfs = split_singleton(new_dfs)
     output_dir = args.output
     output_dfs(input_path, output_dir, new_dfs)
 

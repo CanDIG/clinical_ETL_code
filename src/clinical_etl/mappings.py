@@ -272,8 +272,8 @@ def int_to_date_interval_json(data_values):
 def set_neg_99_blank_int(data_values):
     """Sets to blank if -99 used to indicate a value is not available or returns input value"""
     val = single_val(data_values)
-    val = int(round(val))
     try:
+        val = int(round(val))
         if val == -99:
             return None
         else:

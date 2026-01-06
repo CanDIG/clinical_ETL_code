@@ -280,8 +280,8 @@ def set_neg_99_blank_int(data_values):
             return int(val)
     except TypeError:
         return None
-    except ValueError:
-        return None
+    # except ValueError:
+    #     return None
 
 
 def set_neg_99_blank_float(data_values):

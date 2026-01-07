@@ -304,6 +304,8 @@ def numeric_not_available(data_values):
             return None
     except TypeError:
         return None
+    except ValueError:
+        return None
 
 
 def has_value(data_values):

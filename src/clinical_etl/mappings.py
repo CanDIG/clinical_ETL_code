@@ -273,15 +273,12 @@ def set_neg_99_blank_int(data_values):
     """Sets to blank if -99 used to indicate a value is not available or returns input value"""
     val = single_val(data_values)
     try:
-        val = int(round(val))
         if val == -99:
             return None
         else:
             return int(val)
     except TypeError:
         return None
-    # except ValueError:
-    #     return None
 
 
 def set_neg_99_blank_float(data_values):
@@ -299,10 +296,13 @@ def set_neg_99_blank_float(data_values):
 def numeric_not_available(data_values):
     """Returns True if -99 used to indicate a value is not available"""
     val = single_val(data_values)
-    if val:
-        if float(val) == -99:
-            return True
-    else:
+    try:
+        if val:
+            if float(val) == -99:
+                return True
+        else:
+            return None
+    except TypeError:
         return None
 
 

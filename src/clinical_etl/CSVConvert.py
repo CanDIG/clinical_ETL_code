@@ -54,7 +54,7 @@ def map_data_to_scaffold(node, line, rownum):
     """
     if line is not None:
         mappings.CURRENT_LINE = line
-        verbose_print(f"Mapping line '{mappings.CURRENT_LINE}' for {mappings.IDENTIFIER}")
+        print(f"Mapping line '{mappings.CURRENT_LINE}' for {mappings.IDENTIFIER}")
     # if we're looking at an array of objects:
     if "dict" in str(type(node)) and "INDEX" in node:
         result = map_indexed_scaffold(node, line)
@@ -99,12 +99,12 @@ def map_indexed_scaffold(node, line):
     # process the index
     if "INDEX" in node:
         index_method, index_field = parse_mapping_function(node["INDEX"])
-        verbose_print(f"  Mapping indexed scaffold for {index_field}")
+        print(f"  Mapping indexed scaffold for {index_field}")
         if index_field is None:
             return None
         # evaluate INDEX, using None as rownum to indicate that we're calculating an index and not a specific row
         index_values = eval_mapping(node["INDEX"], None)
-        verbose_print(f"  Indexing on  {index_values}")
+        print(f"  Indexing on  {index_values}")
         if index_values is None:
             return None
         index_field = index_values["field"]

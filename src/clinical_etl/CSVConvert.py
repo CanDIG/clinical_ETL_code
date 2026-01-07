@@ -126,6 +126,9 @@ def map_indexed_scaffold(node, line):
             top_frame = mappings._peek_at_top_of_stack()
 
         row = get_row_for_stack_top(top_frame["sheet"], top_frame["rownum"])
+        if index_field not in row.keys():
+            verbose_print(f"  Did not find index value: {index_field} in row: {row}")
+            return None
         verbose_print(f"  Comparing to index_values {index_values} to top_frame[{index_field}] {row[index_field]}")
 
         possible_values = []

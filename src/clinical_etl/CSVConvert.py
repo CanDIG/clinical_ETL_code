@@ -99,12 +99,12 @@ def map_indexed_scaffold(node, line):
     # process the index
     if "INDEX" in node:
         index_method, index_field = parse_mapping_function(node["INDEX"])
-        print(f"  Mapping indexed scaffold for {index_field}")
+        verbose_print(f"  Mapping indexed scaffold for {index_field}")
         if index_field is None:
             return None
         # evaluate INDEX, using None as rownum to indicate that we're calculating an index and not a specific row
         index_values = eval_mapping(node["INDEX"], None)
-        print(f"  Indexing on  {index_values}")
+        verbose_print(f"  Indexing on  {index_values}")
         if index_values is None:
             return None
         index_field = index_values["field"]
@@ -121,22 +121,22 @@ def map_indexed_scaffold(node, line):
         top_frame = mappings._peek_at_top_of_stack()
 
         # FIRST PASS: when we've passed in None for the sheet in the stack
-        print(mappings.INDEX_STACK)
-        print(f"top_frame before:{top_frame}")
+        # print(mappings.INDEX_STACK)
+        # print(f"top_frame before:{top_frame}")
         if top_frame["sheet"] is None:
             mappings.INDEX_STACK[-1]["sheet"] = index_sheet
             mappings.INDEX_STACK[-1]["id"] = index_field
             top_frame = mappings._peek_at_top_of_stack()
-        print(f"top_frame after:{top_frame}")
+        # print(f"top_frame after:{top_frame}")
         row = get_row_for_stack_top(top_frame["sheet"], top_frame["rownum"])
-        print(f" row: {row}")
+        # print(f" row: {row}")
         if index_field not in row.keys():
-            print(f"  Did not find index value: {index_field} in row: {row}")
-            print(f"index_method: {index_method}" )
-            print(f"index_sheet: {index_sheet}")
-            print(f"index_values: {index_values}")
-            print(f"template line: {line}")
-            pprint.pprint(f"node: {node}")
+            # print(f"  Did not find index value: {index_field} in row: {row}")
+            # print(f"index_method: {index_method}" )
+            # print(f"index_sheet: {index_sheet}")
+            # print(f"index_values: {index_values}")
+            # print(f"template line: {line}")
+            # pprint.pprint(f"node: {node}")
             return None
         verbose_print(f"  Comparing to index_values {index_values} to top_frame[{index_field}] {row[index_field]}")
 

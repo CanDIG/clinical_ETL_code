@@ -121,12 +121,15 @@ def map_indexed_scaffold(node, line):
         top_frame = mappings._peek_at_top_of_stack()
 
         # FIRST PASS: when we've passed in None for the sheet in the stack
+        print(mappings.INDEX_STACK)
+        print(f"top_frame before:{top_frame}")
         if top_frame["sheet"] is None:
             mappings.INDEX_STACK[-1]["sheet"] = index_sheet
             mappings.INDEX_STACK[-1]["id"] = index_field
             top_frame = mappings._peek_at_top_of_stack()
-
+        print(f"top_frame after:{top_frame}")
         row = get_row_for_stack_top(top_frame["sheet"], top_frame["rownum"])
+        print(f" row: {row}")
         if index_field not in row.keys():
             print(f"  Did not find index value: {index_field} in row: {row}")
             print(f"index_method: {index_method}" )

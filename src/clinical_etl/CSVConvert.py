@@ -54,7 +54,7 @@ def map_data_to_scaffold(node, line, rownum):
     """
     if line is not None:
         mappings.CURRENT_LINE = line
-        print(f"Mapping line '{mappings.CURRENT_LINE}' for {mappings.IDENTIFIER}")
+        verbose_print(f"Mapping line '{mappings.CURRENT_LINE}' for {mappings.IDENTIFIER}")
     # if we're looking at an array of objects:
     if "dict" in str(type(node)) and "INDEX" in node:
         result = map_indexed_scaffold(node, line)

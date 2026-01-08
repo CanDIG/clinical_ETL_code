@@ -137,6 +137,7 @@ def map_indexed_scaffold(node, line):
             print(f"index_values: {index_values}")
             print(f"template line: {line}")
             pprint.pprint(f"node: {node}")
+            return None
         verbose_print(f"  Comparing to index_values {index_values} to top_frame[{index_field}] {row[index_field]}")
 
         possible_values = []

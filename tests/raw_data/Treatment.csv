@@ -9,3 +9,5 @@ TR_7,DONOR_2,PD_2_1,Surgery,Yes,01/02/2021,01/02/2022,Diagnostic,,Progressive di
 TR_8,DONOR_2,PD_2_1,Systemic therapy,No,01/03/2021,01/03/2022,Forensic,AML Response Criteria,Immune confirmed progressive disease (iCPD),Other
 TR_9,DONOR_6,PD_6,Surgery,No,01/02/2021,01/02/2022,Diagnostic,Blazer score,Progressive disease,
 TR_10,DONOR_5,PD_5,Systemic therapy,No,01/02/2021,01/02/2022,Forensic,Response Assessment in Neuro-Oncology (RANO),,
+TR_11,DONOR_1,PD_1,Radiopharmaceutical Therapy,No,01/09/2021,01/09/2022,Forensic,Response Assessment in Neuro-Oncology (RANO),,Treatment stopped due to acute toxicity
+TR_12,DONOR_2,PD_2,Radiopharmaceutical Therapy,No,01/12/2021,,Diagnostic,Response Assessment in Neuro-Oncology (RANO),,Treatment ongoing

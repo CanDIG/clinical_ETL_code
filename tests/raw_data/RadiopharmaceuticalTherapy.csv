@@ -1,0 +1,1 @@
+submitter_donor_id,submitter_treatment_id,rxnorm_code,agent_name,radionuclide,radionuclide_other,cumulative_drug_dose,drug_dose_units, number_of_cycles,start_date,end_date,mass_units,mass_value,mass_unit_ucum

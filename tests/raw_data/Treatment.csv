@@ -9,3 +9,7 @@ TR_7,DONOR_2,PD_2_1,Surgery,Yes,01/02/2021,01/02/2022,Diagnostic,,Progressive di
 TR_8,DONOR_2,PD_2_1,Systemic therapy,No,01/03/2021,01/03/2022,Forensic,AML Response Criteria,Immune confirmed progressive disease (iCPD),Other
 TR_9,DONOR_6,PD_6,Surgery,No,01/02/2021,01/02/2022,Diagnostic,Blazer score,Progressive disease,
 TR_10,DONOR_5,PD_5,Systemic therapy,No,01/02/2021,01/02/2022,Forensic,Response Assessment in Neuro-Oncology (RANO),,
+TR_AF,CMPLT_AF,PD_AF,Bone marrow transplant,Yes,1/7/2018,1/9/2018,Curative,,,
+TR_BF,CMPLT_BF,PD_BF,Bone marrow transplant,Yes,1/7/2018,1/9/2018,Curative,,,
+TR_COV1,CMPLT_COV1,PD_COV1,Systemic therapy|Radiation therapy|Surgery,Yes,1/2/2018,1/12/2018,Curative,,,
+TR_COV2,CMPLT_COV2,PD_COV2,Systemic therapy|Radiation therapy|Surgery,Yes,1/2/2018,1/12/2018,Curative,,,

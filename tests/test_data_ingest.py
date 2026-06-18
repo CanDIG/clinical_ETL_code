@@ -31,8 +31,9 @@ def packets():
 
 
 def test_csv_convert(packets):
-    # there are 6 donors
-    assert len(packets) == 6
+    # 6 original sample donors + 5 completeness fixtures (CMPLT_AF/BF/AM/BM/INC)
+    # + 2 full-coverage fulsome donors (CMPLT_COV1/COV2)
+    assert len(packets) == 13
 
 
 def test_external_mapping(packets):
@@ -79,7 +80,11 @@ def test_donor_2(packets):
 
 
 def test_validation(packets, schema):
-    schema.validate_ingest_map({"donors": packets})
+    # Scope validation to the original sample donors so the expected warning /
+    # error lists below are unaffected by the CMPLT_* completeness fixtures.
+    original_ids = {"DONOR_1", "DONOR_2", "DONOR_3", "DONOR_4", "DONOR_5", "DONOR_6"}
+    original = [p for p in packets if p["submitter_donor_id"] in original_ids]
+    schema.validate_ingest_map({"donors": original})
     print(schema.validation_warnings)
     warnings = [
         "DONOR_2 > PD_2: date_of_diagnosis required for primary_diagnoses",
@@ -144,3 +149,52 @@ def test_multisheet_mapping(packets):
                         assert len(s["multisheet"]["placeholder"]["submitter_specimen_id"]["Sample_Registration"]) == 0
                         assert len(s["multisheet"]["placeholder"]["extra"]["Sample_Registration"]) == 0
 
+
+# Per-donor tier/level completeness summary over the full cohort.
+# The tests/raw_data fixtures include five CMPLT_* donors purpose-built to land
+# in each summary bucket:
+#   CMPLT_AF  -> Tier A, fulsome   CMPLT_BF  -> Tier B, fulsome
+#   CMPLT_AM  -> Tier A, minimal   CMPLT_BM  -> Tier B, minimal
+#   CMPLT_INC -> untiered (single normal DNA sample) -> incomplete
+def test_completeness_summary(packets, schema):
+    schema.validate_ingest_map({"donors": packets})
+    summary = CSVConvert.summarize_completeness(schema.statistics["donor_completeness"])
+
+    assert summary["total_donors"] == 13
+    # each axis partitions all donors exactly once
+    assert (summary["tier_a_min_clinical_complete"]
+            + summary["tier_b_min_clinical_complete"]
+            + summary["incomplete_min_donors"]) == 13
+    assert (summary["tier_a_full_clinical_complete"]
+            + summary["tier_b_full_clinical_complete"]
+            + summary["incomplete_full_donors"]) == 13
+    # the CMPLT_* donors populate each category (Tier A donors are not also
+    # counted toward Tier B); original donors only add to the incomplete buckets
+    assert summary["tier_a_min_clinical_complete"] == 3    # CMPLT_AF, CMPLT_AM, CMPLT_COV1
+    assert summary["tier_b_min_clinical_complete"] == 3    # CMPLT_BF, CMPLT_BM, CMPLT_COV2
+    assert summary["tier_a_full_clinical_complete"] == 2   # CMPLT_AF, CMPLT_COV1
+    assert summary["tier_b_full_clinical_complete"] == 2   # CMPLT_BF, CMPLT_COV2
+    assert summary["incomplete_min_donors"] >= 1           # CMPLT_INC (+ originals)
+    assert summary["incomplete_full_donors"] >= 3          # CMPLT_AM, CMPLT_BM, CMPLT_INC (+ originals)
+
+
+# CMPLT_COV1 / CMPLT_COV2 populate every object type in the model, with all
+# required and conditionally-required fields filled, so they should come out
+# fulsome complete. This guards against the required-field lists drifting out of
+# sync with the model (a newly-required field would make these donors fail).
+def test_full_object_coverage_donors_are_fulsome(packets, schema):
+    schema.validate_ingest_map({"donors": packets})
+    dc = schema.statistics["donor_completeness"]
+    for donor_id in ("CMPLT_COV1", "CMPLT_COV2"):
+        assert dc[donor_id]["fulsome_complete"] is True, dc[donor_id]["fulsome_unmet"]
+        assert dc[donor_id]["fulsome_unmet"] == []
+
+    cov = next(p for p in packets if p["submitter_donor_id"] == "CMPLT_COV1")
+    # donor-level objects
+    for key in ("primary_diagnoses", "followups", "biomarkers", "comorbidities", "exposures"):
+        assert cov.get(key), f"CMPLT_COV1 missing {key}"
+    pd = cov["primary_diagnoses"][0]
+    assert pd.get("specimens") and pd["specimens"][0].get("sample_registrations")
+    tr = pd["treatments"][0]
+    for key in ("systemic_therapies", "radiations", "surgeries"):
+        assert tr.get(key), f"CMPLT_COV1 treatment missing {key}"

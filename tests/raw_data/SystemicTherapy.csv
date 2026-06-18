@@ -4,3 +4,5 @@ DONOR_2,TR_2,Chemotherapy,NIVOLUMAB,87333,mg/m2,150,111,PubChem,5,2,1/04/2020,1/
 DONOR_3,TR_3,Hormone therapy,degarelix,46475,ug/m2,179,97,PubChem,6,3,10/12/2020,19/12/2021
 DONOR_4,TR_4,Immunotherapy,Pembrolizumab,4459876,IU/kg,95,160,RxNorm,4,2,1/3/2021,12/12/2021
 DONOR_2,TR_8,Immunotherapy,Pexidartinib,8836851,ug/m2,197,183,PubChem,6,1,9/5/2021,6/6/2023
+CMPLT_COV1,TR_COV1,Chemotherapy,Cisplatin,12345,,,,RxNorm,,,1/3/2018,1/6/2018
+CMPLT_COV2,TR_COV2,Chemotherapy,Cisplatin,12345,,,,RxNorm,,,1/3/2018,1/6/2018

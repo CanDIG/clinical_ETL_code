@@ -635,6 +635,101 @@ def load_manifest(manifest_file):
     return result
 
 
+def summarize_completeness(donor_completeness):
+    """Aggregate per-donor completeness into ID-free counts.
+
+    Produces two independent partitions of all donors:
+      * minimal: tier_a_min_clinical_complete + tier_b_min_clinical_complete
+                 + incomplete_min_donors
+      * fulsome: tier_a_full_clinical_complete + tier_b_full_clinical_complete
+                 + incomplete_full_donors
+    A donor is counted in a tier bucket only if it meets that tier AND the
+    relevant completeness level; everything else (wrong/absent tier, or not
+    complete) falls into the matching incomplete bucket. Tier assignment is
+    exclusive, so a Tier A donor is never counted toward a Tier B bucket."""
+    summary = {
+        "total_donors": len(donor_completeness),
+        "tier_a_min_clinical_complete": 0,
+        "tier_b_min_clinical_complete": 0,
+        "incomplete_min_donors": 0,
+        "tier_a_full_clinical_complete": 0,
+        "tier_b_full_clinical_complete": 0,
+        "incomplete_full_donors": 0,
+    }
+    for rec in donor_completeness.values():
+        tier = rec["tier"]
+        # minimal partition
+        if tier == "A" and rec["minimal_complete"]:
+            summary["tier_a_min_clinical_complete"] += 1
+        elif tier == "B" and rec["minimal_complete"]:
+            summary["tier_b_min_clinical_complete"] += 1
+        else:
+            summary["incomplete_min_donors"] += 1
+        # fulsome partition
+        if tier == "A" and rec["fulsome_complete"]:
+            summary["tier_a_full_clinical_complete"] += 1
+        elif tier == "B" and rec["fulsome_complete"]:
+            summary["tier_b_full_clinical_complete"] += 1
+        else:
+            summary["incomplete_full_donors"] += 1
+    return summary
+
+
+def build_completeness_failures(donor_completeness, tier_criteria=None):
+    """Build a detailed per-donor report of every donor that is not fully
+    (tier + fulsome) complete, with the reasons it failed.
+
+    A donor is considered failing unless it is assigned a tier (A or B) AND is
+    fulsome complete. For each failing donor the report lists the offending
+    sample composition and/or the specific unmet minimal and fulsome fields."""
+    def _tier_requirement_text():
+        if not tier_criteria:
+            return "any tier"
+        parts = []
+        for tier, crit in tier_criteria.items():
+            desc = ", ".join(f"{n} {kind}" for kind, n in crit.items())
+            parts.append(f"Tier {tier} ({desc})")
+        return " or ".join(parts)
+
+    failing = []
+    for donor_id, rec in donor_completeness.items():
+        tiered = rec["tier"] in ("A", "B")
+        if tiered and rec["fulsome_complete"]:
+            continue  # fully complete -> not a failure
+
+        reasons = []
+        if not tiered:
+            reasons.append(
+                f"Sample composition does not satisfy {_tier_requirement_text()}; "
+                f"found {rec['sample_counts'] or 'no classifiable tumour/normal DNA/RNA samples'}"
+            )
+        if not rec["minimal_complete"]:
+            reasons.append(
+                f"Fails minimal clinical completeness: {len(rec['minimal_unmet'])} field(s) missing"
+            )
+        if not rec["fulsome_complete"]:
+            reasons.append(
+                f"Fails fulsome clinical completeness: {len(rec['fulsome_unmet'])} "
+                f"required/conditionally-required field(s) missing"
+            )
+        failing.append({
+            "donor_id": donor_id,
+            "tier": rec["tier"],
+            "minimal_complete": rec["minimal_complete"],
+            "fulsome_complete": rec["fulsome_complete"],
+            "reasons": reasons,
+            "sample_counts": rec["sample_counts"],
+            "minimal_unmet": rec["minimal_unmet"],
+            "fulsome_unmet": rec["fulsome_unmet"],
+        })
+
+    return {
+        "total_donors": len(donor_completeness),
+        "failing_donors": len(failing),
+        "donors": failing,
+    }
+
+
 def csv_convert(input_path, manifest_file, minify=False, index_output=False, verbose=False):
     mappings.VERBOSE = verbose
     # read manifest data
@@ -756,9 +851,24 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     schema.validate_ingest_map(result)
     validation_results = {"validation_errors": schema.validation_errors,
                           "validation_warnings": schema.validation_warnings,
-                          "cases_missing_data": schema.statistics["cases_missing_data"]}
+                          "cases_missing_data": schema.statistics["cases_missing_data"],
+                          "donor_completeness": schema.statistics.get("donor_completeness", {})}
     result["statistics"] = schema.statistics
     result["statistics"].pop("cases_missing_data")  # remove donor IDs from _map.json file
+    # per-donor completeness is keyed by donor ID: keep it out of _map.json too,
+    # but retain an aggregate tier/level summary (no IDs) in the statistics.
+    donor_completeness = result["statistics"].pop("donor_completeness", {})
+    result["statistics"]["completeness_summary"] = summarize_completeness(donor_completeness)
+    # write a detailed per-donor completeness failure report (contains donor IDs,
+    # so it is kept out of _map.json, like the validation results)
+    if donor_completeness:
+        completeness_failures = build_completeness_failures(
+            donor_completeness, getattr(schema, "tier_criteria", None))
+        with open(f"{input_path}_completeness_failures.json", 'w') as f:
+            json.dump(completeness_failures, f, indent=4)
+        print(f"{Bcolors.OKGREEN}Completeness failure report ("
+              f"{completeness_failures['failing_donors']}/{completeness_failures['total_donors']} "
+              f"donors) written to {input_path}_completeness_failures.json{Bcolors.ENDC}")
     
     # write ingestion and validation json files
     print(f"{Bcolors.OKGREEN}Saving packets to file.{Bcolors.ENDC}")

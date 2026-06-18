@@ -5,3 +5,10 @@ DONOR_3,TEST_1,PD_3,Lost contact,4/6/2022,No,,7/12/1945,,Non-binary,Other,month
 DONOR_4,TEST_1,,,,Yes,Not available,1/6/1984,239,Man,Male,month
 DONOR_5,TEST_2,PD_5,Not available,1/6/2022,Yes,,15/2/1984,,Woman,Female,month
 DONOR_6,TEST_2,PD_6,Withdrew from study,1/6/2022,No,,12/9/1974,,Non-binary,Other,month
+CMPLT_AF,TEST_1,,,,No,,6/1/1960,,Woman,Female,month
+CMPLT_BF,TEST_1,,,,No,,6/1/1961,,Man,Male,month
+CMPLT_AM,TEST_1,,,,No,,6/1/1962,,Woman,Female,month
+CMPLT_BM,TEST_1,,,,No,,6/1/1963,,Man,Male,month
+CMPLT_INC,TEST_1,,,,No,,6/1/1964,,Non-binary,Other,month
+CMPLT_COV1,TEST_1,,,,No,,1/1/1970,,Woman,Female,month
+CMPLT_COV2,TEST_1,,,,No,,1/1/1970,,Woman,Female,month

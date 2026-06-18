@@ -132,11 +132,11 @@ DONOR.INDEX.comorbidities.INDEX.age_at_comorbidity_diagnosis_not_available, {num
 DONOR.INDEX.comorbidities.INDEX.comorbidity_type_code, {single_val(Comorbidity.comorbidity_type_code)}
 DONOR.INDEX.comorbidities.INDEX.comorbidity_treatment_status, {single_val(Comorbidity.comorbidity_treatment_status)}
 DONOR.INDEX.comorbidities.INDEX.comorbidity_treatment, {single_val(Comorbidity.comorbidity_treatment)}
-DONOR.INDEX.exposures.INDEX, {indexed_on(EXPOSURES_SHEET.submitter_donor_id)}
-DONOR.INDEX.exposures.INDEX.tobacco_smoking_status, {single_val(EXPOSURES_SHEET.tobacco_smoking_status)}
-DONOR.INDEX.exposures.INDEX.tobacco_type, {pipe_delim(EXPOSURES_SHEET.tobacco_type)}
-DONOR.INDEX.exposures.INDEX.pack_years_smoked, {set_neg_99_blank_int(EXPOSURES_SHEET.pack_years_smoked)}
-DONOR.INDEX.exposures.INDEX.pack_years_smoked_not_available, {numeric_not_available(EXPOSURES_SHEET.pack_years_smoked)}
+DONOR.INDEX.exposures.INDEX, {indexed_on(Exposure.submitter_donor_id)}
+DONOR.INDEX.exposures.INDEX.tobacco_smoking_status, {single_val(Exposure.tobacco_smoking_status)}
+DONOR.INDEX.exposures.INDEX.tobacco_type, {pipe_delim(Exposure.tobacco_type)}
+DONOR.INDEX.exposures.INDEX.pack_years_smoked, {set_neg_99_blank_int(Exposure.pack_years_smoked)}
+DONOR.INDEX.exposures.INDEX.pack_years_smoked_not_available, {numeric_not_available(Exposure.pack_years_smoked)}
 DONOR.INDEX.biomarkers.INDEX, {indexed_on(Biomarker.submitter_donor_id)}
 DONOR.INDEX.biomarkers.INDEX.submitter_specimen_id, {single_val(Biomarker.submitter_specimen_id)}
 DONOR.INDEX.biomarkers.INDEX.submitter_primary_diagnosis_id, {single_val(Biomarker.submitter_primary_diagnosis_id)}

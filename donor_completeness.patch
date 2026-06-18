@@ -1,0 +1,1052 @@
+diff --git a/src/clinical_etl/CSVConvert.py b/src/clinical_etl/CSVConvert.py
+index 2aeb879..e51d760 100644
+--- a/src/clinical_etl/CSVConvert.py
++++ b/src/clinical_etl/CSVConvert.py
+@@ -635,6 +635,101 @@ def load_manifest(manifest_file):
+     return result
+ 
+ 
++def summarize_completeness(donor_completeness):
++    """Aggregate per-donor completeness into ID-free counts.
++
++    Produces two independent partitions of all donors:
++      * minimal: tier_a_min_clinical_complete + tier_b_min_clinical_complete
++                 + incomplete_min_donors
++      * fulsome: tier_a_full_clinical_complete + tier_b_full_clinical_complete
++                 + incomplete_full_donors
++    A donor is counted in a tier bucket only if it meets that tier AND the
++    relevant completeness level; everything else (wrong/absent tier, or not
++    complete) falls into the matching incomplete bucket. Tier assignment is
++    exclusive, so a Tier A donor is never counted toward a Tier B bucket."""
++    summary = {
++        "total_donors": len(donor_completeness),
++        "tier_a_min_clinical_complete": 0,
++        "tier_b_min_clinical_complete": 0,
++        "incomplete_min_donors": 0,
++        "tier_a_full_clinical_complete": 0,
++        "tier_b_full_clinical_complete": 0,
++        "incomplete_full_donors": 0,
++    }
++    for rec in donor_completeness.values():
++        tier = rec["tier"]
++        # minimal partition
++        if tier == "A" and rec["minimal_complete"]:
++            summary["tier_a_min_clinical_complete"] += 1
++        elif tier == "B" and rec["minimal_complete"]:
++            summary["tier_b_min_clinical_complete"] += 1
++        else:
++            summary["incomplete_min_donors"] += 1
++        # fulsome partition
++        if tier == "A" and rec["fulsome_complete"]:
++            summary["tier_a_full_clinical_complete"] += 1
++        elif tier == "B" and rec["fulsome_complete"]:
++            summary["tier_b_full_clinical_complete"] += 1
++        else:
++            summary["incomplete_full_donors"] += 1
++    return summary
++
++
++def build_completeness_failures(donor_completeness, tier_criteria=None):
++    """Build a detailed per-donor report of every donor that is not fully
++    (tier + fulsome) complete, with the reasons it failed.
++
++    A donor is considered failing unless it is assigned a tier (A or B) AND is
++    fulsome complete. For each failing donor the report lists the offending
++    sample composition and/or the specific unmet minimal and fulsome fields."""
++    def _tier_requirement_text():
++        if not tier_criteria:
++            return "any tier"
++        parts = []
++        for tier, crit in tier_criteria.items():
++            desc = ", ".join(f"{n} {kind}" for kind, n in crit.items())
++            parts.append(f"Tier {tier} ({desc})")
++        return " or ".join(parts)
++
++    failing = []
++    for donor_id, rec in donor_completeness.items():
++        tiered = rec["tier"] in ("A", "B")
++        if tiered and rec["fulsome_complete"]:
++            continue  # fully complete -> not a failure
++
++        reasons = []
++        if not tiered:
++            reasons.append(
++                f"Sample composition does not satisfy {_tier_requirement_text()}; "
++                f"found {rec['sample_counts'] or 'no classifiable tumour/normal DNA/RNA samples'}"
++            )
++        if not rec["minimal_complete"]:
++            reasons.append(
++                f"Fails minimal clinical completeness: {len(rec['minimal_unmet'])} field(s) missing"
++            )
++        if not rec["fulsome_complete"]:
++            reasons.append(
++                f"Fails fulsome clinical completeness: {len(rec['fulsome_unmet'])} "
++                f"required/conditionally-required field(s) missing"
++            )
++        failing.append({
++            "donor_id": donor_id,
++            "tier": rec["tier"],
++            "minimal_complete": rec["minimal_complete"],
++            "fulsome_complete": rec["fulsome_complete"],
++            "reasons": reasons,
++            "sample_counts": rec["sample_counts"],
++            "minimal_unmet": rec["minimal_unmet"],
++            "fulsome_unmet": rec["fulsome_unmet"],
++        })
++
++    return {
++        "total_donors": len(donor_completeness),
++        "failing_donors": len(failing),
++        "donors": failing,
++    }
++
++
+ def csv_convert(input_path, manifest_file, minify=False, index_output=False, verbose=False):
+     mappings.VERBOSE = verbose
+     # read manifest data
+@@ -756,9 +851,24 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
+     schema.validate_ingest_map(result)
+     validation_results = {"validation_errors": schema.validation_errors,
+                           "validation_warnings": schema.validation_warnings,
+-                          "cases_missing_data": schema.statistics["cases_missing_data"]}
++                          "cases_missing_data": schema.statistics["cases_missing_data"],
++                          "donor_completeness": schema.statistics.get("donor_completeness", {})}
+     result["statistics"] = schema.statistics
+     result["statistics"].pop("cases_missing_data")  # remove donor IDs from _map.json file
++    # per-donor completeness is keyed by donor ID: keep it out of _map.json too,
++    # but retain an aggregate tier/level summary (no IDs) in the statistics.
++    donor_completeness = result["statistics"].pop("donor_completeness", {})
++    result["statistics"]["completeness_summary"] = summarize_completeness(donor_completeness)
++    # write a detailed per-donor completeness failure report (contains donor IDs,
++    # so it is kept out of _map.json, like the validation results)
++    if donor_completeness:
++        completeness_failures = build_completeness_failures(
++            donor_completeness, getattr(schema, "tier_criteria", None))
++        with open(f"{input_path}_completeness_failures.json", 'w') as f:
++            json.dump(completeness_failures, f, indent=4)
++        print(f"{Bcolors.OKGREEN}Completeness failure report ("
++              f"{completeness_failures['failing_donors']}/{completeness_failures['total_donors']} "
++              f"donors) written to {input_path}_completeness_failures.json{Bcolors.ENDC}")
+     
+     # write ingestion and validation json files
+     print(f"{Bcolors.OKGREEN}Saving packets to file.{Bcolors.ENDC}")
+diff --git a/src/clinical_etl/completeness_table.py b/src/clinical_etl/completeness_table.py
+index f315509..f356893 100644
+--- a/src/clinical_etl/completeness_table.py
++++ b/src/clinical_etl/completeness_table.py
+@@ -27,7 +27,39 @@ def generate_csv(input_path):
+                     out.write(f"{k},{field},{total},{missing},{round(missing_percent)}\n")
+ 
+ 
++def generate_donor_completeness_csv(input_path):
++    """Write a per-donor tier/level completeness table from a
++    *_validation_results.json file (which holds the donor-ID-keyed records)."""
++    output_path = input_path.replace("_validation_results.json", "_donor_completeness.csv")
++    print(f"Converting {input_path} to {output_path}")
++    with open(input_path) as f:
++        donors = json.load(f).get("donor_completeness", {})
++    with open(output_path, "w") as out:
++        out.write("Donor,Tier,Level,Type,Minimal Complete,Fulsome Complete,Unmet (fulsome)\n")
++        for donor_id, rec in donors.items():
++            out.write(
++                f"{donor_id},{rec['tier'] or ''},{rec['level']},{rec['type']},"
++                f"{rec['minimal_complete']},{rec['fulsome_complete']},"
++                f"{'|'.join(rec['fulsome_unmet'])}\n"
++            )
++
++
++def main(input_path):
++    """Dispatch on file type: aggregate field stats from a _map.json, or the
++    per-donor tier/level table from a _validation_results.json."""
++    with open(input_path) as f:
++        data = json.load(f)
++    if "donor_completeness" in data:
++        generate_donor_completeness_csv(input_path)
++    elif "statistics" in data:
++        generate_csv(input_path)
++    else:
++        raise SystemExit(
++            "Input json has neither 'statistics' (a _map.json) nor "
++            "'donor_completeness' (a _validation_results.json)."
++        )
++
++
+ if __name__ == "__main__":
+     args = parse_args()
+-    input_path = args.input
+-    generate_csv(input_path)
++    main(args.input)
+diff --git a/src/clinical_etl/mohschemav3.py b/src/clinical_etl/mohschemav3.py
+index 2b691a1..09e1fa9 100644
+--- a/src/clinical_etl/mohschemav3.py
++++ b/src/clinical_etl/mohschemav3.py
+@@ -163,6 +163,64 @@ class MoHSchemaV3(BaseSchema):
+         }
+     }
+ 
++    # ------------------------------------------------------------------ #
++    # Per-donor completeness criteria (consumed by BaseSchema engine)    #
++    # ------------------------------------------------------------------ #
++
++    # Tier = sample_registration composition. Ordered strongest-first so that
++    # a donor satisfying both is assigned the higher tier (A) and is therefore
++    # NOT also counted in the Tier B total. Criteria are cumulative: Tier A's
++    # required samples are a superset of Tier B's.
++    tier_criteria = {
++        "A": {"tumour_dna": 1, "tumour_rna": 1, "normal_dna": 1},
++        "B": {"tumour_dna": 1, "normal_dna": 1},
++    }
++
++    # Minimal completeness: reduced field set that must hold valid values on
++    # every existing instance of each object type.
++    minimal_criteria = {
++        "donors":               ["gender", "sex_at_birth", "date_of_birth", "date_resolution"],
++        "primary_diagnoses":    ["date_of_diagnosis", "cancer_type_code", "primary_site", "basis_of_diagnosis"],
++        "specimens":            ["specimen_collection_date", "specimen_anatomic_location"],
++        "sample_registrations": ["specimen_tissue_source", "tumour_normal_designation", "specimen_type", "sample_type"],
++    }
++
++    # Nested objects every donor must have for 'fulsome' completeness. Counted
++    # anywhere in the donor tree (e.g. treatments live under primary_diagnoses).
++    required_instances = [
++        {"key": "treatments", "min": 1},
++    ]
++
++    # Conditionally-required fields are NOT re-listed here. 'fulsome' completeness
++    # is derived directly from the validation pass: every conditional requirement
++    # in the validate_* methods raises warn(..., conditional_required=True), and
++    # those warnings are attributed per-donor and fed into the fulsome check
++    # (see BaseSchema._evaluate_fulsome). Soft notes / consistency warnings are
++    # marked conditional_required=False so they don't affect completeness.
++
++    @staticmethod
++    def _sample_kind(sample):
++        """Classify a sample_registration as e.g. 'tumour_dna' / 'normal_dna'.
++
++        ASSUMPTION: the molecule (DNA vs RNA) is read from `sample_type`.
++        If the MoH model encodes it in a different field, change ONLY this
++        method (e.g. read 'specimen_type' or an analyte field instead)."""
++        designation = (sample.get("tumour_normal_designation") or "").lower()
++        sample_type = (sample.get("sample_type") or "").lower()
++        if "rna" in sample_type:
++            molecule = "rna"
++        elif "dna" in sample_type:
++            molecule = "dna"
++        else:
++            molecule = None
++        if "tumour" in designation or "tumor" in designation:
++            tn = "tumour"
++        elif "normal" in designation:
++            tn = "normal"
++        else:
++            tn = None
++        return f"{tn}_{molecule}" if (tn and molecule) else None
++
+     def validate_donors(self, map_json):
+         for prop in map_json:
+             match prop:
+@@ -181,7 +239,8 @@ class MoHSchemaV3(BaseSchema):
+                     if map_json["lost_to_followup_reason"] is not None:
+                         if "lost_to_followup_after_clinical_event_identifier" not in map_json:
+                             self.warn(
+-                                "lost_to_followup_reason should only be submitted if lost_to_followup_after_clinical_event_identifier is submitted")
++                                "lost_to_followup_reason should only be submitted if lost_to_followup_after_clinical_event_identifier is submitted",
++                                conditional_required=False)
+                 case "date_alive_after_lost_to_followup":
+                     if map_json["date_alive_after_lost_to_followup"] is not None:
+                         if "lost_to_followup_after_clinical_event_identifier" not in map_json:
+@@ -239,7 +298,7 @@ class MoHSchemaV3(BaseSchema):
+                                     if ('diagnosis_date' in locals() and diagnosis_date not in [None, ''] and
+                                             treatment_end not in [None, ''] and 'treatment_end' in locals() and
+                                             treatment_end < diagnosis_date):
+-                                        self.warn(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: date_of_diagnosis should be earlier than treatment_end_date ")
++                                        self.warn(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: date_of_diagnosis should be earlier than treatment_end_date ", conditional_required=False)
+                                     if 'treatment_start' in locals() and treatment_start not in [None, '']:
+                                         if 'death' in locals() and death not in [None, ''] and treatment_start > death:
+                                             self.fail(
+@@ -247,12 +306,12 @@ class MoHSchemaV3(BaseSchema):
+                                         if 'birth' in locals() and birth not in [None, ''] and treatment_start < birth and treatment_start is not None:
+                                             self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date cannot be before date_of_birth")
+                                         if 'diagnosis_date' in locals() and diagnosis_date not in [None, ''] and treatment_start < diagnosis_date:
+-                                            self.warn(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date should not be before date_of_diagnosis")
++                                            self.warn(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date should not be before date_of_diagnosis", conditional_required=False)
+                         diagnosis_values_list = list(diagnoses_dates.values())
+                         if (len(diagnosis_values_list) > 0 and "int" in str(type(diagnosis_values_list[0])) and
+                                 0 not in diagnosis_values_list):
+                             self.warn(f"Earliest primary_diagnosis.date_of_diagnosis.month_interval should be 0, current "
+-                                      f"month_intervals: {diagnoses_dates}")
++                                      f"month_intervals: {diagnoses_dates}", conditional_required=False)
+                 case "date_of_death":
+                     if map_json["date_of_death"] is not None:
+                         if map_json["is_deceased"] in ["No", "Not available"]:
+@@ -286,7 +345,7 @@ class MoHSchemaV3(BaseSchema):
+ 
+     def validate_primary_diagnoses(self, map_json):
+         if map_json["date_of_diagnosis"] is None:
+-            self.warn("NOTE: cannot calculate any date intervals for this patient without date_of_diagnosis")
++            self.warn("NOTE: cannot calculate any date intervals for this patient without date_of_diagnosis", conditional_required=False)
+         if "clinical_tumour_staging_system" not in map_json and "pathological_tumour_staging_system" not in map_json:
+                     self.warn("Either clinical_tumour_staging_system or pathological_staging_system is required")
+         for prop in map_json:
+diff --git a/src/clinical_etl/schema.py b/src/clinical_etl/schema.py
+index 1609eb8..2ed0fc0 100644
+--- a/src/clinical_etl/schema.py
++++ b/src/clinical_etl/schema.py
+@@ -49,6 +49,13 @@ class BaseSchema:
+     # The component name in the OpenAPI specification
+     schema_name = None
+ 
++    # Values that count as "empty" for per-donor completeness scoring.
++    # NOTE: "Not available" is intentionally NOT included: it is treated as a
++    # valid, complete answer for completeness purposes. (This differs from the
++    # required_but_missing / cases_missing_data stats in validate_schema, which
++    # still treat "Not available" as missing.)
++    EMPTY_VALUES = (None, "")
++
+     # schema for validation beyond jsonschema checks. Each schema that is described in the model gets an entry.
+     validation_schema = {
+         "examples": {             # There should be a method `validate_examples` implemented to validate conditionals
+@@ -115,7 +122,15 @@ class BaseSchema:
+         self.template = self.add_default_mappings(raw_template)
+ 
+ 
+-    def warn(self, message):
++    def warn(self, message, conditional_required=True):
++        """Record a validation warning.
++
++        `conditional_required` (default True) marks the warning as indicating a
++        required or conditionally-required field/object that is missing, so it
++        counts against per-donor 'fulsome' completeness. Set it False for soft
++        notes and cross-field consistency warnings that are not about a missing
++        requirement. The warning is attributed to the current donor via
++        stack_location[0] so the completeness engine can look it up."""
+         prefix = " > ".join(self.stack_location)
+         if prefix.strip() == "":
+             prefix = ""
+@@ -123,6 +138,11 @@ class BaseSchema:
+             prefix += ": "
+         message = prefix + message
+         self.validation_warnings.append(f"{message}")
++        if conditional_required and self.stack_location:
++            donor = self.stack_location[0]
++            if not hasattr(self, "_conditional_gaps"):
++                self._conditional_gaps = {}
++            self._conditional_gaps.setdefault(donor, []).append(message)
+ 
+ 
+     def fail(self, message):
+@@ -324,6 +344,8 @@ class BaseSchema:
+         self.statistics["required_but_missing"] = {}
+         self.statistics["schemas_used"] = []
+         self.statistics["cases_missing_data"] = []
++        self.statistics["donor_completeness"] = {}
++        self._conditional_gaps = {}   # donor_id -> [conditional-requirement warnings]
+ 
+         for key in self.validation_schema.keys():
+             self.validation_schema[key]["extra_args"] = {
+@@ -333,6 +355,9 @@ class BaseSchema:
+         for x in range(0, len(map_json[root_schema])):
+             self.validate_jsonschema(map_json[root_schema][x], x)
+             self.validate_schema(root_schema, map_json[root_schema][x])
++            record = self.calculate_donor_completeness(map_json[root_schema][x])
++            if record is not None:
++                self.statistics["donor_completeness"][record["donor_id"]] = record
+         for schema in self.identifiers:
+             most_common = self.identifiers[schema].most_common()
+             if most_common[0][1] > 1:
+@@ -411,7 +436,10 @@ class BaseSchema:
+                 }
+             self.statistics["required_but_missing"][schema_name][f]["total"] += 1
+             if f not in map_json or map_json[f] == "Not available":
+-                self.warn(f"{f} required for {schema_name}")
++                # Flat required-field gaps are handled by the completeness
++                # engine's _required_complete (which, unlike this check, treats
++                # "Not available" as a valid value), so don't double-count here.
++                self.warn(f"{f} required for {schema_name}", conditional_required=False)
+                 self.statistics["required_but_missing"][schema_name][f]["missing"] += 1
+                 if case not in self.statistics["cases_missing_data"]:
+                     self.statistics["cases_missing_data"].append(case)
+@@ -432,3 +460,145 @@ class BaseSchema:
+                     else:
+                         self.validate_schema(ns, map_json[ns])
+         self.stack_location.pop()
++
++    # ------------------------------------------------------------------ #
++    # Per-donor completeness                                             #
++    # ------------------------------------------------------------------ #
++    # Two orthogonal axes per donor:
++    #   * tier  ("A"/"B"/None) -- driven by sample_registration composition
++    #   * level ("fulsome"/"minimal"/"incomplete") -- driven by field validity
++    # A schema subclass opts in by defining `tier_criteria`, `minimal_criteria`
++    # and (optionally) `conditional_fields` plus the `_sample_kind` classifier.
++    # Schemas that don't define these get None (feature disabled for them).
++
++    def _field_present(self, obj, field):
++        """True if `field` has a non-empty value on `obj`.
++
++        "Not available" counts as a valid, complete value (see EMPTY_VALUES)."""
++        return isinstance(obj, dict) and field in obj and obj[field] not in self.EMPTY_VALUES
++
++    def _find_objects(self, node, key):
++        """Return every object appearing under `key` anywhere in the donor tree."""
++        found = []
++        if isinstance(node, dict):
++            for k, v in node.items():
++                if k == key:
++                    found.extend(v if isinstance(v, list) else [v])
++                found.extend(self._find_objects(v, key))
++        elif isinstance(node, list):
++            for item in node:
++                found.extend(self._find_objects(item, key))
++        return [o for o in found if isinstance(o, dict)]
++
++    def _evaluate_tier(self, donor):
++        """Classify a donor's sample composition into a single, exclusive tier.
++
++        Tier criteria are cumulative (Tier A's samples are a superset of Tier B's),
++        so a donor that qualifies for A also qualifies for B. The returned `tier`
++        resolves this in favour of the highest tier, so a Tier A donor is counted
++        ONLY as A and never toward the Tier B total. The `criteria_met` dict is
++        diagnostic (overlapping) and must not be used for tallying totals."""
++        samples = self._find_objects(donor, "sample_registrations")
++        counts = {}
++        for s in samples:
++            kind = self._sample_kind(s)
++            if kind:
++                counts[kind] = counts.get(kind, 0) + 1
++        criteria_met = {
++            tier: all(counts.get(k, 0) >= n for k, n in req.items())
++            for tier, req in self.tier_criteria.items()
++        }
++        # highest satisfied tier wins; assumes tier_criteria ordered strongest-first
++        tier = next((t for t in self.tier_criteria if criteria_met.get(t)), None)
++        return tier, counts, criteria_met
++
++    def _evaluate_minimal(self, donor):
++        """Check the reduced 'minimal' field set on every existing instance."""
++        unmet = []
++        for schema_name, fields in self.minimal_criteria.items():
++            instances = [donor] if schema_name == self._root_schema() \
++                else self._find_objects(donor, schema_name)
++            id_key = self.validation_schema.get(schema_name, {}).get("id")
++            for inst in instances:
++                ident = inst.get(id_key, "?") if id_key else "?"
++                unmet += [f"{schema_name}[{ident}].{f}"
++                          for f in fields if not self._field_present(inst, f)]
++        return (len(unmet) == 0), unmet
++
++    def _required_complete(self, schema_name, obj, unmet, prefix=""):
++        """Recursively check all required_fields across the donor tree."""
++        spec = self.validation_schema[schema_name]
++        id_key = spec["id"]
++        ident = obj.get(id_key, "?") if id_key else "?"
++        here = f"{prefix}{schema_name}[{ident}]"
++        for f in spec["required_fields"]:
++            if not self._field_present(obj, f):
++                unmet.append(f"{here}.{f}")
++        for ns in spec["nested_schemas"]:
++            for child in (obj.get(ns) or []):
++                self._required_complete(ns, child, unmet, prefix=f"{here} > ")
++
++    def _evaluate_required_instances(self, donor):
++        """Check that required nested objects exist (e.g. >= 1 treatment).
++
++        Driven by the optional `required_instances` list on the schema subclass,
++        each entry being {"key": <json key>, "min": <count>}. Objects are counted
++        anywhere in the donor tree via _find_objects."""
++        unmet = []
++        for spec in getattr(self, "required_instances", []):
++            found = len(self._find_objects(donor, spec["key"]))
++            need = spec.get("min", 1)
++            if found < need:
++                unmet.append(
++                    f"missing required object: {spec['key']} (found {found}, need >= {need})")
++        return unmet
++
++    def _evaluate_fulsome(self, donor, donor_id):
++        """Fulsome = every required field present (across the whole tree) AND
++        every conditionally-required field/object present.
++
++        Flat required fields are checked directly by _required_complete (which
++        honours "Not available" as a valid value). The conditional requirements
++        are taken from the validation pass itself: every `warn(...)` raised with
++        conditional_required=True during this donor's validation is a missing
++        conditional requirement. This means *all* conditional rules in the
++        validate_* methods are covered automatically and stay in sync as the
++        model evolves -- no rule needs to be re-listed here.
++
++        NOTE: relies on validate_schema having run for this donor first (it does,
++        in validate_ingest_map, immediately before calculate_donor_completeness)."""
++        unmet = []
++        self._required_complete(self._root_schema(), donor, unmet)
++        unmet += getattr(self, "_conditional_gaps", {}).get(donor_id, [])
++        unmet += self._evaluate_required_instances(donor)
++        return (len(unmet) == 0), unmet
++
++    def _root_schema(self):
++        return list(self.validation_schema.keys())[0]
++
++    def calculate_donor_completeness(self, donor):
++        """Return a per-donor completeness record, or None if this schema does
++        not define completeness criteria."""
++        if getattr(self, "tier_criteria", None) is None \
++                or getattr(self, "minimal_criteria", None) is None:
++            return None
++
++        id_field = self.validation_schema[self._root_schema()]["id"]
++        donor_id = donor.get(id_field)
++        tier, sample_counts, tier_criteria_met = self._evaluate_tier(donor)
++        minimal_ok, minimal_unmet = self._evaluate_minimal(donor)
++        # conditional gaps are keyed by stack_location[0] == str(donor_id)
++        fulsome_ok, fulsome_unmet = self._evaluate_fulsome(donor, str(donor_id))
++        level = "fulsome" if fulsome_ok else "minimal" if minimal_ok else "incomplete"
++        return {
++            "donor_id": donor_id,
++            "tier": tier,                       # "A" / "B" / None (exclusive)
++            "level": level,                     # fulsome / minimal / incomplete
++            "type": (f"Tier {tier} {level}" if tier else f"untiered {level}"),
++            "tier_criteria_met": tier_criteria_met,  # diagnostic only (overlapping)
++            "sample_counts": sample_counts,
++            "minimal_complete": minimal_ok,
++            "fulsome_complete": fulsome_ok,
++            "minimal_unmet": minimal_unmet,
++            "fulsome_unmet": fulsome_unmet,
++        }
+diff --git a/tests/raw_data/Biomarker.csv b/tests/raw_data/Biomarker.csv
+index 3d1fa75..2a70823 100644
+--- a/tests/raw_data/Biomarker.csv
++++ b/tests/raw_data/Biomarker.csv
+@@ -11,3 +11,5 @@ DONOR_3,,,TR_3,1/5/2020,,7,327,103,8,Positive,65.8,Not applicable,23.6,Not avail
+ DONOR_3,,,TR_3,1/5/2020,,7,207,112,9,Positive,73.5,Not available,72.8,Cannot be determined,Not applicable,Not applicable,Negative,,
+ DONOR_3,,PD_3,,1/5/2020,,6,304,-99,9,,1.3,Negative,15.1,Not available,Not applicable,Not applicable,Positive,HPV16|HPV39,
+ DONOR_5,,PD_5,,1/5/2020,,4,245,46,11,Cannot be determined,59.9,Not available,-99,Not applicable,Cannot be determined,Negative,Cannot be determined,,
++CMPLT_COV1,,,,1/5/2018,,,5,,,,,,,,,,,,
++CMPLT_COV2,,,,1/5/2018,,,5,,,,,,,,,,,,
+diff --git a/tests/raw_data/Comorbidity.csv b/tests/raw_data/Comorbidity.csv
+index 08e14a3..07c5c30 100644
+--- a/tests/raw_data/Comorbidity.csv
++++ b/tests/raw_data/Comorbidity.csv
+@@ -1,2 +1,4 @@
+ submitter_donor_id,prior_malignancy,laterality_of_prior_malignancy,age_at_comorbidity_diagnosis,comorbidity_type_code,comorbidity_treatment_status,comorbidity_treatment,
+ DONOR_1,Yes,Right,44,C34.9,Not available,Ablation,
++CMPLT_COV1,,,,C34.9,,,
++CMPLT_COV2,,,,C34.9,,,
+diff --git a/tests/raw_data/Donor.csv b/tests/raw_data/Donor.csv
+index 7fdbde0..4a6b3af 100644
+--- a/tests/raw_data/Donor.csv
++++ b/tests/raw_data/Donor.csv
+@@ -5,3 +5,10 @@ DONOR_3,TEST_1,PD_3,Lost contact,4/6/2022,No,,7/12/1945,,Non-binary,Other,month
+ DONOR_4,TEST_1,,,,Yes,Not available,1/6/1984,239,Man,Male,month
+ DONOR_5,TEST_2,PD_5,Not available,1/6/2022,Yes,,15/2/1984,,Woman,Female,month
+ DONOR_6,TEST_2,PD_6,Withdrew from study,1/6/2022,No,,12/9/1974,,Non-binary,Other,month
++CMPLT_AF,TEST_1,,,,No,,6/1/1960,,Woman,Female,month
++CMPLT_BF,TEST_1,,,,No,,6/1/1961,,Man,Male,month
++CMPLT_AM,TEST_1,,,,No,,6/1/1962,,Woman,Female,month
++CMPLT_BM,TEST_1,,,,No,,6/1/1963,,Man,Male,month
++CMPLT_INC,TEST_1,,,,No,,6/1/1964,,Non-binary,Other,month
++CMPLT_COV1,TEST_1,,,,No,,1/1/1970,,Woman,Female,month
++CMPLT_COV2,TEST_1,,,,No,,1/1/1970,,Woman,Female,month
+diff --git a/tests/raw_data/Exposure.csv b/tests/raw_data/Exposure.csv
+new file mode 100644
+index 0000000..f9832ca
+--- /dev/null
++++ b/tests/raw_data/Exposure.csv
+@@ -0,0 +1,3 @@
++submitter_donor_id,tobacco_smoking_status,tobacco_type,pack_years_smoked
++CMPLT_COV1,Lifelong non-smoker (<100 cigarettes smoked in lifetime),,
++CMPLT_COV2,Lifelong non-smoker (<100 cigarettes smoked in lifetime),,
+diff --git a/tests/raw_data/Followup.csv b/tests/raw_data/Followup.csv
+index 2a946bb..c636ba4 100644
+--- a/tests/raw_data/Followup.csv
++++ b/tests/raw_data/Followup.csv
+@@ -5,3 +5,5 @@ FOLLOW_UP_3,DONOR_1,,,01/08/2022,Loco-regional progression,Distant recurrence/me
+ FOLLOW_UP_4,DONOR_1,,,01/08/2022,Loco-regional progression,Biochemical progression,16-05-2022,Imaging (procedure)|Laboratory data interpretation (procedure),C05,Lugano staging system,T1d,N1mi,M1a(0),Stage IVBS,
+ FOLLOW_UP_4,DONOR_6,,,01/07/2022,Loco-regional progression,Biochemical progression,16-05-2022,Imaging (procedure)|Laboratory data interpretation (procedure),C05,Lugano staging system,T1d,N1mi,M1a(0),Stage IVBS,
+ DUPLICATE_ID,DONOR_4,,,01/07/2022,Loco-regional progression,Biochemical progression,18-05-2022,Imaging (procedure)|Laboratory data interpretation (procedure),C05,Lugano staging system,T1d,N1mi,M1a(0),Stage IVBS,
++FU_CMPLT_COV1,CMPLT_COV1,,,1/6/2019,No evidence of disease,,,,,,,,,,
++FU_CMPLT_COV2,CMPLT_COV2,,,1/6/2019,No evidence of disease,,,,,,,,,,
+diff --git a/tests/raw_data/PrimaryDiagnosis.csv b/tests/raw_data/PrimaryDiagnosis.csv
+index d74a45d..ec168f8 100644
+--- a/tests/raw_data/PrimaryDiagnosis.csv
++++ b/tests/raw_data/PrimaryDiagnosis.csv
+@@ -6,4 +6,11 @@ DONOR_3,Tongue,DUPLICATE_ID,1/5/2018,C43.9,Cytology,AJCC cancer staging system,T
+ DONOR_4,Brain,PD_4,1/5/2018,C64.9,Death certificate only,Revised International staging system (R-ISS),,,,Stage 1B,"Unilateral, side not specified",,,,Stage IIS
+ DONOR_5,Gum,PD_5,15/3/2020,C64.9,,Revised International staging system (R-ISS),T1,N0a,M0,,Left,,,,Stage IIBES
+ DONOR_6,"Heart, mediastinum, and pleura",PD_6,1/5/2016,C02.2,Specific tumour markers,International Neuroblastoma Staging System,,,,Stage C,"Unilateral, side not specified",,,,Stage IIIB
+-DONOR_2,Floor of mouth,PD_2_1,6/3/2018,C43.9,Histology of a primary tumour,Binet staging system,,,,Stage B,Bilateral,,,,
+\ No newline at end of file
++DONOR_2,Floor of mouth,PD_2_1,6/3/2018,C43.9,Histology of a primary tumour,Binet staging system,,,,Stage B,Bilateral,,,,
++CMPLT_AF,Breast,PD_AF,1/6/2018,C50.1,Histology of a primary tumour,Durie-Salmon staging system,,,,Stage I,Left,,,,
++CMPLT_BF,Breast,PD_BF,1/6/2018,C50.1,Histology of a primary tumour,Durie-Salmon staging system,,,,Stage I,Left,,,,
++CMPLT_AM,Breast,PD_AM,1/6/2018,C50.1,Histology of a primary tumour,Durie-Salmon staging system,,,,Stage I,Left,,,,
++CMPLT_BM,Breast,PD_BM,1/6/2018,C50.1,Histology of a primary tumour,Durie-Salmon staging system,,,,Stage I,Left,,,,
++CMPLT_INC,Breast,PD_INC,1/6/2018,C50.1,Histology of a primary tumour,Durie-Salmon staging system,,,,Stage I,Left,,,,
++CMPLT_COV1,Breast,PD_COV1,1/2/2018,C50.1,Histology of a primary tumour,AJCC cancer staging system,T1,N0,M0,,Left,,,,
++CMPLT_COV2,Breast,PD_COV2,1/2/2018,C50.1,Histology of a primary tumour,Durie-Salmon staging system,,,,Stage I,Left,,,,
+diff --git a/tests/raw_data/Radiation.csv b/tests/raw_data/Radiation.csv
+index e253d36..14aa591 100644
+--- a/tests/raw_data/Radiation.csv
++++ b/tests/raw_data/Radiation.csv
+@@ -1,3 +1,5 @@
+ submitter_donor_id, submitter_treatment_id, radiation_therapy_modality, radiation_therapy_type, radiation_therapy_fractions, radiation_therapy_dosage, anatomical_site_irradiated, radiation_boost, reference_radiation_treatment_id, 
+ DONOR_5,TR_5, Teleradiotherapy protons (procedure), Internal, 30,-99,FINGER (INCLUDING THUMBS),Yes, REFERENCE_RADIATION_TREATMENT_2,
+ DONOR_5,TR_5, Teleradiotherapy protons (procedure), Internal, 10,33,FINGER (INCLUDING THUMBS),No,, 
++CMPLT_COV1,TR_COV1,Brachytherapy (procedure),External,30,50,ABDOMEN,No,,
++CMPLT_COV2,TR_COV2,Brachytherapy (procedure),External,30,50,ABDOMEN,No,,
+diff --git a/tests/raw_data/Sample_Registration.csv b/tests/raw_data/Sample_Registration.csv
+index f77fa14..c9d9157 100644
+--- a/tests/raw_data/Sample_Registration.csv
++++ b/tests/raw_data/Sample_Registration.csv
+@@ -3,3 +3,19 @@ SAMPLE_REGISTRATION_1,DONOR_2,SPECIMEN_4,Cervical mucus,Tumour,Recurrent tumour,
+ SAMPLE_REGISTRATION_2,DONOR_2,SPECIMEN_7,Cervical mucus,Normal,Recurrent tumour,Total DNA,Bar
+ SAMPLE_REGISTRATION_3,DONOR_2,SPECIMEN_5,Cervical mucus,Normal,Recurrent tumour,Total DNA,Baz
+ SAMPLE_REGISTRATION_4,DONOR_5,SPECIMEN_6,Cervical mucus,Normal,Recurrent tumour,Total DNA,Bat
++SAMP_AF_TD,CMPLT_AF,SPEC_AF_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total DNA,Foo
++SAMP_AF_TR,CMPLT_AF,SPEC_AF_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total RNA,Foo
++SAMP_AF_ND,CMPLT_AF,SPEC_AF_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
++SAMP_BF_TD,CMPLT_BF,SPEC_BF_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total DNA,Foo
++SAMP_BF_ND,CMPLT_BF,SPEC_BF_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
++SAMP_AM_TD,CMPLT_AM,SPEC_AM_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total DNA,Foo
++SAMP_AM_TR,CMPLT_AM,SPEC_AM_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total RNA,Foo
++SAMP_AM_ND,CMPLT_AM,SPEC_AM_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
++SAMP_BM_TD,CMPLT_BM,SPEC_BM_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total DNA,Foo
++SAMP_BM_ND,CMPLT_BM,SPEC_BM_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
++SAMP_INC_ND,CMPLT_INC,SPEC_INC_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
++SAMP_COV1_TD,CMPLT_COV1,SPEC_COV1_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total DNA,Foo
++SAMP_COV1_TR,CMPLT_COV1,SPEC_COV1_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total RNA,Foo
++SAMP_COV1_ND,CMPLT_COV1,SPEC_COV1_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
++SAMP_COV2_TD,CMPLT_COV2,SPEC_COV2_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total DNA,Foo
++SAMP_COV2_ND,CMPLT_COV2,SPEC_COV2_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
+diff --git a/tests/raw_data/Specimen.csv b/tests/raw_data/Specimen.csv
+index b208747..1b11340 100644
+--- a/tests/raw_data/Specimen.csv
++++ b/tests/raw_data/Specimen.csv
+@@ -6,3 +6,16 @@ DONOR_2,PD_2_1,SPECIMEN_4,,Durie-Salmon staging system,23/12/2021,RNA later froz
+ DONOR_2,PD_2,SPECIMEN_5,TR_7,Durie-Salmon staging system,07/12/2020,Frozen in -70 freezer,,C15.9,,,,,,,Formalin fixed & paraffin embedded,,,,,,,,,,,,,,,
+ DONOR_5,PD_5,SPECIMEN_6,,Durie-Salmon staging system,20/04/2021,Cut slide,8124/9,C15.9,,Not done,IASLC grading system,G3,51-100%,Pathology estimate by percent nuclei,Formalin fixed - buffered,,,,,,,,,,,,,,,
+ DONOR_2,PD_2_1,SPECIMEN_7,,Durie-Salmon staging system,23/02/2021,RNA later frozen,,C43.9,,,,,,,Cryopreservation - other,,,,,,,,,,,,,,,
++CMPLT_AF,PD_AF,SPEC_AF_T,,,1/8/2018,Frozen in liquid nitrogen,,C50.1,Yes,Yes,Two-tier grading system,Low grade,51-100%,Image analysis,,,,,,,,,,,,,,,,
++CMPLT_AF,PD_AF,SPEC_AF_N,,,1/8/2018,Frozen in liquid nitrogen,,C50.1,,,,,,,,,,,,,,,,,,,,,,
++CMPLT_BF,PD_BF,SPEC_BF_T,,,1/8/2018,Frozen in liquid nitrogen,,C50.1,Yes,Yes,Two-tier grading system,Low grade,51-100%,Image analysis,,,,,,,,,,,,,,,,
++CMPLT_BF,PD_BF,SPEC_BF_N,,,1/8/2018,Frozen in liquid nitrogen,,C50.1,,,,,,,,,,,,,,,,,,,,,,
++CMPLT_AM,PD_AM,SPEC_AM_T,,,1/8/2018,,,C50.1,Yes,Yes,Two-tier grading system,Low grade,51-100%,Image analysis,,,,,,,,,,,,,,,,
++CMPLT_AM,PD_AM,SPEC_AM_N,,,1/8/2018,Frozen in liquid nitrogen,,C50.1,,,,,,,,,,,,,,,,,,,,,,
++CMPLT_BM,PD_BM,SPEC_BM_T,,,1/8/2018,,,C50.1,Yes,Yes,Two-tier grading system,Low grade,51-100%,Image analysis,,,,,,,,,,,,,,,,
++CMPLT_BM,PD_BM,SPEC_BM_N,,,1/8/2018,Frozen in liquid nitrogen,,C50.1,,,,,,,,,,,,,,,,,,,,,,
++CMPLT_INC,PD_INC,SPEC_INC_N,,,1/8/2018,Frozen in liquid nitrogen,,C50.1,,,,,,,,,,,,,,,,,,,,,,
++CMPLT_COV1,PD_COV1,SPEC_COV1_T,,,1/3/2018,Frozen in liquid nitrogen,,C50.1,Yes,Yes,Two-tier grading system,Low grade,51-100%,Image analysis,,,,,,,,,,,,,,,,
++CMPLT_COV1,PD_COV1,SPEC_COV1_N,,,1/3/2018,Frozen in liquid nitrogen,,C50.1,,,,,,,,,,,,,,,,,,,,,,
++CMPLT_COV2,PD_COV2,SPEC_COV2_T,,,1/3/2018,Frozen in liquid nitrogen,,C50.1,Yes,Yes,Two-tier grading system,Low grade,51-100%,Image analysis,,,,,,,,,,,,,,,,
++CMPLT_COV2,PD_COV2,SPEC_COV2_N,,,1/3/2018,Frozen in liquid nitrogen,,C50.1,,,,,,,,,,,,,,,,,,,,,,
+diff --git a/tests/raw_data/Surgery.csv b/tests/raw_data/Surgery.csv
+index ee22ddd..95b8ac8 100644
+--- a/tests/raw_data/Surgery.csv
++++ b/tests/raw_data/Surgery.csv
+@@ -1,3 +1,5 @@
+ submitter_donor_id,submitter_specimen_id,submitter_treatment_id,surgery_reference_database,surgery_reference_identifier,surgery_type,surgery_site,surgery_location,tumour_length,tumour_width,greatest_dimension_tumour,tumour_focality,residual_tumour_classification,margin_types_involved,margin_types_not_involved,lymphovascular_invasion,margin_types_not_assessed,perineural_invasion
+ DONOR_2,SPECIMEN_4,TR_7,SNOMED,178294003,Axillary lymph nodes sampling,C14,Primary,9,7,5,Unifocal,R2,Distal margin|Circumferential resection margin,,Absent,Not available,Absent
+ DONOR_6,SPECIMEN_43,TR_9,NCIt,C15361,Fine needle aspiration biopsy,C14,Primary,9,7,5,Unifocal,R2,Distal margin|Circumferential resection margin,,Absent,Not available,Absent
++CMPLT_COV1,SPEC_COV1_T,TR_COV1,SNOMED,178294003,Excision,,,,,,,,,,,,
++CMPLT_COV2,SPEC_COV2_T,TR_COV2,SNOMED,178294003,Excision,,,,,,,,,,,,
+diff --git a/tests/raw_data/SystemicTherapy.csv b/tests/raw_data/SystemicTherapy.csv
+index 7f0909c..8a1dfc4 100644
+--- a/tests/raw_data/SystemicTherapy.csv
++++ b/tests/raw_data/SystemicTherapy.csv
+@@ -4,3 +4,5 @@ DONOR_2,TR_2,Chemotherapy,NIVOLUMAB,87333,mg/m2,150,111,PubChem,5,2,1/04/2020,1/
+ DONOR_3,TR_3,Hormone therapy,degarelix,46475,ug/m2,179,97,PubChem,6,3,10/12/2020,19/12/2021
+ DONOR_4,TR_4,Immunotherapy,Pembrolizumab,4459876,IU/kg,95,160,RxNorm,4,2,1/3/2021,12/12/2021
+ DONOR_2,TR_8,Immunotherapy,Pexidartinib,8836851,ug/m2,197,183,PubChem,6,1,9/5/2021,6/6/2023
++CMPLT_COV1,TR_COV1,Chemotherapy,Cisplatin,12345,,,,RxNorm,,,1/3/2018,1/6/2018
++CMPLT_COV2,TR_COV2,Chemotherapy,Cisplatin,12345,,,,RxNorm,,,1/3/2018,1/6/2018
+diff --git a/tests/raw_data/Treatment.csv b/tests/raw_data/Treatment.csv
+index 6b5d854..da6e6c7 100644
+--- a/tests/raw_data/Treatment.csv
++++ b/tests/raw_data/Treatment.csv
+@@ -9,3 +9,7 @@ TR_7,DONOR_2,PD_2_1,Surgery,Yes,01/02/2021,01/02/2022,Diagnostic,,Progressive di
+ TR_8,DONOR_2,PD_2_1,Systemic therapy,No,01/03/2021,01/03/2022,Forensic,AML Response Criteria,Immune confirmed progressive disease (iCPD),Other
+ TR_9,DONOR_6,PD_6,Surgery,No,01/02/2021,01/02/2022,Diagnostic,Blazer score,Progressive disease,
+ TR_10,DONOR_5,PD_5,Systemic therapy,No,01/02/2021,01/02/2022,Forensic,Response Assessment in Neuro-Oncology (RANO),,
++TR_AF,CMPLT_AF,PD_AF,Bone marrow transplant,Yes,1/7/2018,1/9/2018,Curative,,,
++TR_BF,CMPLT_BF,PD_BF,Bone marrow transplant,Yes,1/7/2018,1/9/2018,Curative,,,
++TR_COV1,CMPLT_COV1,PD_COV1,Systemic therapy|Radiation therapy|Surgery,Yes,1/2/2018,1/12/2018,Curative,,,
++TR_COV2,CMPLT_COV2,PD_COV2,Systemic therapy|Radiation therapy|Surgery,Yes,1/2/2018,1/12/2018,Curative,,,
+diff --git a/tests/test2mohv3.csv b/tests/test2mohv3.csv
+index 0a1658e..49a314d 100644
+--- a/tests/test2mohv3.csv
++++ b/tests/test2mohv3.csv
+@@ -132,11 +132,11 @@ DONOR.INDEX.comorbidities.INDEX.age_at_comorbidity_diagnosis_not_available, {num
+ DONOR.INDEX.comorbidities.INDEX.comorbidity_type_code, {single_val(Comorbidity.comorbidity_type_code)}
+ DONOR.INDEX.comorbidities.INDEX.comorbidity_treatment_status, {single_val(Comorbidity.comorbidity_treatment_status)}
+ DONOR.INDEX.comorbidities.INDEX.comorbidity_treatment, {single_val(Comorbidity.comorbidity_treatment)}
+-DONOR.INDEX.exposures.INDEX, {indexed_on(EXPOSURES_SHEET.submitter_donor_id)}
+-DONOR.INDEX.exposures.INDEX.tobacco_smoking_status, {single_val(EXPOSURES_SHEET.tobacco_smoking_status)}
+-DONOR.INDEX.exposures.INDEX.tobacco_type, {pipe_delim(EXPOSURES_SHEET.tobacco_type)}
+-DONOR.INDEX.exposures.INDEX.pack_years_smoked, {set_neg_99_blank_int(EXPOSURES_SHEET.pack_years_smoked)}
+-DONOR.INDEX.exposures.INDEX.pack_years_smoked_not_available, {numeric_not_available(EXPOSURES_SHEET.pack_years_smoked)}
++DONOR.INDEX.exposures.INDEX, {indexed_on(Exposure.submitter_donor_id)}
++DONOR.INDEX.exposures.INDEX.tobacco_smoking_status, {single_val(Exposure.tobacco_smoking_status)}
++DONOR.INDEX.exposures.INDEX.tobacco_type, {pipe_delim(Exposure.tobacco_type)}
++DONOR.INDEX.exposures.INDEX.pack_years_smoked, {set_neg_99_blank_int(Exposure.pack_years_smoked)}
++DONOR.INDEX.exposures.INDEX.pack_years_smoked_not_available, {numeric_not_available(Exposure.pack_years_smoked)}
+ DONOR.INDEX.biomarkers.INDEX, {indexed_on(Biomarker.submitter_donor_id)}
+ DONOR.INDEX.biomarkers.INDEX.submitter_specimen_id, {single_val(Biomarker.submitter_specimen_id)}
+ DONOR.INDEX.biomarkers.INDEX.submitter_primary_diagnosis_id, {single_val(Biomarker.submitter_primary_diagnosis_id)}
+diff --git a/tests/test_data_ingest.py b/tests/test_data_ingest.py
+index ae24b28..4863325 100644
+--- a/tests/test_data_ingest.py
++++ b/tests/test_data_ingest.py
+@@ -31,8 +31,9 @@ def packets():
+ 
+ 
+ def test_csv_convert(packets):
+-    # there are 6 donors
+-    assert len(packets) == 6
++    # 6 original sample donors + 5 completeness fixtures (CMPLT_AF/BF/AM/BM/INC)
++    # + 2 full-coverage fulsome donors (CMPLT_COV1/COV2)
++    assert len(packets) == 13
+ 
+ 
+ def test_external_mapping(packets):
+@@ -79,7 +80,11 @@ def test_donor_2(packets):
+ 
+ 
+ def test_validation(packets, schema):
+-    schema.validate_ingest_map({"donors": packets})
++    # Scope validation to the original sample donors so the expected warning /
++    # error lists below are unaffected by the CMPLT_* completeness fixtures.
++    original_ids = {"DONOR_1", "DONOR_2", "DONOR_3", "DONOR_4", "DONOR_5", "DONOR_6"}
++    original = [p for p in packets if p["submitter_donor_id"] in original_ids]
++    schema.validate_ingest_map({"donors": original})
+     print(schema.validation_warnings)
+     warnings = [
+         "DONOR_2 > PD_2: date_of_diagnosis required for primary_diagnoses",
+@@ -144,3 +149,52 @@ def test_multisheet_mapping(packets):
+                         assert len(s["multisheet"]["placeholder"]["submitter_specimen_id"]["Sample_Registration"]) == 0
+                         assert len(s["multisheet"]["placeholder"]["extra"]["Sample_Registration"]) == 0
+ 
++
++# Per-donor tier/level completeness summary over the full cohort.
++# The tests/raw_data fixtures include five CMPLT_* donors purpose-built to land
++# in each summary bucket:
++#   CMPLT_AF  -> Tier A, fulsome   CMPLT_BF  -> Tier B, fulsome
++#   CMPLT_AM  -> Tier A, minimal   CMPLT_BM  -> Tier B, minimal
++#   CMPLT_INC -> untiered (single normal DNA sample) -> incomplete
++def test_completeness_summary(packets, schema):
++    schema.validate_ingest_map({"donors": packets})
++    summary = CSVConvert.summarize_completeness(schema.statistics["donor_completeness"])
++
++    assert summary["total_donors"] == 13
++    # each axis partitions all donors exactly once
++    assert (summary["tier_a_min_clinical_complete"]
++            + summary["tier_b_min_clinical_complete"]
++            + summary["incomplete_min_donors"]) == 13
++    assert (summary["tier_a_full_clinical_complete"]
++            + summary["tier_b_full_clinical_complete"]
++            + summary["incomplete_full_donors"]) == 13
++    # the CMPLT_* donors populate each category (Tier A donors are not also
++    # counted toward Tier B); original donors only add to the incomplete buckets
++    assert summary["tier_a_min_clinical_complete"] == 3    # CMPLT_AF, CMPLT_AM, CMPLT_COV1
++    assert summary["tier_b_min_clinical_complete"] == 3    # CMPLT_BF, CMPLT_BM, CMPLT_COV2
++    assert summary["tier_a_full_clinical_complete"] == 2   # CMPLT_AF, CMPLT_COV1
++    assert summary["tier_b_full_clinical_complete"] == 2   # CMPLT_BF, CMPLT_COV2
++    assert summary["incomplete_min_donors"] >= 1           # CMPLT_INC (+ originals)
++    assert summary["incomplete_full_donors"] >= 3          # CMPLT_AM, CMPLT_BM, CMPLT_INC (+ originals)
++
++
++# CMPLT_COV1 / CMPLT_COV2 populate every object type in the model, with all
++# required and conditionally-required fields filled, so they should come out
++# fulsome complete. This guards against the required-field lists drifting out of
++# sync with the model (a newly-required field would make these donors fail).
++def test_full_object_coverage_donors_are_fulsome(packets, schema):
++    schema.validate_ingest_map({"donors": packets})
++    dc = schema.statistics["donor_completeness"]
++    for donor_id in ("CMPLT_COV1", "CMPLT_COV2"):
++        assert dc[donor_id]["fulsome_complete"] is True, dc[donor_id]["fulsome_unmet"]
++        assert dc[donor_id]["fulsome_unmet"] == []
++
++    cov = next(p for p in packets if p["submitter_donor_id"] == "CMPLT_COV1")
++    # donor-level objects
++    for key in ("primary_diagnoses", "followups", "biomarkers", "comorbidities", "exposures"):
++        assert cov.get(key), f"CMPLT_COV1 missing {key}"
++    pd = cov["primary_diagnoses"][0]
++    assert pd.get("specimens") and pd["specimens"][0].get("sample_registrations")
++    tr = pd["treatments"][0]
++    for key in ("systemic_therapies", "radiations", "surgeries"):
++        assert tr.get(key), f"CMPLT_COV1 treatment missing {key}"
+diff --git a/tests/test_donor_completeness.py b/tests/test_donor_completeness.py
+new file mode 100644
+index 0000000..76873f7
+--- /dev/null
++++ b/tests/test_donor_completeness.py
+@@ -0,0 +1,271 @@
++"""Tests for per-donor tier/level completeness (BaseSchema completeness engine).
++
++Offline by design: MoHSchemaV3.__init__ fetches the OpenAPI schema over the
++network, but the completeness engine only needs the class-level criteria and
++the validation pass. We instantiate via __new__ and supply a permissive
++json_schema ({} validates anything) so validate_ingest_map runs without network.
++
++'fulsome' completeness is derived from the validation pass, so these tests run
++the donor(s) through schema.validate_ingest_map and read the resulting
++statistics["donor_completeness"], rather than calling the engine in isolation.
++"""
++
++import pytest
++
++from clinical_etl.mohschemav3 import MoHSchemaV3
++from clinical_etl.CSVConvert import summarize_completeness, build_completeness_failures
++
++
++@pytest.fixture
++def schema():
++    s = MoHSchemaV3.__new__(MoHSchemaV3)          # bypass network __init__
++    s.validation_warnings = []
++    s.validation_errors = []
++    s.statistics = {}
++    s.identifiers = {}
++    s.stack_location = []
++    s.json_schema = {}                            # permissive: no jsonschema errors
++    return s
++
++
++def evaluate(schema, *donors):
++    """Run donors through the full validation pass and return the per-donor
++    completeness records keyed by donor id."""
++    schema.validate_ingest_map({"donors": list(donors)})
++    return schema.statistics["donor_completeness"]
++
++
++# --- fixture builders ------------------------------------------------------ #
++
++def sample(tn, stype, sid):
++    return {
++        "submitter_sample_id": sid,
++        "tumour_normal_designation": tn,
++        "specimen_tissue_source": "Blood derived",
++        "specimen_type": "Primary tumour",
++        "sample_type": stype,
++    }
++
++
++def tumour_dna(sid="S_TDNA"):
++    return sample("Tumour", "Total DNA", sid)
++
++
++def tumour_rna(sid="S_TRNA"):
++    return sample("Tumour", "Total RNA", sid)
++
++
++def normal_dna(sid="S_NDNA"):
++    return sample("Normal", "Total DNA", sid)
++
++
++def treatment():
++    # treatment_type that does not require nested therapy/radiation/surgery objects
++    return {
++        "submitter_treatment_id": "TR1",
++        "treatment_type": ["Bone marrow transplant"],
++        "is_primary_treatment": "Yes",
++        "treatment_start_date": {"month_interval": 0},
++        "treatment_end_date": {"month_interval": 1},
++        "treatment_intent": "Curative",
++    }
++
++
++def build_donor(donor_id="DONOR", samples=None, deceased="No",
++                with_specimen_storage=True, with_staging=True,
++                with_tumour_specimen_fields=True, with_treatment=True):
++    """Build a donor that is fully (fulsome) complete by default; flip a knob
++    to introduce a specific gap."""
++    if samples is None:
++        samples = [tumour_dna(), tumour_rna(), normal_dna()]
++    specimen = {
++        "submitter_specimen_id": "SP1",
++        "specimen_collection_date": {"month_interval": 0},
++        "specimen_anatomic_location": "C50",
++        "sample_registrations": samples,
++    }
++    if with_specimen_storage:
++        specimen["specimen_storage"] = "Frozen in liquid nitrogen"
++    if with_tumour_specimen_fields:
++        specimen.update({
++            "reference_pathology_confirmed_diagnosis": "Yes",
++            "reference_pathology_confirmed_tumour_presence": "Yes",
++            "tumour_grading_system": "Two-tier grading system",
++            "tumour_grade": "Low grade",
++            "percent_tumour_cells_range": "51-100%",
++            "percent_tumour_cells_measurement_method": "Image analysis",
++        })
++    primary_diagnosis = {
++        "submitter_primary_diagnosis_id": "PD1",
++        "date_of_diagnosis": {"month_interval": 0},
++        "cancer_type_code": "C50.1",
++        "primary_site": "Breast",
++        "basis_of_diagnosis": "Histology of primary tumour",
++        "specimens": [specimen],
++    }
++    if with_treatment:
++        primary_diagnosis["treatments"] = [treatment()]
++    if with_staging:
++        primary_diagnosis["clinical_tumour_staging_system"] = "Revised International staging system (R-ISS)"
++        primary_diagnosis["clinical_stage_group"] = "Stage I"
++    return {
++        "submitter_donor_id": donor_id,
++        "gender": "Woman",
++        "sex_at_birth": "Female",
++        "date_of_birth": {"month_interval": 0},
++        "date_resolution": "month",
++        "is_deceased": deceased,
++        "program_id": "PROGRAM_1",
++        "primary_diagnoses": [primary_diagnosis],
++    }
++
++
++# --- _field_present: "Not available" counts as complete -------------------- #
++
++def test_not_available_is_a_valid_value(schema):
++    assert schema._field_present({"x": "Not available"}, "x") is True
++    assert schema._field_present({"x": "Woman"}, "x") is True
++    assert schema._field_present({"x": ""}, "x") is False
++    assert schema._field_present({"x": None}, "x") is False
++    assert schema._field_present({}, "x") is False
++
++
++# --- tier classification (exclusive) --------------------------------------- #
++
++def test_tier_a(schema):
++    rec = evaluate(schema, build_donor())["DONOR"]
++    assert rec["tier"] == "A"
++    assert rec["sample_counts"] == {"tumour_dna": 1, "tumour_rna": 1, "normal_dna": 1}
++    assert rec["tier_criteria_met"] == {"A": True, "B": True}  # diagnostic overlap only
++
++
++def test_tier_b(schema):
++    rec = evaluate(schema, build_donor(samples=[tumour_dna(), normal_dna()]))["DONOR"]
++    assert rec["tier"] == "B"
++    assert rec["tier_criteria_met"] == {"A": False, "B": True}
++
++
++def test_tier_none_when_composition_incomplete(schema):
++    rec = evaluate(schema, build_donor(samples=[tumour_dna()]))["DONOR"]
++    assert rec["tier"] is None
++
++
++def test_summary_buckets(schema):
++    recs = evaluate(
++        schema,
++        # Tier A, fulsome
++        build_donor(donor_id="DONOR_AF"),
++        # Tier B, fulsome
++        build_donor(donor_id="DONOR_BF", samples=[tumour_dna(), normal_dna()]),
++        # Tier A, minimal only (missing conditional staging -> not fulsome)
++        build_donor(donor_id="DONOR_AM", with_staging=False),
++        # No qualifying tier (single tumour DNA sample)
++        build_donor(donor_id="DONOR_N", samples=[tumour_dna()]),
++    )
++    summary = summarize_completeness(recs)
++    assert summary["total_donors"] == 4
++    # minimal partition (sums to 4); Tier A donor never counted toward Tier B
++    assert summary["tier_a_min_clinical_complete"] == 2   # AF, AM
++    assert summary["tier_b_min_clinical_complete"] == 1   # BF
++    assert summary["incomplete_min_donors"] == 1          # N
++    # fulsome partition (sums to 4)
++    assert summary["tier_a_full_clinical_complete"] == 1  # AF
++    assert summary["tier_b_full_clinical_complete"] == 1  # BF
++    assert summary["incomplete_full_donors"] == 2         # AM (minimal only), N
++
++
++# --- fulsome vs minimal ---------------------------------------------------- #
++
++def test_fully_complete_donor_is_fulsome(schema):
++    rec = evaluate(schema, build_donor())["DONOR"]
++    assert rec["fulsome_unmet"] == []
++    assert rec["fulsome_complete"] is True
++    assert rec["minimal_complete"] is True
++    assert rec["level"] == "fulsome"
++    assert rec["type"] == "Tier A fulsome"
++
++
++def test_missing_flat_required_breaks_fulsome(schema):
++    # specimen_storage is required but is not part of the minimal set
++    rec = evaluate(schema, build_donor(with_specimen_storage=False))["DONOR"]
++    assert rec["minimal_complete"] is True
++    assert rec["fulsome_complete"] is False
++    assert rec["level"] == "minimal"
++    assert any("specimen_storage" in u for u in rec["fulsome_unmet"])
++
++
++def test_missing_treatment_breaks_fulsome(schema):
++    # every donor must have >= 1 treatment object (required_instances)
++    rec = evaluate(schema, build_donor(with_treatment=False))["DONOR"]
++    assert rec["fulsome_complete"] is False
++    assert any("treatments" in u for u in rec["fulsome_unmet"])
++    assert rec["minimal_complete"] is True   # treatment existence is not a minimal criterion
++
++
++def test_missing_staging_is_a_conditional_gap(schema):
++    # conditional requirement raised in validate_primary_diagnoses
++    rec = evaluate(schema, build_donor(with_staging=False))["DONOR"]
++    assert rec["fulsome_complete"] is False
++    assert any("clinical_tumour_staging_system" in u or "staging" in u
++               for u in rec["fulsome_unmet"])
++    assert rec["minimal_complete"] is True   # staging not in the minimal set
++
++
++def test_missing_tumour_specimen_fields_is_a_conditional_gap(schema):
++    # conditional requirement raised in validate_specimens for Tumour samples
++    rec = evaluate(schema, build_donor(with_tumour_specimen_fields=False))["DONOR"]
++    assert rec["fulsome_complete"] is False
++    assert any("Tumour specimens require" in u for u in rec["fulsome_unmet"])
++    assert rec["minimal_complete"] is True
++
++
++def test_deceased_without_death_fields_is_a_conditional_gap(schema):
++    rec = evaluate(schema, build_donor(deceased="Yes"))["DONOR"]
++    assert rec["fulsome_complete"] is False
++    assert any("cause_of_death" in u for u in rec["fulsome_unmet"])
++    assert any("date_of_death" in u for u in rec["fulsome_unmet"])
++    assert rec["minimal_complete"] is True   # death fields not in the minimal set
++
++
++# --- "Not available" rule flows through fulsome ---------------------------- #
++
++def test_not_available_keeps_donor_fulsome(schema):
++    donor = build_donor()
++    donor["gender"] = "Not available"
++    rec = evaluate(schema, donor)["DONOR"]
++    assert rec["fulsome_complete"] is True
++
++
++def test_blank_value_breaks_fulsome(schema):
++    donor = build_donor()
++    donor["gender"] = ""
++    rec = evaluate(schema, donor)["DONOR"]
++    assert rec["fulsome_complete"] is False
++    assert any(u.endswith(".gender") for u in rec["fulsome_unmet"])
++
++
++# --- detailed failure report ----------------------------------------------- #
++
++def test_completeness_failures_report(schema):
++    recs = evaluate(
++        schema,
++        build_donor(donor_id="DONOR_AF"),                       # fully complete
++        build_donor(donor_id="DONOR_AM", with_staging=False),   # tier A, not fulsome
++        build_donor(donor_id="DONOR_N", samples=[tumour_dna()]),  # untiered
++    )
++    report = build_completeness_failures(recs, schema.tier_criteria)
++
++    assert report["total_donors"] == 3
++    assert report["failing_donors"] == 2
++    ids = {d["donor_id"] for d in report["donors"]}
++    assert "DONOR_AF" not in ids          # fully complete -> excluded
++    assert ids == {"DONOR_AM", "DONOR_N"}
++
++    am = next(d for d in report["donors"] if d["donor_id"] == "DONOR_AM")
++    assert am["fulsome_complete"] is False
++    assert any("fulsome" in r.lower() for r in am["reasons"])
++    assert any("staging" in u.lower() for u in am["fulsome_unmet"])
++
++    n = next(d for d in report["donors"] if d["donor_id"] == "DONOR_N")
++    assert n["tier"] is None
++    assert any("Sample composition" in r for r in n["reasons"])

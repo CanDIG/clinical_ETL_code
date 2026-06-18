@@ -7,3 +7,10 @@ DONOR_4,Brain,PD_4,1/5/2018,C64.9,Death certificate only,Revised International s
 DONOR_5,Gum,PD_5,15/3/2020,C64.9,,Revised International staging system (R-ISS),T1,N0a,M0,,Left,,,,Stage IIBES
 DONOR_6,"Heart, mediastinum, and pleura",PD_6,1/5/2016,C02.2,Specific tumour markers,International Neuroblastoma Staging System,,,,Stage C,"Unilateral, side not specified",,,,Stage IIIB
 DONOR_2,Floor of mouth,PD_2_1,6/3/2018,C43.9,Histology of a primary tumour,Binet staging system,,,,Stage B,Bilateral,,,,
+CMPLT_AF,Breast,PD_AF,1/6/2018,C50.1,Histology of a primary tumour,Durie-Salmon staging system,,,,Stage I,Left,,,,
+CMPLT_BF,Breast,PD_BF,1/6/2018,C50.1,Histology of a primary tumour,Durie-Salmon staging system,,,,Stage I,Left,,,,
+CMPLT_AM,Breast,PD_AM,1/6/2018,C50.1,Histology of a primary tumour,Durie-Salmon staging system,,,,Stage I,Left,,,,
+CMPLT_BM,Breast,PD_BM,1/6/2018,C50.1,Histology of a primary tumour,Durie-Salmon staging system,,,,Stage I,Left,,,,
+CMPLT_INC,Breast,PD_INC,1/6/2018,C50.1,Histology of a primary tumour,Durie-Salmon staging system,,,,Stage I,Left,,,,
+CMPLT_COV1,Breast,PD_COV1,1/2/2018,C50.1,Histology of a primary tumour,AJCC cancer staging system,T1,N0,M0,,Left,,,,
+CMPLT_COV2,Breast,PD_COV2,1/2/2018,C50.1,Histology of a primary tumour,Durie-Salmon staging system,,,,Stage I,Left,,,,

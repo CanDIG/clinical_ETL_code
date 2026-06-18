@@ -3,3 +3,19 @@ SAMPLE_REGISTRATION_1,DONOR_2,SPECIMEN_4,Cervical mucus,Tumour,Recurrent tumour,
 SAMPLE_REGISTRATION_2,DONOR_2,SPECIMEN_7,Cervical mucus,Normal,Recurrent tumour,Total DNA,Bar
 SAMPLE_REGISTRATION_3,DONOR_2,SPECIMEN_5,Cervical mucus,Normal,Recurrent tumour,Total DNA,Baz
 SAMPLE_REGISTRATION_4,DONOR_5,SPECIMEN_6,Cervical mucus,Normal,Recurrent tumour,Total DNA,Bat
+SAMP_AF_TD,CMPLT_AF,SPEC_AF_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total DNA,Foo
+SAMP_AF_TR,CMPLT_AF,SPEC_AF_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total RNA,Foo
+SAMP_AF_ND,CMPLT_AF,SPEC_AF_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
+SAMP_BF_TD,CMPLT_BF,SPEC_BF_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total DNA,Foo
+SAMP_BF_ND,CMPLT_BF,SPEC_BF_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
+SAMP_AM_TD,CMPLT_AM,SPEC_AM_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total DNA,Foo
+SAMP_AM_TR,CMPLT_AM,SPEC_AM_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total RNA,Foo
+SAMP_AM_ND,CMPLT_AM,SPEC_AM_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
+SAMP_BM_TD,CMPLT_BM,SPEC_BM_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total DNA,Foo
+SAMP_BM_ND,CMPLT_BM,SPEC_BM_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
+SAMP_INC_ND,CMPLT_INC,SPEC_INC_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
+SAMP_COV1_TD,CMPLT_COV1,SPEC_COV1_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total DNA,Foo
+SAMP_COV1_TR,CMPLT_COV1,SPEC_COV1_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total RNA,Foo
+SAMP_COV1_ND,CMPLT_COV1,SPEC_COV1_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo
+SAMP_COV2_TD,CMPLT_COV2,SPEC_COV2_T,Blood derived - peripheral blood,Tumour,Primary tumour,Total DNA,Foo
+SAMP_COV2_ND,CMPLT_COV2,SPEC_COV2_N,Blood derived - peripheral blood,Normal,Normal,Total DNA,Foo

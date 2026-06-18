@@ -49,6 +49,13 @@ class BaseSchema:
     # The component name in the OpenAPI specification
     schema_name = None
 
+    # Values that count as "empty" for per-donor completeness scoring.
+    # NOTE: "Not available" is intentionally NOT included: it is treated as a
+    # valid, complete answer for completeness purposes. (This differs from the
+    # required_but_missing / cases_missing_data stats in validate_schema, which
+    # still treat "Not available" as missing.)
+    EMPTY_VALUES = (None, "")
+
     # schema for validation beyond jsonschema checks. Each schema that is described in the model gets an entry.
     validation_schema = {
         "examples": {             # There should be a method `validate_examples` implemented to validate conditionals
@@ -115,7 +122,15 @@ class BaseSchema:
         self.template = self.add_default_mappings(raw_template)
 
 
-    def warn(self, message):
+    def warn(self, message, conditional_required=True):
+        """Record a validation warning.
+
+        `conditional_required` (default True) marks the warning as indicating a
+        required or conditionally-required field/object that is missing, so it
+        counts against per-donor 'fulsome' completeness. Set it False for soft
+        notes and cross-field consistency warnings that are not about a missing
+        requirement. The warning is attributed to the current donor via
+        stack_location[0] so the completeness engine can look it up."""
         prefix = " > ".join(self.stack_location)
         if prefix.strip() == "":
             prefix = ""
@@ -123,6 +138,11 @@ class BaseSchema:
             prefix += ": "
         message = prefix + message
         self.validation_warnings.append(f"{message}")
+        if conditional_required and self.stack_location:
+            donor = self.stack_location[0]
+            if not hasattr(self, "_conditional_gaps"):
+                self._conditional_gaps = {}
+            self._conditional_gaps.setdefault(donor, []).append(message)
 
 
     def fail(self, message):
@@ -324,6 +344,8 @@ class BaseSchema:
         self.statistics["required_but_missing"] = {}
         self.statistics["schemas_used"] = []
         self.statistics["cases_missing_data"] = []
+        self.statistics["donor_completeness"] = {}
+        self._conditional_gaps = {}   # donor_id -> [conditional-requirement warnings]
 
         for key in self.validation_schema.keys():
             self.validation_schema[key]["extra_args"] = {
@@ -333,6 +355,9 @@ class BaseSchema:
         for x in range(0, len(map_json[root_schema])):
             self.validate_jsonschema(map_json[root_schema][x], x)
             self.validate_schema(root_schema, map_json[root_schema][x])
+            record = self.calculate_donor_completeness(map_json[root_schema][x])
+            if record is not None:
+                self.statistics["donor_completeness"][record["donor_id"]] = record
         for schema in self.identifiers:
             most_common = self.identifiers[schema].most_common()
             if most_common[0][1] > 1:
@@ -411,7 +436,10 @@ class BaseSchema:
                 }
             self.statistics["required_but_missing"][schema_name][f]["total"] += 1
             if f not in map_json or map_json[f] == "Not available":
-                self.warn(f"{f} required for {schema_name}")
+                # Flat required-field gaps are handled by the completeness
+                # engine's _required_complete (which, unlike this check, treats
+                # "Not available" as a valid value), so don't double-count here.
+                self.warn(f"{f} required for {schema_name}", conditional_required=False)
                 self.statistics["required_but_missing"][schema_name][f]["missing"] += 1
                 if case not in self.statistics["cases_missing_data"]:
                     self.statistics["cases_missing_data"].append(case)
@@ -432,3 +460,145 @@ class BaseSchema:
                     else:
                         self.validate_schema(ns, map_json[ns])
         self.stack_location.pop()
+
+    # ------------------------------------------------------------------ #
+    # Per-donor completeness                                             #
+    # ------------------------------------------------------------------ #
+    # Two orthogonal axes per donor:
+    #   * tier  ("A"/"B"/None) -- driven by sample_registration composition
+    #   * level ("fulsome"/"minimal"/"incomplete") -- driven by field validity
+    # A schema subclass opts in by defining `tier_criteria`, `minimal_criteria`
+    # and (optionally) `conditional_fields` plus the `_sample_kind` classifier.
+    # Schemas that don't define these get None (feature disabled for them).
+
+    def _field_present(self, obj, field):
+        """True if `field` has a non-empty value on `obj`.
+
+        "Not available" counts as a valid, complete value (see EMPTY_VALUES)."""
+        return isinstance(obj, dict) and field in obj and obj[field] not in self.EMPTY_VALUES
+
+    def _find_objects(self, node, key):
+        """Return every object appearing under `key` anywhere in the donor tree."""
+        found = []
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k == key:
+                    found.extend(v if isinstance(v, list) else [v])
+                found.extend(self._find_objects(v, key))
+        elif isinstance(node, list):
+            for item in node:
+                found.extend(self._find_objects(item, key))
+        return [o for o in found if isinstance(o, dict)]
+
+    def _evaluate_tier(self, donor):
+        """Classify a donor's sample composition into a single, exclusive tier.
+
+        Tier criteria are cumulative (Tier A's samples are a superset of Tier B's),
+        so a donor that qualifies for A also qualifies for B. The returned `tier`
+        resolves this in favour of the highest tier, so a Tier A donor is counted
+        ONLY as A and never toward the Tier B total. The `criteria_met` dict is
+        diagnostic (overlapping) and must not be used for tallying totals."""
+        samples = self._find_objects(donor, "sample_registrations")
+        counts = {}
+        for s in samples:
+            kind = self._sample_kind(s)
+            if kind:
+                counts[kind] = counts.get(kind, 0) + 1
+        criteria_met = {
+            tier: all(counts.get(k, 0) >= n for k, n in req.items())
+            for tier, req in self.tier_criteria.items()
+        }
+        # highest satisfied tier wins; assumes tier_criteria ordered strongest-first
+        tier = next((t for t in self.tier_criteria if criteria_met.get(t)), None)
+        return tier, counts, criteria_met
+
+    def _evaluate_minimal(self, donor):
+        """Check the reduced 'minimal' field set on every existing instance."""
+        unmet = []
+        for schema_name, fields in self.minimal_criteria.items():
+            instances = [donor] if schema_name == self._root_schema() \
+                else self._find_objects(donor, schema_name)
+            id_key = self.validation_schema.get(schema_name, {}).get("id")
+            for inst in instances:
+                ident = inst.get(id_key, "?") if id_key else "?"
+                unmet += [f"{schema_name}[{ident}].{f}"
+                          for f in fields if not self._field_present(inst, f)]
+        return (len(unmet) == 0), unmet
+
+    def _required_complete(self, schema_name, obj, unmet, prefix=""):
+        """Recursively check all required_fields across the donor tree."""
+        spec = self.validation_schema[schema_name]
+        id_key = spec["id"]
+        ident = obj.get(id_key, "?") if id_key else "?"
+        here = f"{prefix}{schema_name}[{ident}]"
+        for f in spec["required_fields"]:
+            if not self._field_present(obj, f):
+                unmet.append(f"{here}.{f}")
+        for ns in spec["nested_schemas"]:
+            for child in (obj.get(ns) or []):
+                self._required_complete(ns, child, unmet, prefix=f"{here} > ")
+
+    def _evaluate_required_instances(self, donor):
+        """Check that required nested objects exist (e.g. >= 1 treatment).
+
+        Driven by the optional `required_instances` list on the schema subclass,
+        each entry being {"key": <json key>, "min": <count>}. Objects are counted
+        anywhere in the donor tree via _find_objects."""
+        unmet = []
+        for spec in getattr(self, "required_instances", []):
+            found = len(self._find_objects(donor, spec["key"]))
+            need = spec.get("min", 1)
+            if found < need:
+                unmet.append(
+                    f"missing required object: {spec['key']} (found {found}, need >= {need})")
+        return unmet
+
+    def _evaluate_fulsome(self, donor, donor_id):
+        """Fulsome = every required field present (across the whole tree) AND
+        every conditionally-required field/object present.
+
+        Flat required fields are checked directly by _required_complete (which
+        honours "Not available" as a valid value). The conditional requirements
+        are taken from the validation pass itself: every `warn(...)` raised with
+        conditional_required=True during this donor's validation is a missing
+        conditional requirement. This means *all* conditional rules in the
+        validate_* methods are covered automatically and stay in sync as the
+        model evolves -- no rule needs to be re-listed here.
+
+        NOTE: relies on validate_schema having run for this donor first (it does,
+        in validate_ingest_map, immediately before calculate_donor_completeness)."""
+        unmet = []
+        self._required_complete(self._root_schema(), donor, unmet)
+        unmet += getattr(self, "_conditional_gaps", {}).get(donor_id, [])
+        unmet += self._evaluate_required_instances(donor)
+        return (len(unmet) == 0), unmet
+
+    def _root_schema(self):
+        return list(self.validation_schema.keys())[0]
+
+    def calculate_donor_completeness(self, donor):
+        """Return a per-donor completeness record, or None if this schema does
+        not define completeness criteria."""
+        if getattr(self, "tier_criteria", None) is None \
+                or getattr(self, "minimal_criteria", None) is None:
+            return None
+
+        id_field = self.validation_schema[self._root_schema()]["id"]
+        donor_id = donor.get(id_field)
+        tier, sample_counts, tier_criteria_met = self._evaluate_tier(donor)
+        minimal_ok, minimal_unmet = self._evaluate_minimal(donor)
+        # conditional gaps are keyed by stack_location[0] == str(donor_id)
+        fulsome_ok, fulsome_unmet = self._evaluate_fulsome(donor, str(donor_id))
+        level = "fulsome" if fulsome_ok else "minimal" if minimal_ok else "incomplete"
+        return {
+            "donor_id": donor_id,
+            "tier": tier,                       # "A" / "B" / None (exclusive)
+            "level": level,                     # fulsome / minimal / incomplete
+            "type": (f"Tier {tier} {level}" if tier else f"untiered {level}"),
+            "tier_criteria_met": tier_criteria_met,  # diagnostic only (overlapping)
+            "sample_counts": sample_counts,
+            "minimal_complete": minimal_ok,
+            "fulsome_complete": fulsome_ok,
+            "minimal_unmet": minimal_unmet,
+            "fulsome_unmet": fulsome_unmet,
+        }

@@ -163,6 +163,64 @@ class MoHSchemaV3(BaseSchema):
         }
     }
 
+    # ------------------------------------------------------------------ #
+    # Per-donor completeness criteria (consumed by BaseSchema engine)    #
+    # ------------------------------------------------------------------ #
+
+    # Tier = sample_registration composition. Ordered strongest-first so that
+    # a donor satisfying both is assigned the higher tier (A) and is therefore
+    # NOT also counted in the Tier B total. Criteria are cumulative: Tier A's
+    # required samples are a superset of Tier B's.
+    tier_criteria = {
+        "A": {"tumour_dna": 1, "tumour_rna": 1, "normal_dna": 1},
+        "B": {"tumour_dna": 1, "normal_dna": 1},
+    }
+
+    # Minimal completeness: reduced field set that must hold valid values on
+    # every existing instance of each object type.
+    minimal_criteria = {
+        "donors":               ["gender", "sex_at_birth", "date_of_birth", "date_resolution"],
+        "primary_diagnoses":    ["date_of_diagnosis", "cancer_type_code", "primary_site", "basis_of_diagnosis"],
+        "specimens":            ["specimen_collection_date", "specimen_anatomic_location"],
+        "sample_registrations": ["specimen_tissue_source", "tumour_normal_designation", "specimen_type", "sample_type"],
+    }
+
+    # Nested objects every donor must have for 'fulsome' completeness. Counted
+    # anywhere in the donor tree (e.g. treatments live under primary_diagnoses).
+    required_instances = [
+        {"key": "treatments", "min": 1},
+    ]
+
+    # Conditionally-required fields are NOT re-listed here. 'fulsome' completeness
+    # is derived directly from the validation pass: every conditional requirement
+    # in the validate_* methods raises warn(..., conditional_required=True), and
+    # those warnings are attributed per-donor and fed into the fulsome check
+    # (see BaseSchema._evaluate_fulsome). Soft notes / consistency warnings are
+    # marked conditional_required=False so they don't affect completeness.
+
+    @staticmethod
+    def _sample_kind(sample):
+        """Classify a sample_registration as e.g. 'tumour_dna' / 'normal_dna'.
+
+        ASSUMPTION: the molecule (DNA vs RNA) is read from `sample_type`.
+        If the MoH model encodes it in a different field, change ONLY this
+        method (e.g. read 'specimen_type' or an analyte field instead)."""
+        designation = (sample.get("tumour_normal_designation") or "").lower()
+        sample_type = (sample.get("sample_type") or "").lower()
+        if "rna" in sample_type:
+            molecule = "rna"
+        elif "dna" in sample_type:
+            molecule = "dna"
+        else:
+            molecule = None
+        if "tumour" in designation or "tumor" in designation:
+            tn = "tumour"
+        elif "normal" in designation:
+            tn = "normal"
+        else:
+            tn = None
+        return f"{tn}_{molecule}" if (tn and molecule) else None
+
     def validate_donors(self, map_json):
         for prop in map_json:
             match prop:
@@ -181,7 +239,8 @@ class MoHSchemaV3(BaseSchema):
                     if map_json["lost_to_followup_reason"] is not None:
                         if "lost_to_followup_after_clinical_event_identifier" not in map_json:
                             self.warn(
-                                "lost_to_followup_reason should only be submitted if lost_to_followup_after_clinical_event_identifier is submitted")
+                                "lost_to_followup_reason should only be submitted if lost_to_followup_after_clinical_event_identifier is submitted",
+                                conditional_required=False)
                 case "date_alive_after_lost_to_followup":
                     if map_json["date_alive_after_lost_to_followup"] is not None:
                         if "lost_to_followup_after_clinical_event_identifier" not in map_json:
@@ -239,7 +298,7 @@ class MoHSchemaV3(BaseSchema):
                                     if ('diagnosis_date' in locals() and diagnosis_date not in [None, ''] and
                                             treatment_end not in [None, ''] and 'treatment_end' in locals() and
                                             treatment_end < diagnosis_date):
-                                        self.warn(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: date_of_diagnosis should be earlier than treatment_end_date ")
+                                        self.warn(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: date_of_diagnosis should be earlier than treatment_end_date ", conditional_required=False)
                                     if 'treatment_start' in locals() and treatment_start not in [None, '']:
                                         if 'death' in locals() and death not in [None, ''] and treatment_start > death:
                                             self.fail(
@@ -247,12 +306,12 @@ class MoHSchemaV3(BaseSchema):
                                         if 'birth' in locals() and birth not in [None, ''] and treatment_start < birth and treatment_start is not None:
                                             self.fail(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date cannot be before date_of_birth")
                                         if 'diagnosis_date' in locals() and diagnosis_date not in [None, ''] and treatment_start < diagnosis_date:
-                                            self.warn(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date should not be before date_of_diagnosis")
+                                            self.warn(f"{diagnosis['submitter_primary_diagnosis_id']} > {treatment['submitter_treatment_id']}: treatment_start_date should not be before date_of_diagnosis", conditional_required=False)
                         diagnosis_values_list = list(diagnoses_dates.values())
                         if (len(diagnosis_values_list) > 0 and "int" in str(type(diagnosis_values_list[0])) and
                                 0 not in diagnosis_values_list):
                             self.warn(f"Earliest primary_diagnosis.date_of_diagnosis.month_interval should be 0, current "
-                                      f"month_intervals: {diagnoses_dates}")
+                                      f"month_intervals: {diagnoses_dates}", conditional_required=False)
                 case "date_of_death":
                     if map_json["date_of_death"] is not None:
                         if map_json["is_deceased"] in ["No", "Not available"]:
@@ -286,7 +345,7 @@ class MoHSchemaV3(BaseSchema):
 
     def validate_primary_diagnoses(self, map_json):
         if map_json["date_of_diagnosis"] is None:
-            self.warn("NOTE: cannot calculate any date intervals for this patient without date_of_diagnosis")
+            self.warn("NOTE: cannot calculate any date intervals for this patient without date_of_diagnosis", conditional_required=False)
         if "clinical_tumour_staging_system" not in map_json and "pathological_tumour_staging_system" not in map_json:
                     self.warn("Either clinical_tumour_staging_system or pathological_staging_system is required")
         for prop in map_json:

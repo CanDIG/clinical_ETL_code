@@ -27,7 +27,39 @@ def generate_csv(input_path):
                     out.write(f"{k},{field},{total},{missing},{round(missing_percent)}\n")
 
 
+def generate_donor_completeness_csv(input_path):
+    """Write a per-donor tier/level completeness table from a
+    *_validation_results.json file (which holds the donor-ID-keyed records)."""
+    output_path = input_path.replace("_validation_results.json", "_donor_completeness.csv")
+    print(f"Converting {input_path} to {output_path}")
+    with open(input_path) as f:
+        donors = json.load(f).get("donor_completeness", {})
+    with open(output_path, "w") as out:
+        out.write("Donor,Tier,Level,Type,Minimal Complete,Fulsome Complete,Unmet (fulsome)\n")
+        for donor_id, rec in donors.items():
+            out.write(
+                f"{donor_id},{rec['tier'] or ''},{rec['level']},{rec['type']},"
+                f"{rec['minimal_complete']},{rec['fulsome_complete']},"
+                f"{'|'.join(rec['fulsome_unmet'])}\n"
+            )
+
+
+def main(input_path):
+    """Dispatch on file type: aggregate field stats from a _map.json, or the
+    per-donor tier/level table from a _validation_results.json."""
+    with open(input_path) as f:
+        data = json.load(f)
+    if "donor_completeness" in data:
+        generate_donor_completeness_csv(input_path)
+    elif "statistics" in data:
+        generate_csv(input_path)
+    else:
+        raise SystemExit(
+            "Input json has neither 'statistics' (a _map.json) nor "
+            "'donor_completeness' (a _validation_results.json)."
+        )
+
+
 if __name__ == "__main__":
     args = parse_args()
-    input_path = args.input
-    generate_csv(input_path)
+    main(args.input)

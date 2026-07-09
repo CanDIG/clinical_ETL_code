@@ -84,7 +84,6 @@ def test_validation(packets, schema):
     warnings = [
         "DONOR_2 > PD_2: date_of_diagnosis required for primary_diagnoses",
         "DONOR_2 > PD_2: NOTE: cannot calculate any date intervals for this patient without date_of_diagnosis",
-        # "DONOR_3 > PD_3: basis_of_diagnosis required for primary_diagnoses",
         "DONOR_5: cause_of_death required if is_deceased = Yes",
         "DONOR_5: date_of_death required if is_deceased = Yes",
         "DONOR_5 > PD_5: basis_of_diagnosis required for primary_diagnoses",

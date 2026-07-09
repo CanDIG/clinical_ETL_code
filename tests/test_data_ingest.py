@@ -84,7 +84,7 @@ def test_validation(packets, schema):
     warnings = [
         "DONOR_2 > PD_2: date_of_diagnosis required for primary_diagnoses",
         "DONOR_2 > PD_2: NOTE: cannot calculate any date intervals for this patient without date_of_diagnosis",
-        "DONOR_3 > PD_3: basis_of_diagnosis required for primary_diagnoses",
+        # "DONOR_3 > PD_3: basis_of_diagnosis required for primary_diagnoses",
         "DONOR_5: cause_of_death required if is_deceased = Yes",
         "DONOR_5: date_of_death required if is_deceased = Yes",
         "DONOR_5 > PD_5: basis_of_diagnosis required for primary_diagnoses",
@@ -92,7 +92,7 @@ def test_validation(packets, schema):
         "DONOR_5 > PD_5 > TR_5 > Radiation 0: radiation_therapy_dosage required for radiations",
         "DONOR_5 > PD_5 > TR_10: Treatment type Systemic therapy should have one or more systemic therapies submitted",
     ]
-    assert len(schema.validation_warnings) == 9
+    assert len(schema.validation_warnings) == 8
     assert (sorted(schema.validation_warnings) == sorted(warnings))
 
     

@@ -56,7 +56,6 @@ class MoHSchemaV3(BaseSchema):
             "required_fields": [
                 "submitter_specimen_id",
                 "specimen_collection_date",
-                "specimen_storage",
                 "specimen_anatomic_location"
             ],
             "nested_schemas": [

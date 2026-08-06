@@ -333,6 +333,16 @@ Functions
 `placeholder(data_values)`
 :   Return a dict with a placeholder key.
 
+`set_na_if_empty(data_values)`
+:   Returns the value, or 'Not available' if empty.
+    
+    Use sparingly.  This is only for rare fields that are required and have proven difficult or impossible to fill.
+    
+    Args:
+        data_values: a values dict
+    Returns:
+        The value or 'Not available'
+
 `set_neg_99_blank_float(data_values)`
 :   Sets to blank if -99 used to indicate a value is not available or returns input value
 

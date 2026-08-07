@@ -104,15 +104,50 @@ class BaseSchema:
             if sha_match is not None:
                 self.katsu_sha = sha_match.group(1)
 
-        self.json_schema = openapi_to_jsonschema(resp.text, self.schema_name)
+        # A schema may declare more than one top-level ("root") object to generate
+        # and validate (e.g. MoH v4 emits both `donors` and `programs`). Each root is
+        # built by temporarily pointing self.schema_name/base_name/validation_schema at
+        # it and reusing the existing scaffold/template machinery.
+        self.roots = {}
+        self._root_order = []
+        for schema_name, base_name, validation_schema in self.root_specs():
+            self.schema_name = schema_name
+            self.base_name = base_name
+            self.validation_schema = validation_schema
+            root_key = list(validation_schema.keys())[0]
 
-        # create the template for the schema_name schema
-        self.scaffold = self.generate_schema_scaffold(self.schema[self.schema_name], list(self.validation_schema.keys())[0])
-        # print(json.dumps(self.scaffold, indent=4))
-        _, raw_template = self.generate_mapping_template(self.scaffold, node_name=f"{self.base_name}.INDEX")
+            json_schema = openapi_to_jsonschema(resp.text, schema_name)
+            scaffold = self.generate_schema_scaffold(self.schema[schema_name], root_key)
+            _, raw_template = self.generate_mapping_template(scaffold, node_name=f"{base_name}.INDEX")
+            template = self.add_default_mappings(raw_template)
 
-        # add default mapping functions:
-        self.template = self.add_default_mappings(raw_template)
+            self.roots[root_key] = {
+                "root_key": root_key,
+                "schema_name": schema_name,
+                "base_name": base_name,
+                "validation_schema": validation_schema,
+                "json_schema": json_schema,
+                "scaffold": scaffold,
+                "template": template,
+            }
+            self._root_order.append(root_key)
+
+        # Restore the primary (first) root as the default self.* attributes so single-root
+        # callers and backward-compatible code keep working unchanged.
+        primary = self.roots[self._root_order[0]]
+        self.schema_name = primary["schema_name"]
+        self.base_name = primary["base_name"]
+        self.validation_schema = primary["validation_schema"]
+        self.json_schema = primary["json_schema"]
+        self.scaffold = primary["scaffold"]
+        self.template = primary["template"]
+
+
+    def root_specs(self):
+        """Return the list of (openapi component name, sheet-name prefix, validation schema)
+        tuples to build/validate. Subclasses with more than one top-level object override this.
+        Defaults to a single root derived from the class attributes."""
+        return [(self.schema_name, self.base_name, self.validation_schema)]
 
 
     def warn(self, message):
@@ -312,8 +347,10 @@ class BaseSchema:
                 elif "cumulative" in data_value or "_percent_" in data_value or \
                         data_value in ["greatest_dimension_tumour", "tumour_length", "tumour_width"]:
                     x += f" {{floating({sheet_stack[-1]}.{data_value})}}"
-                elif data_value in ["treatment_type", "hpv_strain", "tobacco_type"] or "progression" in data_value or \
-                        data_value.startswith("margin_types"):
+                elif data_value in ["treatment_type", "hpv_strain", "tobacco_type",
+                                     "keywords", "principal_investigators", "lead_organizations",
+                                     "collaborators", "funding_sources", "publication_links"] \
+                        or "progression" in data_value or data_value.startswith("margin_types"):
                     x += f" {{pipe_delim({sheet_stack[-1]}.{data_value})}}"
                 else:
                     x += f" {{single_val({sheet_stack[-1]}.{data_value})}}"
@@ -325,25 +362,42 @@ class BaseSchema:
         self.statistics["schemas_used"] = []
         self.statistics["cases_missing_data"] = []
 
-        for key in self.validation_schema.keys():
-            self.validation_schema[key]["extra_args"] = {
-                "index": 0
-            }
-        root_schema = list(self.validation_schema.keys())[0]
-        for x in range(0, len(map_json[root_schema])):
-            self.validate_jsonschema(map_json[root_schema][x], x)
-            self.validate_schema(root_schema, map_json[root_schema][x])
+        all_schema_keys = set()
+        # Validate each top-level root (e.g. donors, programs). validate_jsonschema and
+        # validate_schema read self.json_schema/self.validation_schema, so point those at
+        # the current root before validating its instances.
+        for root_key in self._root_order:
+            root = self.roots[root_key]
+            self.validation_schema = root["validation_schema"]
+            self.json_schema = root["json_schema"]
+            all_schema_keys.update(self.validation_schema.keys())
+            for key in self.validation_schema.keys():
+                self.validation_schema[key]["extra_args"] = {
+                    "index": 0
+                }
+            if root_key not in map_json:
+                continue
+            for x in range(0, len(map_json[root_key])):
+                self.validate_jsonschema(map_json[root_key][x], x)
+                self.validate_schema(root_key, map_json[root_key][x])
         for schema in self.identifiers:
             most_common = self.identifiers[schema].most_common()
             if most_common[0][1] > 1:
                 for x in most_common:
                     if x[1] > 1:
                         self.fail(f"Duplicated IDs: in schema {schema}, {x[0]} occurs {x[1]} times")
-        self.statistics["schemas_not_used"] = list(set(self.validation_schema.keys()) - set(self.statistics["schemas_used"]))
+        self.statistics["schemas_not_used"] = list(all_schema_keys - set(self.statistics["schemas_used"]))
+        # Completeness summary is reported against the primary (first) root, i.e. donors.
+        primary_key = self._root_order[0]
+        primary_cases = map_json.get(primary_key, [])
         self.statistics["summary_cases"] = {
-            "complete_cases": len(map_json[root_schema]) - len(self.statistics["cases_missing_data"]),
-            "total_cases": len(map_json[root_schema])
+            "complete_cases": len(primary_cases) - len(self.statistics["cases_missing_data"]),
+            "total_cases": len(primary_cases)
         }
+        # Restore primary root as the default context.
+        primary = self.roots[primary_key]
+        self.validation_schema = primary["validation_schema"]
+        self.json_schema = primary["json_schema"]
 
 
     def validate_jsonschema(self, map_json, index):

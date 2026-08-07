@@ -22,12 +22,12 @@ jobs:
       - name: Test with pytest
         run: |
           pytest
-      - name: Compare to moh_v3_template.csv
+      - name: Compare to moh_v4_template.csv
         shell: bash {0}
         run: |
           # Script based largely on update_moh_template.sh
           python src/clinical_etl/generate_schema.py --out moh_template
-          diff moh_template.csv moh_v3_template.csv > curr_diff.txt
+          diff moh_template.csv moh_v4_template.csv > curr_diff.txt
           bytes=$(head -5 curr_diff.txt | wc -c)
           dd if=curr_diff.txt bs="$bytes" skip=1 conv=notrunc of=new_diff.txt
           diff new_diff.txt tests/moh_diffs.txt

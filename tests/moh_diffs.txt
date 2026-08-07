@@ -1,43 +1,71 @@
 < DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.systemic_therapies.INDEX.number_of_cycles, {integer(SYSTEMIC_THERAPIES_SHEET.number_of_cycles)}
 ---
 > DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.systemic_therapies.INDEX.number_of_cycles, {set_neg_99_blank_int(SYSTEMIC_THERAPIES_SHEET.number_of_cycles)}
-83c83
+78c78
+< DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.systemic_therapies.INDEX.prescribed_cumulative_drug_dose, {floating(SYSTEMIC_THERAPIES_SHEET.prescribed_cumulative_drug_dose)}
+---
+> DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.systemic_therapies.INDEX.prescribed_cumulative_drug_dose, {set_neg_99_blank_float(SYSTEMIC_THERAPIES_SHEET.prescribed_cumulative_drug_dose)}
+80c80
+< DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.systemic_therapies.INDEX.actual_cumulative_drug_dose, {floating(SYSTEMIC_THERAPIES_SHEET.actual_cumulative_drug_dose)}
+---
+> DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.systemic_therapies.INDEX.actual_cumulative_drug_dose, {set_neg_99_blank_float(SYSTEMIC_THERAPIES_SHEET.actual_cumulative_drug_dose)}
+85c85
 < DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_fractions, {integer(RADIATIONS_SHEET.radiation_therapy_fractions)}
 ---
 > DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_fractions, {set_neg_99_blank_int(RADIATIONS_SHEET.radiation_therapy_fractions)}
-85c85
+87c87
 < DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_dosage, {integer(RADIATIONS_SHEET.radiation_therapy_dosage)}
 ---
 > DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiations.INDEX.radiation_therapy_dosage, {set_neg_99_blank_int(RADIATIONS_SHEET.radiation_therapy_dosage)}
-128c128
+96c96
+< DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.tumour_length, {floating(SURGERIES_SHEET.tumour_length)}
+---
+> DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.tumour_length, {set_neg_99_blank_float(SURGERIES_SHEET.tumour_length)}
+98c98
+< DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.tumour_width, {floating(SURGERIES_SHEET.tumour_width)}
+---
+> DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.tumour_width, {set_neg_99_blank_float(SURGERIES_SHEET.tumour_width)}
+100c100
+< DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.greatest_dimension_tumour, {floating(SURGERIES_SHEET.greatest_dimension_tumour)}
+---
+> DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.surgeries.INDEX.greatest_dimension_tumour, {set_neg_99_blank_float(SURGERIES_SHEET.greatest_dimension_tumour)}
+116c116
+< DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiopharmaceutical_therapies.INDEX.cumulative_drug_dose, {floating(RADIOPHARMACEUTICAL_THERAPIES_SHEET.cumulative_drug_dose)}
+---
+> DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiopharmaceutical_therapies.INDEX.cumulative_drug_dose, {set_neg_99_blank_float(RADIOPHARMACEUTICAL_THERAPIES_SHEET.cumulative_drug_dose)}
+122c122
+< DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiopharmaceutical_therapies.INDEX.number_of_cycles, {integer(RADIOPHARMACEUTICAL_THERAPIES_SHEET.number_of_cycles)}
+---
+> DONOR.INDEX.primary_diagnoses.INDEX.treatments.INDEX.radiopharmaceutical_therapies.INDEX.number_of_cycles, {set_neg_99_blank_int(RADIOPHARMACEUTICAL_THERAPIES_SHEET.number_of_cycles)}
+143c143
 < DONOR.INDEX.comorbidities.INDEX.age_at_comorbidity_diagnosis, {integer(COMORBIDITIES_SHEET.age_at_comorbidity_diagnosis)}
 ---
 > DONOR.INDEX.comorbidities.INDEX.age_at_comorbidity_diagnosis, {set_neg_99_blank_int(COMORBIDITIES_SHEET.age_at_comorbidity_diagnosis)}
-136c136
+151c151
 < DONOR.INDEX.exposures.INDEX.pack_years_smoked, {integer(EXPOSURES_SHEET.pack_years_smoked)}
 ---
 > DONOR.INDEX.exposures.INDEX.pack_years_smoked, {set_neg_99_blank_int(EXPOSURES_SHEET.pack_years_smoked)}
-144c144
+159c159
 < DONOR.INDEX.biomarkers.INDEX.psa_level, {integer(BIOMARKERS_SHEET.psa_level)}
 ---
 > DONOR.INDEX.biomarkers.INDEX.psa_level, {set_neg_99_blank_int(BIOMARKERS_SHEET.psa_level)}
-146c146
+161c161
 < DONOR.INDEX.biomarkers.INDEX.ca125, {integer(BIOMARKERS_SHEET.ca125)}
 ---
 > DONOR.INDEX.biomarkers.INDEX.ca125, {set_neg_99_blank_int(BIOMARKERS_SHEET.ca125)}
-148c148
+163c163
 < DONOR.INDEX.biomarkers.INDEX.cea, {integer(BIOMARKERS_SHEET.cea)}
 ---
 > DONOR.INDEX.biomarkers.INDEX.cea, {set_neg_99_blank_int(BIOMARKERS_SHEET.cea)}
-151c151
+168c168
 < DONOR.INDEX.biomarkers.INDEX.er_percent_positive, {floating(BIOMARKERS_SHEET.er_percent_positive)}
 ---
 > DONOR.INDEX.biomarkers.INDEX.er_percent_positive, {set_neg_99_blank_float(BIOMARKERS_SHEET.er_percent_positive)}
-154c154
+171c171
 < DONOR.INDEX.biomarkers.INDEX.pr_percent_positive, {floating(BIOMARKERS_SHEET.pr_percent_positive)}
 ---
 > DONOR.INDEX.biomarkers.INDEX.pr_percent_positive, {set_neg_99_blank_float(BIOMARKERS_SHEET.pr_percent_positive)}
-161c161
+178c178
 < DONOR.INDEX.followups.INDEX, {indexed_on(FOLLOWUPS_SHEET.submitter_donor_id)}
 ---
 > DONOR.INDEX.followups.INDEX, {moh_indexed_on_donor_if_others_absent(FOLLOWUPS_SHEET.submitter_donor_id)}

@@ -8,28 +8,14 @@ A class for the representation of a ProgramWithClinicalData (MoHCCN data model v
 """
 
 class MoHSchemaV4(BaseSchema):
-    schema_name = "ProgramWithClinicalDataSchema"
-    base_name = "PROGRAM"
+    # The MoHCCN v4 clinical packet is rooted at the donor (DonorWithClinicalDataSchema).
+    # Program metadata is a separate, standalone ingestable object (ProgramIngestSchema)
+    # and is handled as a second root; see program_validation_schema and root_specs().
+    schema_name = "DonorWithClinicalDataSchema"
+    base_name = "DONOR"
 
     ## Following are specific checks for required fields in the MoH data model, as well as checks for conditionals specified in the model.
     validation_schema = {
-        "programs": {
-            "id": "program_id",
-            "name": "Program",
-            "required_fields": [
-                "program_id",
-                "program_name",
-                "program_description",
-                "status",
-                "context",
-                "principal_investigators",
-                "lead_organizations",
-                "funding_sources",
-            ],
-            "nested_schemas": [
-                "donors"
-            ]
-        },
         "donors": {
             "id": "submitter_donor_id",
             "name": "Donor",
@@ -63,7 +49,6 @@ class MoHSchemaV4(BaseSchema):
             "nested_schemas": [
                 "specimens",
                 "treatments",
-                "biomarkers",
                 "followups"
             ]
         },
@@ -80,8 +65,7 @@ class MoHSchemaV4(BaseSchema):
                 "tumour_normal_designation"
             ],
             "nested_schemas": [
-                "sample_registrations",
-                "biomarkers"
+                "sample_registrations"
             ]
         },
         "sample_registrations": {
@@ -107,8 +91,8 @@ class MoHSchemaV4(BaseSchema):
                 "systemic_therapies",
                 "radiations",
                 "surgeries",
-                "followups",
-                "biomarkers"
+                "radiopharmaceutical_therapies",
+                "followups"
             ]
         },
         "systemic_therapies": {
@@ -157,7 +141,8 @@ class MoHSchemaV4(BaseSchema):
                 "start_date",
                 "cumulative_drug_dose",
                 "drug_dose_units"
-            ]
+            ],
+            "nested_schemas": []
         },
         "biomarkers": {
             "id": None,
@@ -173,9 +158,7 @@ class MoHSchemaV4(BaseSchema):
                 "date_of_followup",
                 "disease_status_at_followup"
             ],
-            "nested_schemas": [
-                "biomarkers"
-            ]
+            "nested_schemas": []
         },
         "comorbidities": {
             "id": None,
@@ -192,6 +175,34 @@ class MoHSchemaV4(BaseSchema):
             "nested_schemas": []
         }
     }
+
+    ## Program metadata is a separate top-level ingestable object in v4 (ProgramIngestSchema).
+    ## It is validated as its own root, not nested under donors.
+    program_validation_schema = {
+        "programs": {
+            "id": "program_id",
+            "name": "Program",
+            "required_fields": [
+                "program_id",
+                "program_name",
+                "program_description",
+                "status",
+                "context",
+                "principal_investigators",
+                "lead_organizations",
+                "funding_sources",
+            ],
+            "nested_schemas": []
+        }
+    }
+
+    def root_specs(self):
+        # v4 emits two top-level arrays: donors (clinical tree) and programs (metadata).
+        # Each tuple is (openapi component name, sheet-name prefix, validation schema).
+        return [
+            (self.schema_name, self.base_name, self.validation_schema),
+            ("ProgramIngestSchema", "PROGRAM", self.program_validation_schema),
+        ]
 
     def validate_programs(self, map_json):
         for prop in map_json:
@@ -213,13 +224,13 @@ class MoHSchemaV4(BaseSchema):
                 # TODO: add logic for date_of_death_is_estimated
                 case "lost_to_followup_reason":
                     if map_json["lost_to_followup_reason"] is not None:
-                        if "lost_to_followup" not in map_json:
+                        if map_json.get("lost_to_follow_up") != "Yes":
                             self.warn(
-                                "lost_to_followup_reason should only be submitted if lost_to_followup == Yes")
-                case "lost_to_followup":
-                    if map_json["lost_to_followup"] == "Yes":
+                                "lost_to_followup_reason should only be submitted if lost_to_follow_up == Yes")
+                case "lost_to_follow_up":
+                    if map_json["lost_to_follow_up"] == "Yes":
                         if "lost_to_followup_reason" not in map_json:
-                            self.warn("lost_to_followup_reason required if lost_to_followup == Yes")
+                            self.warn("lost_to_followup_reason required if lost_to_follow_up == Yes")
                 case "cause_of_death":
                     if map_json["cause_of_death"] is not None:
                         if map_json["is_deceased"] in ["No", "Not available"]:
@@ -332,19 +343,18 @@ class MoHSchemaV4(BaseSchema):
                 self.warn(f"{staging_type}_stage_group is required for {staging_type}_tumour_staging_system {map_json[f'{staging_type}_tumour_staging_system']}")
 
     def validate_specimens(self, map_json):
-        for prop in map_json:
-            if "tumour_normal_designation" in prop and prop["tumour_normal_designation"] == "Tumour":
-                required_fields = [
-                    "reference_pathology_confirmed_diagnosis",
-                    "reference_pathology_confirmed_tumour_presence",
-                    "tumour_grading_system",
-                    "tumour_grade",
-                    "percent_tumour_cells_range",
-                    "percent_tumour_cells_measurement_method"
-                ]
-                for f in required_fields:
-                    if f not in map_json:
-                        self.warn(f"Tumour specimens require a {f}")
+        if map_json.get("tumour_normal_designation") == "Tumour":
+            required_fields = [
+                "reference_pathology_confirmed_diagnosis",
+                "reference_pathology_confirmed_tumour_presence",
+                "tumour_grading_system",
+                "tumour_grade",
+                "percent_tumour_cells_range",
+                "percent_tumour_cells_measurement_method"
+            ]
+            for f in required_fields:
+                if f not in map_json:
+                    self.warn(f"Tumour specimens require a {f}")
 
     def validate_sample_registrations(self, map_json):
         return
@@ -357,11 +367,11 @@ class MoHSchemaV4(BaseSchema):
                         self.warn("Treatment end date is required if status_of_treatment != Treatment ongoing")
                     if "systemic_therapies" in map_json:
                         for therapy in map_json["systemic_therapies"]:
-                            if therapy["end_date"] not in map_json:
+                            if "end_date" not in therapy or therapy["end_date"] is None:
                                 self.warn("Systemic therapy end date should be submitted if status_of_treatment != Treatment ongoing")
                     if "radiopharmaceutical_therapies" in map_json:
                         for therapy in map_json["radiopharmaceutical_therapies"]:
-                            if therapy["end_date"] not in map_json:
+                            if "end_date" not in therapy or therapy["end_date"] is None:
                                 self.warn(
                                     "Radiopharmaceutical Therapy end date should be submitted if status_of_treatment != Treatment ongoing")
                 else:

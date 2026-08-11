@@ -1,3 +1,3 @@
 submitter_donor_id,submitter_treatment_id,rxnorm_code,agent_name,radionuclide,radionuclide_other,cumulative_drug_dose,drug_dose_units, number_of_cycles,start_date,end_date,mass_value,mass_unit_ucum
-DONOR_1,TR_11,1999683,Lutathera,Lutetium‑177,,346,Bq,5,01/09/2021,01/09/2022,,
-DONOR_2,TR_12,1424215,Xofigo,Radium‑223,,200,kBq,8,01/12/2021,,900,ug
+DONOR_1,TR_11,1999683,Lutathera,Lutetium-177,,346,Bq,5,01/09/2021,01/09/2022,,
+DONOR_2,TR_12,1424215,Xofigo,Radium-223,,200,kBq,8,01/12/2021,,900,ug

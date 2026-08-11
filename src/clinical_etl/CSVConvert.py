@@ -683,71 +683,111 @@ def csv_convert(input_path, manifest_file, minify=False, index_output=False, ver
     check_for_sheet_inconsistencies(set([re.findall(r"\(([\w\" ]+)", x)[0].replace('"',"") for x in template_lines]),
                                     set(raw_csv_dfs.keys()))
 
-    print(f"{Bcolors.OKGREEN}Indexing data...{Bcolors.ENDC}")
-    mappings.INDEXED_DATA = process_data(raw_csv_dfs, verbose)
-    if index_output:
-        with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
-            if minify:
-                json.dump(mappings.INDEXED_DATA, f)
-            else:
-                json.dump(mappings.INDEXED_DATA, f, indent=4)
-
-    # if verbose flag is set, warn if column name is present in multiple sheets:
-    if verbose:
-        for col in mappings.INDEXED_DATA["columns"]:
-            if col != mappings.IDENTIFIER_FIELD and len(mappings.INDEXED_DATA["columns"][col]) > 1:
-                mappings._info(
-                    f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
-
     # warn if any template lines map the same column to multiple lines:
     scan_template_for_duplicate_mappings(template_lines)
 
-    mapping_scaffold = create_scaffold_from_template(template_lines)
-
-    if mapping_scaffold is None:
-        sys.exit("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
-
-    packets = []
-    # for each identifier's row, make a packet
-    print(f"\n{Bcolors.OKGREEN}Creating packets: {Bcolors.ENDC}")
-    progress = tqdm(mappings.INDEXED_DATA["individuals"])
-    for indiv in progress:
-        progress.set_postfix_str(indiv)
-        # print(f"{Bcolors.OKGREEN}{indiv}  {Bcolors.ENDC}", end="\r")
-        mappings.IDENTIFIER = indiv
-
-        # If there is a reference_date in the manifest, we need to calculate that and add CALCULATED.REFERENCE_DATE to the INDEXED_DATA
-        if "reference_date" in manifest:
-            ref_temp = f"REFERENCE_DATE, {{{manifest['reference_date']}}}"
-            reference_date_scaffold = create_scaffold_from_template([ref_temp])
-            func, params = parse_mapping_function(reference_date_scaffold['REFERENCE_DATE'])
-            sheet = params[0].split('.')[0]
-            mappings._push_to_stack(sheet, mappings.IDENTIFIER_FIELD, 0)
-            map_data_to_scaffold(reference_date_scaffold, None, 0)
-            mappings.INDEX_STACK = []
-        mappings._push_to_stack(None, None, 0)
-        packet = map_data_to_scaffold(deepcopy(mapping_scaffold), None, 0)
-        if packet is not None:
-            main_key = list(packet.keys())[0]
-            packets.extend(packet[main_key])
-        if mappings._pop_from_stack() is None:
-            raise Exception(f"Stack popped too far!\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}")
-        if mappings._pop_from_stack() is not None:
-            raise Exception(
-                f"Stack not empty\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}\n {mappings.INDEX_STACK}")
-    if index_output:
-        with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
-            if minify:
-                json.dump(mappings.INDEXED_DATA, f)
-            else:
-                json.dump(mappings.INDEXED_DATA, f, indent=4)
-
-    result_key = list(schema.validation_schema.keys()).pop(0)
+    # A schema may declare more than one top-level ("root") object to emit. For MoH v4
+    # these are `donors` (the clinical tree, keyed on submitter_donor_id) and `programs`
+    # (program metadata, keyed on program_id). Each root is processed independently: it
+    # uses only its own template lines, its own identifier, and only the sheets that its
+    # mappings reference. Single-root schemas (v2/v3) simply loop once.
     result = {
         "openapi_url": schema.openapi_url,
         "schema_class": type(schema).__name__,
-        result_key: packets
     }
+    indexed_by_root = {}
+    primary_root_key = schema._root_order[0]
+    # the primary (clinical) root uses the identifier from the manifest; capture it up front
+    # because mappings.IDENTIFIER_FIELD gets reassigned per root inside the loop below.
+    primary_identifier = mappings.IDENTIFIER_FIELD
+    packets = []  # primary (clinical) root's packets, returned for backwards compatibility
+
+    # Process/emit roots in reverse of _root_order so that `programs` is written to the
+    # output json before `donors`. `donors` stays the primary root (see primary_root_key).
+    for root_key in reversed(schema._root_order):
+        root = schema.roots[root_key]
+        base_name = root["base_name"]
+
+        # partition the template down to just this root's lines (e.g. those starting DONOR. or PROGRAM.)
+        root_lines = [line for line in template_lines
+                      if line.split(",")[0].strip().split(".")[0] == base_name]
+        if len(root_lines) == 0:
+            # nothing mapped for this root (e.g. no program metadata supplied); skip it
+            continue
+
+        # the identifier used to index this root's sheets
+        if root_key == primary_root_key:
+            root_identifier = primary_identifier
+        else:
+            root_identifier = root["validation_schema"][root_key]["id"]
+        mappings.IDENTIFIER_FIELD = root_identifier
+
+        # restrict to only the sheets this root's mappings reference
+        root_sheets = set()
+        for line in root_lines:
+            found = re.findall(r"\(([\w\" ]+)", line)
+            if len(found) > 0:
+                root_sheets.add(found[0].replace('"', "").split(".")[0])
+        root_dfs = {sheet: raw_csv_dfs[sheet] for sheet in root_sheets if sheet in raw_csv_dfs}
+        if len(root_dfs) == 0:
+            continue
+
+        print(f"{Bcolors.OKGREEN}Indexing {root_key} data...{Bcolors.ENDC}")
+        mappings.INDEXED_DATA = process_data(root_dfs, verbose)
+        indexed_by_root[root_key] = mappings.INDEXED_DATA
+
+        # if verbose flag is set, warn if column name is present in multiple sheets:
+        if verbose:
+            for col in mappings.INDEXED_DATA["columns"]:
+                if col != mappings.IDENTIFIER_FIELD and len(mappings.INDEXED_DATA["columns"][col]) > 1:
+                    mappings._info(
+                        f"Column name {col} present in multiple sheets: {', '.join(mappings.INDEXED_DATA['columns'][col])}")
+
+        root_scaffold = create_scaffold_from_template(root_lines)
+        if root_scaffold is None:
+            sys.exit("Could not create mapping scaffold. Make sure that the manifest specifies a valid csv template.")
+
+        root_packets = []
+        # for each identifier's row, make a packet
+        print(f"\n{Bcolors.OKGREEN}Creating {root_key} packets: {Bcolors.ENDC}")
+        progress = tqdm(mappings.INDEXED_DATA["individuals"])
+        for indiv in progress:
+            progress.set_postfix_str(indiv)
+            mappings.IDENTIFIER = indiv
+
+            # If there is a reference_date in the manifest, we need to calculate that and add
+            # CALCULATED.REFERENCE_DATE to the INDEXED_DATA. Date intervals only apply to the
+            # primary clinical root (donors), not to program metadata.
+            if root_key == primary_root_key and "reference_date" in manifest:
+                ref_temp = f"REFERENCE_DATE, {{{manifest['reference_date']}}}"
+                reference_date_scaffold = create_scaffold_from_template([ref_temp])
+                func, params = parse_mapping_function(reference_date_scaffold['REFERENCE_DATE'])
+                sheet = params[0].split('.')[0]
+                mappings._push_to_stack(sheet, mappings.IDENTIFIER_FIELD, 0)
+                map_data_to_scaffold(reference_date_scaffold, None, 0)
+                mappings.INDEX_STACK = []
+            mappings._push_to_stack(None, None, 0)
+            packet = map_data_to_scaffold(deepcopy(root_scaffold), None, 0)
+            if packet is not None:
+                main_key = list(packet.keys())[0]
+                root_packets.extend(packet[main_key])
+            if mappings._pop_from_stack() is None:
+                raise Exception(f"Stack popped too far!\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}")
+            if mappings._pop_from_stack() is not None:
+                raise Exception(
+                    f"Stack not empty\n{mappings.IDENTIFIER_FIELD}: {mappings.IDENTIFIER}\n {mappings.INDEX_STACK}")
+
+        result[root_key] = root_packets
+        if root_key == primary_root_key:
+            packets = root_packets
+
+    if index_output:
+        with open(f"{mappings.OUTPUT_FILE}_indexed.json", 'w') as f:
+            if minify:
+                json.dump(indexed_by_root, f)
+            else:
+                json.dump(indexed_by_root, f, indent=4)
+
     if schema.katsu_sha is not None:
         result["katsu_sha"] = schema.katsu_sha
 

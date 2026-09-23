@@ -596,6 +596,21 @@ def moh_indexed_on_donor_if_others_absent(data_values):
         "values": result
     }
 
+def set_na_if_empty(data_values):
+    """Returns the value, or 'Not available' if empty.
+
+    Use sparingly.  This is only for rare fields that are required and have proven difficult or impossible to fill.
+
+    Args:
+        data_values: a values dict
+    Returns:
+        The value or 'Not available'
+    """
+    val = single_val(data_values)
+    if val is None:
+        return "Not available"
+    else:
+        return val
 
 def _warn(message, input_values=None):
     """Warns a user when a mapping is unsuccessful with the IDENTIFIER and FIELD."""

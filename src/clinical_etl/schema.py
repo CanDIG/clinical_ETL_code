@@ -410,14 +410,14 @@ class BaseSchema:
                     "missing": 0
                 }
             self.statistics["required_but_missing"][schema_name][f]["total"] += 1
-            if f not in map_json or map_json[f] == "Not available":
+            # `Not available` is valid data - do not throw a warning.
+            if f not in map_json:
                 self.warn(f"{f} required for {schema_name}")
                 self.statistics["required_but_missing"][schema_name][f]["missing"] += 1
                 if case not in self.statistics["cases_missing_data"]:
                     self.statistics["cases_missing_data"].append(case)
-                if f not in map_json:
-                    map_json[f] = None
-                    remove_these.append(f)
+                map_json[f] = None
+                remove_these.append(f)
 
         eval(f"self.validate_{schema_name}({map_json})")
         for f in remove_these:

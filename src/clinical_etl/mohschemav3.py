@@ -366,7 +366,7 @@ class MoHSchemaV3(BaseSchema):
                                 if "dict" in str(type(therapy["end_date"])):
                                     therapy_end = therapy["end_date"]["month_interval"]
                                 else:
-                                    therapy_end = dateparser.parse(therapy["treatment_end_date"]).date()
+                                    therapy_end = dateparser.parse(therapy["end_date"]).date()
                                 if therapy_end > treatment_end:
                                     self.fail("Systemic therapy end date cannot be after its treatment end date.")
 

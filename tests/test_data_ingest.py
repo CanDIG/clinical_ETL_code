@@ -143,3 +143,21 @@ def test_multisheet_mapping(packets):
                         assert len(s["multisheet"]["placeholder"]["submitter_specimen_id"]["Sample_Registration"]) == 0
                         assert len(s["multisheet"]["placeholder"]["extra"]["Sample_Registration"]) == 0
 
+
+
+# test date validation when dates are not converted to month intervals (no reference_date in the manifest):
+def test_systemic_therapy_string_dates(schema):
+    treatment = {
+        "submitter_treatment_id": "TR_STRING_DATES",
+        "treatment_type": ["Systemic therapy"],
+        "treatment_start_date": "2020-01-01",
+        "treatment_end_date": "2020-06-01",
+        "systemic_therapies": [
+            {"start_date": "2020-02-01", "end_date": "2020-05-01"},
+            {"start_date": "2020-02-01", "end_date": "2020-07-01"}
+        ]
+    }
+    schema.validate_treatments(treatment)
+    errors = [e for e in schema.validation_errors if "Systemic therapy" in e]
+    assert len(errors) == 1
+    assert "Systemic therapy end date cannot be after its treatment end date." in errors[0]
